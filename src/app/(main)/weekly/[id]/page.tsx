@@ -72,7 +72,10 @@ export default function WeeklyDetailPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <p className="text-muted-foreground">読み込み中...</p>
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-2xl animate-bounce">📖</span>
+          <p className="text-sm text-muted-foreground">読み込み中...</p>
+        </div>
       </div>
     );
   }
@@ -81,13 +84,21 @@ export default function WeeklyDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" onClick={() => router.push("/weekly")}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push("/weekly")}
+        className="text-muted-foreground hover:text-foreground -ml-2"
+      >
         ← 一覧に戻る
       </Button>
 
-      <Card>
-        <CardContent className="whitespace-pre-wrap p-6 leading-relaxed">
-          {report.content}
+      <Card className="overflow-hidden shadow-sm">
+        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-orange-400 to-yellow-400" />
+        <CardContent className="p-6">
+          <div className="whitespace-pre-wrap leading-relaxed text-sm text-foreground">
+            {report.content}
+          </div>
         </CardContent>
       </Card>
 
@@ -98,11 +109,18 @@ export default function WeeklyDetailPage() {
 
       <Button
         variant="outline"
-        className="w-full"
+        className="w-full border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
         onClick={handleRegenerate}
         disabled={regenerating}
       >
-        {regenerating ? "再生成中..." : "再生成する"}
+        {regenerating ? (
+          <span className="flex items-center gap-2">
+            <span className="animate-spin">✨</span>
+            再生成中...
+          </span>
+        ) : (
+          "✨ 再生成する"
+        )}
       </Button>
     </div>
   );
