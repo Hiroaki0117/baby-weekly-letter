@@ -2,7 +2,7 @@
 
 ## 概要
 
-Webアプリケーション。
+すくすく日記 - 育児ログ週次通信アプリ。日々の育児ログを簡単に残し、週1回AIで「ちょい感動系」の週次通信を自動生成するWebアプリケーション。
 
 ## 開発コマンド
 
@@ -36,16 +36,19 @@ pnpm test:coverage
 
 - **フレームワーク**: Next.js 16 (App Router)
 - **言語**: TypeScript
-- **スタイリング**: Tailwind CSS 4
+- **スタイリング**: Tailwind CSS 4 + shadcn/ui
 - **データベース**: Supabase (PostgreSQL)
-- **認証**: NextAuth.js (Google OAuth)
-- **グラフ**: Recharts
-- **バリデーション**: Zod
+- **認証**: Supabase Auth (メール+パスワード / Google OAuth)
+- **ストレージ**: Supabase Storage (写真保存)
+- **LLM**: Google Gemini 2.0 Flash (週次通信生成)
+- **フォーム**: React Hook Form + Zod
+- **日付操作**: date-fns
 - **テスト**: Vitest
+- **デプロイ**: Vercel
 
 ## プロジェクト構造
 
-本リポジトリは、資産管理アプリケーション専用のリポジトリです。
+本リポジトリは、すくすく日記（育児ログ週次通信アプリ）専用のリポジトリです。
 
 ### ドキュメントの分類
 
