@@ -19,16 +19,22 @@ export function WeeklyReportCard({ report }: WeeklyReportCardProps) {
 
   return (
     <Link href={`/weekly/${report.id}`}>
-      <Card className="transition-colors hover:bg-muted/50">
+      <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 group">
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-orange-400 to-yellow-400" />
         <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <span>📮</span>
-            <span className="text-sm font-medium">
-              {formatWeekRange(report.week_start, report.week_end)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📮</span>
+              <span className="text-sm font-semibold text-foreground">
+                {formatWeekRange(report.week_start, report.week_end)}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+              読む →
             </span>
           </div>
           {preview && (
-            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+            <p className="mt-3 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
               {preview}
             </p>
           )}

@@ -89,8 +89,17 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">📅 {formatDateJa(new Date())}</h1>
+      {/* 日付バナー */}
+      <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-orange-50 to-yellow-50 border border-primary/20 p-5">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">🌤️</span>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium">TODAY</p>
+            <h1 className="text-xl font-bold text-foreground">
+              {formatDateJa(new Date())}
+            </h1>
+          </div>
+        </div>
       </div>
 
       <LogForm
@@ -110,9 +119,15 @@ export default function HomePage() {
 
       {logs.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            今日のログ
-          </h2>
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-1 rounded-full bg-primary" />
+            <h2 className="text-sm font-semibold text-foreground">
+              今日のきろく
+            </h2>
+            <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+              {logs.length}件
+            </span>
+          </div>
           {logs.map((log) => (
             <LogCard
               key={log.id}

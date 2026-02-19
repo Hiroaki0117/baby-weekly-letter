@@ -92,18 +92,29 @@ export default function LogsPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <p className="text-muted-foreground">読み込み中...</p>
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-2xl animate-bounce">🌱</span>
+          <p className="text-sm text-muted-foreground">読み込み中...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">ログ一覧</h1>
+      <div className="flex items-center gap-2">
+        <span className="text-xl">📔</span>
+        <h1 className="text-xl font-bold">ログ一覧</h1>
+        {logs.length > 0 && (
+          <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 ml-1">
+            {logs.length}件
+          </span>
+        )}
+      </div>
 
       {editingLog && (
-        <div className="rounded-lg border p-4">
-          <h2 className="mb-3 text-sm font-medium">ログを編集</h2>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <h2 className="mb-3 text-sm font-semibold text-primary">ログを編集</h2>
           <LogForm
             key={editingLog.id}
             editingLog={editingLog}
@@ -118,9 +129,11 @@ export default function LogsPage() {
       )}
 
       {logs.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">
-          まだログがありません
-        </p>
+        <div className="py-16 text-center space-y-3">
+          <span className="text-5xl">📝</span>
+          <p className="text-muted-foreground">まだログがありません</p>
+          <p className="text-xs text-muted-foreground">ホームから最初のログを記録してみましょう</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {logs.map((log) => (
