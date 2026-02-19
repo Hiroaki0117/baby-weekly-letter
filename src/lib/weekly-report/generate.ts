@@ -1,0 +1,22 @@
+import { getGeminiModel } from "@/lib/gemini/client";
+import { buildPrompt } from "./prompt";
+import type { DailyLog } from "@/types";
+
+export async function generateWeeklyReport(
+  logs: DailyLog[],
+  weekStart: string,
+  weekEnd: string
+): Promise<string> {
+  const model = getGeminiModel();
+  const prompt = buildPrompt(logs, weekStart, weekEnd);
+
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  const text = response.text();
+
+  if (!text) {
+    throw new Error("週次通信の生成に失敗しました（空のレスポンス）");
+  }
+
+  return text;
+}
