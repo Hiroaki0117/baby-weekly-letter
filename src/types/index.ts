@@ -11,6 +11,10 @@ export type WeeklyReport =
 export type WeeklyReportInsert =
   Database["public"]["Tables"]["weekly_reports"]["Insert"];
 
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+
 export type Mood = "happy" | "neutral" | "sad";
 
 export const MOOD_OPTIONS: { value: Mood; emoji: string; label: string }[] = [
