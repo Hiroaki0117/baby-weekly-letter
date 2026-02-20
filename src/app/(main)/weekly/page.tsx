@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getWeekRange, toDateString } from "@/lib/date";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { WeeklyReport } from "@/types";
 import { useRouter } from "next/navigation";
@@ -67,49 +66,61 @@ export default function WeeklyListPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-2xl animate-bounce">📮</span>
-          <p className="text-sm text-muted-foreground">読み込み中...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+        <p className="text-xs text-muted-foreground">読み込み中...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      {/* ヘッダー + 生成ボタン */}
-      <div className="rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 border border-orange-100 p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">📮</span>
-            <div>
-              <h1 className="text-xl font-bold">週次通信</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">今週の育児ハイライト</p>
-            </div>
-          </div>
-          <Button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="bg-primary hover:bg-primary/90 shadow-sm"
-          >
-            {generating ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin">✨</span>
-                生成中...
-              </span>
-            ) : (
-              "今週の通信を作る"
-            )}
-          </Button>
+      {/* ページヘッダー */}
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            Weekly Letters
+          </p>
+          <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
+            週次通信
+          </h1>
         </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {generating ? (
+            <>
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/40 border-t-primary-foreground animate-spin" />
+              生成中...
+            </>
+          ) : (
+            <>
+              <span className="text-base leading-none">✉</span>
+              今週の通信を作る
+            </>
+          )}
+        </button>
       </div>
 
+      <div className="h-px bg-border/60" />
+
       {reports.length === 0 ? (
-        <div className="py-16 text-center space-y-3">
-          <span className="text-5xl">✉️</span>
-          <p className="text-muted-foreground">まだ週次通信がありません</p>
-          <p className="text-xs text-muted-foreground">ログを記録したら「今週の通信を作る」を押してみましょう</p>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          {/* エアメール封筒イラスト */}
+          <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
+            <div className="airmail-stripe absolute inset-x-0 top-0 h-2.5" />
+            <span className="mt-2 text-3xl">✉</span>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              まだ週次通信がありません
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              ログを記録したら「今週の通信を作る」を押してみましょう
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

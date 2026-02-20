@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatWeekRange } from "@/lib/date";
 import type { WeeklyReport } from "@/types";
 
@@ -10,7 +9,6 @@ type WeeklyReportCardProps = {
 };
 
 export function WeeklyReportCard({ report }: WeeklyReportCardProps) {
-  // contentの最初の行（タイトル行）を除いた本文の冒頭を表示
   const lines = report.content.split("\n").filter((l) => l.trim());
   const preview =
     lines.find(
@@ -19,27 +17,32 @@ export function WeeklyReportCard({ report }: WeeklyReportCardProps) {
 
   return (
     <Link href={`/weekly/${report.id}`}>
-      <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 group">
-        <div className="h-1 w-full bg-gradient-to-r from-primary via-orange-400 to-yellow-400" />
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">📮</span>
-              <span className="text-sm font-semibold text-foreground">
-                {formatWeekRange(report.week_start, report.week_end)}
-              </span>
+      <div className="group overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5">
+        {/* エアメール斜めストライプ */}
+        <div className="airmail-stripe h-2.5 w-full" />
+
+        <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-3">
+            {/* ポストマーク風 */}
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-primary/50 bg-primary/6">
+              <span className="text-base leading-none">✉</span>
             </div>
-            <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
-              読む →
-            </span>
+            <div>
+              <p className="font-mincho text-sm font-semibold text-foreground">
+                {formatWeekRange(report.week_start, report.week_end)}
+              </p>
+              {preview && (
+                <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                  {preview}
+                </p>
+              )}
+            </div>
           </div>
-          {preview && (
-            <p className="mt-3 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
-              {preview}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          <span className="text-xs text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary">
+            →
+          </span>
+        </div>
+      </div>
     </Link>
   );
 }

@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "ホーム" },
-  { href: "/logs", label: "ログ" },
+  { href: "/", label: "きょう" },
+  { href: "/logs", label: "きろく" },
   { href: "/weekly", label: "通信" },
 ];
 
@@ -26,13 +26,16 @@ export function Nav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "relative px-3 py-1.5 text-sm transition-colors",
               isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {item.label}
+            {isActive && (
+              <span className="absolute bottom-0 left-3 right-3 h-px bg-primary" />
+            )}
           </Link>
         );
       })}

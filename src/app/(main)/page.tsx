@@ -63,7 +63,6 @@ export default function HomePage() {
   async function handleDelete(id: string) {
     const log = logs.find((l) => l.id === id);
 
-    // 写真も削除
     if (log?.photo_storage_path) {
       await supabase.storage
         .from("log-photos")
@@ -87,21 +86,32 @@ export default function HomePage() {
     fetchTodayLogs();
   }
 
+  const now = new Date();
+
   return (
     <div className="space-y-6">
-      {/* 日付バナー */}
-      <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-orange-50 to-yellow-50 border border-primary/20 p-5">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">🌤️</span>
-          <div>
-            <p className="text-xs text-muted-foreground font-medium">TODAY</p>
-            <h1 className="text-xl font-bold text-foreground">
-              {formatDateJa(new Date())}
-            </h1>
-          </div>
+      {/* 日付ヘッダー（手帳ページ風） */}
+      <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card px-6 py-5 shadow-sm">
+        {/* 右上の小さなドット飾り */}
+        <div className="absolute right-4 top-4 flex gap-1 opacity-30">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-1 w-1 rounded-full bg-primary" />
+          ))}
+        </div>
+        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          Today
+        </p>
+        <h1 className="font-mincho mt-1 text-2xl font-semibold tracking-wide text-foreground">
+          {formatDateJa(now)}
+        </h1>
+        {/* 罫線装飾 */}
+        <div className="mt-3 space-y-1.5">
+          <div className="h-px bg-border/60" />
+          <div className="h-px bg-border/30" />
         </div>
       </div>
 
+      {/* ログフォーム */}
       <LogForm
         key={editingLog?.id ?? "new"}
         editingLog={editingLog}
@@ -117,16 +127,15 @@ export default function HomePage() {
         }
       />
 
+      {/* 今日のログ */}
       {logs.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-1 rounded-full bg-primary" />
-            <h2 className="text-sm font-semibold text-foreground">
-              今日のきろく
-            </h2>
-            <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-              {logs.length}件
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-border/50" />
+            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              {logs.length}件のきろく
             </span>
+            <div className="h-px flex-1 bg-border/50" />
           </div>
           {logs.map((log) => (
             <LogCard

@@ -91,48 +91,60 @@ export default function LogsPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-2xl animate-bounce">🌱</span>
-          <p className="text-sm text-muted-foreground">読み込み中...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+        <p className="text-xs text-muted-foreground">読み込み中...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <span className="text-xl">📔</span>
-        <h1 className="text-xl font-bold">ログ一覧</h1>
+    <div className="space-y-5">
+      {/* ページヘッダー */}
+      <div className="flex items-baseline justify-between">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            All Records
+          </p>
+          <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
+            きろく一覧
+          </h1>
+        </div>
         {logs.length > 0 && (
-          <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 ml-1">
-            {logs.length}件
+          <span className="font-mono text-2xl font-light text-muted-foreground/50">
+            {String(logs.length).padStart(3, "0")}
           </span>
         )}
       </div>
 
+      <div className="h-px bg-border/60" />
+
+      {/* 編集フォーム */}
       {editingLog && (
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-primary">ログを編集</h2>
-          <LogForm
-            key={editingLog.id}
-            editingLog={editingLog}
-            existingPhotoUrl={editingPhotoUrl}
-            onSaved={handleSaved}
-            onCancel={() => {
-              setEditingLog(null);
-              setEditingPhotoUrl(null);
-            }}
-          />
-        </div>
+        <LogForm
+          key={editingLog.id}
+          editingLog={editingLog}
+          existingPhotoUrl={editingPhotoUrl}
+          onSaved={handleSaved}
+          onCancel={() => {
+            setEditingLog(null);
+            setEditingPhotoUrl(null);
+          }}
+        />
       )}
 
+      {/* ログ一覧 */}
       {logs.length === 0 ? (
-        <div className="py-16 text-center space-y-3">
-          <span className="text-5xl">📝</span>
-          <p className="text-muted-foreground">まだログがありません</p>
-          <p className="text-xs text-muted-foreground">ホームから最初のログを記録してみましょう</p>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border text-2xl">
+            📝
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">まだログがありません</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              ホームから最初のきろくを残してみましょう
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
