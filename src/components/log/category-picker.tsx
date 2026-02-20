@@ -18,7 +18,7 @@ export function CategoryPicker({ value, onChange }: CategoryPickerProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5">
       {CATEGORY_OPTIONS.map((option) => {
         const selected = value.includes(option.value);
         return (
@@ -27,10 +27,11 @@ export function CategoryPicker({ value, onChange }: CategoryPickerProps) {
             type="button"
             onClick={() => toggle(option.value)}
             className={cn(
-              "rounded-full border px-3 py-1 text-sm transition-colors",
+              "rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150",
+              "hover:scale-105 active:scale-95",
               selected
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-background text-muted-foreground hover:bg-muted"
+                ? "border-primary/70 bg-primary text-primary-foreground shadow-sm"
+                : "border-border/70 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
             )}
           >
             {option.label}

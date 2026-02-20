@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString } from "@/lib/date";
 import { logFormSchema, type LogFormValues } from "@/schemas/log";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MoodSelector } from "./mood-selector";
@@ -64,7 +63,6 @@ export function LogForm({
       let photoPath = editingLog?.photo_storage_path ?? null;
 
       if (editingLog) {
-        // 更新
         const { error } = await supabase
           .from("daily_logs")
           .update({
@@ -77,9 +75,7 @@ export function LogForm({
 
         if (error) throw error;
 
-        // 新しい写真がある場合
         if (photoFile) {
-          // 古い写真を削除
           if (photoPath) {
             await supabase.storage.from("log-photos").remove([photoPath]);
           }
@@ -97,7 +93,6 @@ export function LogForm({
 
         toast.success("ログを更新しました");
       } else {
-        // 新規作成
         const { data: newLogData, error } = await supabase
           .from("daily_logs")
           .insert({
@@ -114,7 +109,6 @@ export function LogForm({
 
         const newLog = newLogData as DailyLog | null;
 
-        // 写真アップロード
         if (photoFile && newLog) {
           photoPath = `logs/${user.id}/${newLog.id}/${photoFile.name}`;
           const { error: uploadError } = await supabase.storage
@@ -144,59 +138,100 @@ export function LogForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label>今日の気分</Label>
-        <MoodSelector
-          value={mood as Mood | undefined}
-          onChange={(m) => setValue("mood", m)}
-        />
-        {errors.mood && (
-          <p className="text-sm text-destructive">{errors.mood.message}</p>
-        )}
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
+    >
+      {/* フォームヘッダー */}
+      <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          {editingLog ? "ログを編集" : "きょうのきろく"}
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="text">今日の出来事</Label>
-        <Textarea
-          id="text"
-          placeholder="今日あったことや気持ちを自由に書いてください..."
-          rows={4}
-          {...register("text")}
-        />
-        {errors.text && (
-          <p className="text-sm text-destructive">{errors.text.message}</p>
-        )}
+      <div className="space-y-5 p-5">
+        {/* 気分 */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            今日の気分
+          </Label>
+          <MoodSelector
+            value={mood as Mood | undefined}
+            onChange={(m) => setValue("mood", m)}
+          />
+          {errors.mood && (
+            <p className="text-xs text-destructive">{errors.mood.message}</p>
+          )}
+        </div>
+
+        {/* テキスト（日記帳風） */}
+        <div className="space-y-2.5">
+          <Label
+            htmlFor="text"
+            className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+          >
+            今日の出来事
+          </Label>
+          <div className="relative">
+            <Textarea
+              id="text"
+              placeholder="今日あったことや気持ちを自由に書いてください..."
+              rows={5}
+              {...register("text")}
+              className="resize-none border-border/60 bg-background/60 leading-8 focus:border-primary/50"
+              style={{
+                backgroundImage:
+                  "linear-gradient(oklch(0.87 0.020 70 / 0.35) 1px, transparent 1px)",
+                backgroundSize: "100% 2rem",
+                backgroundPositionY: "1.5rem",
+              }}
+            />
+          </div>
+          {errors.text && (
+            <p className="text-xs text-destructive">{errors.text.message}</p>
+          )}
+        </div>
+
+        {/* カテゴリ */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            カテゴリ
+          </Label>
+          <CategoryPicker
+            value={categories}
+            onChange={(c) => setValue("categories", c)}
+          />
+        </div>
+
+        {/* 写真 */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            写真
+          </Label>
+          <PhotoUploader
+            existingUrl={editingLog ? existingPhotoUrl : undefined}
+            onChange={setPhotoFile}
+          />
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>カテゴリ</Label>
-        <CategoryPicker
-          value={categories}
-          onChange={(c) => setValue("categories", c)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>写真</Label>
-        <PhotoUploader
-          existingUrl={editingLog ? existingPhotoUrl : undefined}
-          onChange={setPhotoFile}
-        />
-      </div>
-
-      <div className="flex gap-2">
-        <Button type="submit" className="flex-1" disabled={saving}>
-          {saving
-            ? "保存中..."
-            : editingLog
-              ? "更新する"
-              : "保存する"}
-        </Button>
+      {/* ボタン */}
+      <div className="flex gap-2 border-t border-border/40 bg-muted/20 px-5 py-3">
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
+        >
+          {saving ? "保存中..." : editingLog ? "更新する" : "保存する"}
+        </button>
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-border/70 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
             キャンセル
-          </Button>
+          </button>
         )}
       </div>
     </form>

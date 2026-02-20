@@ -3,10 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { toDateString } from "@/lib/date";
+import { toDateString, formatWeekRange } from "@/lib/date";
 import { PhotoGallery } from "@/components/weekly/photo-gallery";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import type { WeeklyReport } from "@/types";
 
@@ -71,11 +69,9 @@ export default function WeeklyDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-2xl animate-bounce">📖</span>
-          <p className="text-sm text-muted-foreground">読み込み中...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+        <p className="text-xs text-muted-foreground">読み込み中...</p>
       </div>
     );
   }
@@ -84,44 +80,80 @@ export default function WeeklyDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button
-        variant="ghost"
-        size="sm"
+      {/* 戻るリンク */}
+      <button
         onClick={() => router.push("/weekly")}
-        className="text-muted-foreground hover:text-foreground -ml-2"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
-        ← 一覧に戻る
-      </Button>
+        ← 通信一覧へ
+      </button>
 
-      <Card className="overflow-hidden shadow-sm">
-        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-orange-400 to-yellow-400" />
-        <CardContent className="p-6">
-          <div className="whitespace-pre-wrap leading-relaxed text-sm text-foreground">
+      {/* 手紙カード */}
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+        {/* エアメールストライプ上部 */}
+        <div className="airmail-stripe h-3 w-full" />
+
+        {/* 消印エリア */}
+        <div className="flex items-center justify-between border-b border-border/40 bg-muted/20 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-primary/60 bg-primary/6">
+              <span className="text-sm">✉</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                Weekly Letter
+              </p>
+              <p className="font-mincho text-sm font-semibold text-foreground">
+                {formatWeekRange(report.week_start, report.week_end)}
+              </p>
+            </div>
+          </div>
+          {/* ポストマーク風スタンプ */}
+          <div className="flex h-12 w-12 flex-col items-center justify-center rounded-full border-2 border-muted-foreground/20 text-center">
+            <p className="text-[8px] font-bold leading-none text-muted-foreground/40 tracking-tight">
+              SUKUSUKU
+            </p>
+            <div className="my-0.5 h-px w-8 bg-muted-foreground/20" />
+            <p className="text-[7px] leading-none text-muted-foreground/30">
+              DIARY
+            </p>
+          </div>
+        </div>
+
+        {/* 本文（便箋風） */}
+        <div
+          className="px-6 py-6"
+          style={{
+            backgroundImage:
+              "linear-gradient(oklch(0.87 0.020 70 / 0.25) 1px, transparent 1px)",
+            backgroundSize: "100% 1.75rem",
+            backgroundPositionY: "1.5rem",
+          }}
+        >
+          <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
             {report.content}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <PhotoGallery
-        weekStart={report.week_start}
-        weekEnd={report.week_end}
-      />
+      {/* フォトギャラリー */}
+      <PhotoGallery weekStart={report.week_start} weekEnd={report.week_end} />
 
-      <Button
-        variant="outline"
-        className="w-full border-primary/30 text-primary hover:bg-primary/5 hover:text-primary"
+      {/* 再生成ボタン */}
+      <button
         onClick={handleRegenerate}
         disabled={regenerating}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-card py-3 text-sm text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-muted/50 hover:text-primary disabled:opacity-50"
       >
         {regenerating ? (
-          <span className="flex items-center gap-2">
-            <span className="animate-spin">✨</span>
+          <>
+            <span className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
             再生成中...
-          </span>
+          </>
         ) : (
           "✨ 再生成する"
         )}
-      </Button>
+      </button>
     </div>
   );
 }
