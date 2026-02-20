@@ -2,7 +2,19 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateWeeklyReport } from "@/lib/weekly-report/generate";
 import { generateReportSchema } from "@/schemas/weekly-report";
-import type { DailyLog } from "@/types";
+import type { DailyLog, Profile } from "@/types";
+
+/**
+ * 前回通信の結びの文（最後の段落）を抽出する
+ */
+function extractEnding(content: string): string {
+  const lines = content
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  // 最後の非空行を返す
+  return lines[lines.length - 1] ?? "";
+}
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +40,29 @@ export async function POST(request: Request) {
 
     const { weekStart, weekEnd } = parsed.data;
 
+    // プロフィール取得
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    const profile = profileData as Profile | null;
+
+    // 前回の通信を取得（今回の weekStart より前の直近1件）
+    const { data: prevReportData } = await supabase
+      .from("weekly_reports")
+      .select("content")
+      .eq("user_id", user.id)
+      .lt("week_start", weekStart)
+      .order("week_start", { ascending: false })
+      .limit(1)
+      .single();
+
+    const previousReportEnding = prevReportData
+      ? extractEnding((prevReportData as { content: string }).content)
+      : null;
+
     // 対象期間のログを取得
     const { data: logs, error: logsError } = await supabase
       .from("daily_logs")
@@ -52,7 +87,11 @@ export async function POST(request: Request) {
 
     // 週次通信を生成
     const typedLogs = logs as DailyLog[];
-    const content = await generateWeeklyReport(typedLogs, weekStart, weekEnd);
+    const content = await generateWeeklyReport(typedLogs, weekStart, weekEnd, {
+      childName: profile?.child_name,
+      childBirthDate: profile?.child_birth_date,
+      previousReportEnding,
+    });
 
     // upsert
     const sourceLogIds = typedLogs.map((l) => l.id);

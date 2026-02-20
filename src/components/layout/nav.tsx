@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "きょう" },
+  { href: "/calendar", label: "カレンダー" },
   { href: "/logs", label: "きろく" },
   { href: "/weekly", label: "通信" },
 ];

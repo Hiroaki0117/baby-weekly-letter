@@ -2,13 +2,20 @@ import { getGeminiModel } from "@/lib/gemini/client";
 import { buildPrompt } from "./prompt";
 import type { DailyLog } from "@/types";
 
+type GenerateContext = {
+  childName?: string | null;
+  childBirthDate?: string | null;
+  previousReportEnding?: string | null;
+};
+
 export async function generateWeeklyReport(
   logs: DailyLog[],
   weekStart: string,
-  weekEnd: string
+  weekEnd: string,
+  context?: GenerateContext | null
 ): Promise<string> {
   const model = getGeminiModel();
-  const prompt = buildPrompt(logs, weekStart, weekEnd);
+  const prompt = buildPrompt(logs, weekStart, weekEnd, context);
 
   const result = await model.generateContent(prompt);
   const response = result.response;

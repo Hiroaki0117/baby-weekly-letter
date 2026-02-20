@@ -1,4 +1,4 @@
-import { formatDateSlash } from "@/lib/date";
+import { formatDateSlash, calcAge } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS } from "@/types";
 import type { DailyLog } from "@/types";
 
@@ -20,45 +20,91 @@ function formatLogForPrompt(log: DailyLog): string {
 内容: ${log.text}`;
 }
 
+type PromptContext = {
+  childName?: string | null;
+  childBirthDate?: string | null;
+  previousReportEnding?: string | null;
+};
+
 export function buildPrompt(
   logs: DailyLog[],
   weekStart: string,
-  weekEnd: string
+  weekEnd: string,
+  context?: PromptContext | null
 ): string {
   const logsText = logs.map(formatLogForPrompt).join("\n\n");
+  const dateRange = `${formatDateSlash(weekStart)}〜${formatDateSlash(weekEnd)}`;
 
-  return `あなたは育児日記「すくすく日記」のライターです。
-以下の1週間の育児ログをもとに、週次通信を生成してください。
+  // 背景情報セクション
+  let backgroundSection = "";
+  if (context?.childName || context?.childBirthDate) {
+    const parts: string[] = [];
+    if (context.childName) {
+      parts.push(`お子さまの名前: ${context.childName}`);
+    }
+    if (context.childBirthDate) {
+      const age = calcAge(context.childBirthDate);
+      parts.push(`月齢: ${age}`);
+    }
+    backgroundSection = `
+## 背景情報
+${parts.join("\n")}
+`;
+  }
 
-## ルール
-- 日本語で出力してください
-- 文体はやさしく、少し感動的にしてください
-- ログにない出来事を推測して書かないでください。ログの内容のみを元にしてください
-- 読みやすく短い段落と箇条書きを混ぜてください
-- 文字数は350〜500字程度にしてください
-- 最後は必ず前向きな一文で締めてください
+  // 前回通信セクション
+  let previousSection = "";
+  if (context?.previousReportEnding) {
+    previousSection = `
+## 前回の通信より
+前回の週次通信の結びの部分:
+「${context.previousReportEnding}」
+この続きとして、今週の通信を書いてください。
+`;
+  }
 
-## 出力フォーマット（このフォーマットに厳密に従ってください）
+  return `あなたは育児日記「すくすく日記」の専属ライターです。
+親が日々書き残した育児ログを読み、その週の出来事を
+「温かみのある手紙」として紡ぎ出してください。
+${backgroundSection}${previousSection}
+## 思考指示（この部分は出力に含めないでください）
 
-📮 今週のすくすく日記（${formatDateSlash(weekStart)}〜${formatDateSlash(weekEnd)}）
+通信を書く前に、以下を考えてください：
+1. 今週のログ全体を通して、最も印象に残るエピソードは何か？
+2. 複数のログに共通するテーマや、変化の兆しはあるか？
+3. 親（書き手）の気持ちはどう変化しているか？
+${context?.previousReportEnding ? "4. 前回の通信からの成長や変化で注目すべき点はあるか？" : ""}
 
-（本文：今週の出来事を自然な文章でまとめる）
+## 文体ガイドライン
 
-🌱 成長のきざし
-・（ログから成長に関する内容を抽出）
+- 語り手は「育児日記の書き手」。親しみやすい敬体（です・ます調）。
+- 単なる出来事の羅列ではなく、エピソードを「ストーリー」として紡ぐこと。
+- 冒頭は、今週を象徴する一場面やひとことから書き始める。
+- 具体的な描写を大切に。「嬉しかった」で終わらせず、何がどう嬉しかったか。
+- ログにない出来事を推測して書かないこと。ログの内容のみを元にする。
+- 最後は前向きな一文で締めくくる。
+- 500〜800字程度。
 
-😊 かわいかった瞬間
-・（ログからかわいかった瞬間を抽出）
+## 構成ガイド
 
-🫧 ちょっと大変だったこと
-・（ログから大変だったことを抽出。なければ「特になし」）
+以下は参考例です。ログの内容に合わせて最適な構成を選んでください。
+見出し付きの箇条書きと自然な散文を自由に組み合わせてOKです。
 
-🧡 パパ/ママのひとこと
-（ログから親の気持ちを1〜2文でまとめる）
+- テーマ型: 今週のテーマを1つ選び深く書く
+- ダイジェスト型: 日ごとのハイライトを短く紡ぐ
+- 成長ストーリー型: 週の始まりと終わりの変化を軸にする
 
-（前向きな一文で締める）
+セクション見出しには絵文字1つ+見出しテキストを使ってください。
 
-## 今週のログ（${formatDateSlash(weekStart)}〜${formatDateSlash(weekEnd)}）
+## 出力フォーマット
+
+以下のヘッダーで始めてください：
+
+📮 すくすく日記（${dateRange}）
+
+その後、本文をそのまま続けてください。
+
+## 今週のログ（${dateRange}）
 
 ${logsText}`;
 }
