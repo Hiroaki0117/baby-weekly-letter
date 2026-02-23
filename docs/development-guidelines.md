@@ -126,16 +126,26 @@ import type { DailyLog } from "@/types";
 - Vitest を使用する
 - React コンポーネントのテストには Testing Library を使用する
 
-### 4.2 テスト対象（MVP）
+### 4.2 テスト作成ルール
+
+**新機能実装時は、対応するテストコードも合わせて作成すること。**
+
+- 新しいスキーマ（Zod）を追加した場合 → バリデーションテストを作成
+- 新しいユーティリティ関数を追加した場合 → ユニットテストを作成
+- 新しいヘルパー関数（Supabase連携等）を追加した場合 → モックを使用したテストを作成
+- テストは実装と同じコミットに含めるか、実装直後のコミットで追加する
+
+### 4.3 テスト対象
 
 | 対象 | 優先度 | 理由 |
 |------|--------|------|
 | ユーティリティ関数（`lib/date.ts` 等） | 高 | 純粋関数でテストしやすい |
 | Zodスキーマ | 高 | バリデーションの正確性を担保 |
+| ヘルパー関数（`lib/supabase/` 等） | 高 | モックを使い動作を担保 |
 | 週次通信生成ロジック | 中 | プロンプト構築の正確性 |
 | コンポーネント | 低 | MVPでは手動テストで代替 |
 
-### 4.3 テストファイルの配置
+### 4.4 テストファイルの配置
 
 - `__tests__/` ディレクトリに `src/` と同じ構造で配置
 
@@ -143,13 +153,17 @@ import type { DailyLog } from "@/types";
 __tests__/
 ├── lib/
 │   ├── date.test.ts
+│   ├── supabase/
+│   │   └── family.test.ts
 │   └── weekly-report/
 │       └── prompt.test.ts
 └── schemas/
-    └── log.test.ts
+    ├── log.test.ts
+    ├── family.test.ts
+    └── profile.test.ts
 ```
 
-### 4.4 テストの書き方
+### 4.5 テストの書き方
 
 ```tsx
 import { describe, it, expect } from "vitest";
