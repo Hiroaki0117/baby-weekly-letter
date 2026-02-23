@@ -243,6 +243,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      my_family_id: {
+        Args: Record<string, never>;
+        Returns: string | null;
+      };
       verify_invitation: {
         Args: { invite_token: string };
         Returns: { family_id: string; family_name: string }[];
