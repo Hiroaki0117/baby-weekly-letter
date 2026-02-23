@@ -13,9 +13,11 @@ export default function CalendarPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [logsByDate, setLogsByDate] = useState<Record<string, DailyLog[]>>({});
+  const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
+  const membersFetchedRef = useRef(false);
 
   useEffect(() => {
     const client = supabaseRef.current;
@@ -45,6 +47,21 @@ export default function CalendarPage() {
         grouped[log.log_date].push(log);
       }
       setLogsByDate(grouped);
+
+      if (!membersFetchedRef.current) {
+        membersFetchedRef.current = true;
+        const { data: members } = await client
+          .from("family_members")
+          .select("user_id, display_name");
+        if (members) {
+          const names: Record<string, string> = {};
+          for (const m of members as { user_id: string; display_name: string | null }[]) {
+            if (m.display_name) names[m.user_id] = m.display_name;
+          }
+          setAuthorNames(names);
+        }
+      }
+
       setLoading(false);
     }
     load();
@@ -145,6 +162,7 @@ export default function CalendarPage() {
               <LogCard
                 key={log.id}
                 log={log}
+                authorDisplayName={authorNames[log.author_id]}
                 onEdit={handleEditNoop}
                 onDelete={handleDeleteNoop}
               />

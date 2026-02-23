@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,26 @@ import {
 import { toast } from "sonner";
 
 export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+        </div>
+      }
+    >
+      <SignupPageInner />
+    </Suspense>
+  );
+}
+
+function SignupPageInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
   const supabase = createClient();
 
   async function handleSignup(e: React.FormEvent) {
@@ -43,14 +59,18 @@ export default function SignupPage() {
     toast.success("確認メールを送信しました", {
       description: "メールを確認してアカウントを有効化してください。",
     });
-    router.push("/login");
+    const loginUrl = inviteToken ? `/login?invite=${inviteToken}` : "/login";
+    router.push(loginUrl);
   }
 
   async function handleGoogleLogin() {
+    const callbackUrl = inviteToken
+      ? `${window.location.origin}/auth/callback?invite=${inviteToken}`
+      : `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
       },
     });
 

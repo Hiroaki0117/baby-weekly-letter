@@ -10,6 +10,7 @@ import type { DailyLog } from "@/types";
 
 export default function HomePage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
+  const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
   const supabaseRef = useRef(createClient());
@@ -35,14 +36,26 @@ export default function HomePage() {
     const client = supabaseRef.current;
     const todayStr = toDateString(new Date());
     async function load() {
-      const { data, error } = await client
-        .from("daily_logs")
-        .select("*")
-        .eq("log_date", todayStr)
-        .order("created_at", { ascending: false });
+      const [logsRes, membersRes] = await Promise.all([
+        client
+          .from("daily_logs")
+          .select("*")
+          .eq("log_date", todayStr)
+          .order("created_at", { ascending: false }),
+        client
+          .from("family_members")
+          .select("user_id, display_name"),
+      ]);
 
-      if (!error) {
-        setLogs((data as DailyLog[]) ?? []);
+      if (!logsRes.error) {
+        setLogs((logsRes.data as DailyLog[]) ?? []);
+      }
+      if (!membersRes.error && membersRes.data) {
+        const names: Record<string, string> = {};
+        for (const m of membersRes.data as { user_id: string; display_name: string | null }[]) {
+          if (m.display_name) names[m.user_id] = m.display_name;
+        }
+        setAuthorNames(names);
       }
     }
     load();
@@ -141,6 +154,7 @@ export default function HomePage() {
             <LogCard
               key={log.id}
               log={log}
+              authorDisplayName={authorNames[log.author_id]}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

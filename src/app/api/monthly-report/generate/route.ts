@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getMyFamilyId } from "@/lib/supabase/family";
 import { generateMonthlyReport } from "@/lib/monthly-report/generate";
 import { generateMonthlyReportSchema } from "@/schemas/monthly-report";
 import { getMonthRange, toDateString } from "@/lib/date";
-import type { WeeklyReport, Profile } from "@/types";
+import type { WeeklyReport, Child } from "@/types";
 
 /**
  * 前回まとめの結びの文（最後の段落）を抽出する
@@ -28,6 +29,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
+    // family_id 取得
+    const familyId = await getMyFamilyId(supabase);
+    if (!familyId) {
+      return NextResponse.json(
+        { error: "家族が設定されていません" },
+        { status: 400 }
+      );
+    }
+
     // リクエストバリデーション
     const body = await request.json();
     const parsed = generateMonthlyReportSchema.safeParse(body);
@@ -46,16 +56,17 @@ export async function POST(request: Request) {
     );
     const monthDate = toDateString(monthStart); // "YYYY-MM-01"
 
-    // プロフィール取得
-    const { data: profileData } = await supabase
-      .from("profiles")
+    // 子ども情報取得（children テーブルから最初の1件）
+    const { data: childData } = await supabase
+      .from("children")
       .select("*")
-      .eq("user_id", user.id)
+      .limit(1)
       .single();
 
-    const profile = profileData as Profile | null;
+    const child = childData as Child | null;
 
     // 該当月の週次通信を取得（week_start が月内に含まれるもの）
+    // RLS で family_id が自動フィルタされる
     const { data: weeklyReports, error: weeklyError } = await supabase
       .from("weekly_reports")
       .select("*")
@@ -80,10 +91,10 @@ export async function POST(request: Request) {
     const typedReports = weeklyReports as WeeklyReport[];
 
     // 前月の月次まとめを取得（文脈連続性）
+    // RLS で family_id が自動フィルタされる
     const { data: prevMonthlyData } = await supabase
       .from("monthly_reports")
       .select("content")
-      .eq("user_id", user.id)
       .lt("month", monthDate)
       .order("month", { ascending: false })
       .limit(1)
@@ -99,8 +110,8 @@ export async function POST(request: Request) {
       yearNum,
       monthNum - 1,
       {
-        childName: profile?.child_name,
-        childBirthDate: profile?.child_birth_date,
+        childName: child?.name,
+        childBirthDate: child?.birth_date,
         previousMonthlyEnding,
       }
     );
@@ -111,13 +122,13 @@ export async function POST(request: Request) {
       .from("monthly_reports")
       .upsert(
         {
-          user_id: user.id,
+          family_id: familyId,
           month: monthDate,
           content,
           generated_at: new Date().toISOString(),
           source_weekly_report_ids: sourceWeeklyReportIds,
         },
-        { onConflict: "user_id,month" }
+        { onConflict: "family_id,month" }
       )
       .select()
       .single();

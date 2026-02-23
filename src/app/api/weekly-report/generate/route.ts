@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getMyFamilyId } from "@/lib/supabase/family";
 import { generateWeeklyReport } from "@/lib/weekly-report/generate";
 import { generateReportSchema } from "@/schemas/weekly-report";
-import type { DailyLog, Profile } from "@/types";
+import type { DailyLog, Child } from "@/types";
 
 /**
  * 前回通信の結びの文（最後の段落）を抽出する
@@ -28,6 +29,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
+    // family_id 取得
+    const familyId = await getMyFamilyId(supabase);
+    if (!familyId) {
+      return NextResponse.json(
+        { error: "家族が設定されていません" },
+        { status: 400 }
+      );
+    }
+
     // リクエストバリデーション
     const body = await request.json();
     const parsed = generateReportSchema.safeParse(body);
@@ -40,20 +50,20 @@ export async function POST(request: Request) {
 
     const { weekStart, weekEnd } = parsed.data;
 
-    // プロフィール取得
-    const { data: profileData } = await supabase
-      .from("profiles")
+    // 子ども情報取得（children テーブルから最初の1件）
+    const { data: childData } = await supabase
+      .from("children")
       .select("*")
-      .eq("user_id", user.id)
+      .limit(1)
       .single();
 
-    const profile = profileData as Profile | null;
+    const child = childData as Child | null;
 
     // 前回の通信を取得（今回の weekStart より前の直近1件）
+    // RLS で family_id が自動フィルタされる
     const { data: prevReportData } = await supabase
       .from("weekly_reports")
       .select("content")
-      .eq("user_id", user.id)
       .lt("week_start", weekStart)
       .order("week_start", { ascending: false })
       .limit(1)
@@ -63,7 +73,7 @@ export async function POST(request: Request) {
       ? extractEnding((prevReportData as { content: string }).content)
       : null;
 
-    // 対象期間のログを取得
+    // 対象期間のログを取得（RLS で family のログのみ）
     const { data: logs, error: logsError } = await supabase
       .from("daily_logs")
       .select("*")
@@ -88,8 +98,8 @@ export async function POST(request: Request) {
     // 週次通信を生成
     const typedLogs = logs as DailyLog[];
     const content = await generateWeeklyReport(typedLogs, weekStart, weekEnd, {
-      childName: profile?.child_name,
-      childBirthDate: profile?.child_birth_date,
+      childName: child?.name,
+      childBirthDate: child?.birth_date,
       previousReportEnding,
     });
 
@@ -99,14 +109,14 @@ export async function POST(request: Request) {
       .from("weekly_reports")
       .upsert(
         {
-          user_id: user.id,
+          family_id: familyId,
           week_start: weekStart,
           week_end: weekEnd,
           content,
           generated_at: new Date().toISOString(),
           source_log_ids: sourceLogIds,
         },
-        { onConflict: "user_id,week_start" }
+        { onConflict: "family_id,week_start" }
       )
       .select()
       .single();

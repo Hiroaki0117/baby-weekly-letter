@@ -4,15 +4,17 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
+import { AuthorBadge } from "./author-badge";
 import { createClient } from "@/lib/supabase/client";
 
 type LogCardProps = {
   log: DailyLog;
+  authorDisplayName?: string | null;
   onEdit: (log: DailyLog) => void;
   onDelete: (id: string) => void;
 };
 
-export function LogCard({ log, onEdit, onDelete }: LogCardProps) {
+export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardProps) {
   const moodOption = MOOD_OPTIONS.find((m) => m.value === log.mood);
   const supabase = createClient();
 
@@ -50,9 +52,12 @@ export function LogCard({ log, onEdit, onDelete }: LogCardProps) {
               <div className="flex items-center gap-2.5">
                 <span className="text-2xl">{moodOption?.emoji}</span>
                 <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {formatDateJa(log.log_date)}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium text-foreground">
+                      {formatDateJa(log.log_date)}
+                    </p>
+                    <AuthorBadge displayName={authorDisplayName ?? null} />
+                  </div>
                   <p className="text-[11px] text-muted-foreground">
                     {moodOption?.label}
                   </p>
