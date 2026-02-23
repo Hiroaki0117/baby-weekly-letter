@@ -51,13 +51,18 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const data = await res.json();
+        // 既に家族所属済みならホームへリダイレクト
+        if (data.alreadyMember) {
+          window.location.href = "/";
+          return;
+        }
         toast.error(data.error ?? "家族の作成に失敗しました");
         return;
       }
 
       toast.success("すくすく日記へようこそ！");
-      router.push("/");
-      router.refresh();
+      // フルリロードでミドルウェアのキャッシュ問題を回避
+      window.location.href = "/";
     } catch {
       toast.error("エラーが発生しました");
     } finally {

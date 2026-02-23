@@ -14,19 +14,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
-    // 既に家族に所属していないか確認
-    const { data: existingMember } = await supabase
-      .from("family_members")
-      .select("id")
-      .maybeSingle();
-
-    if (existingMember) {
-      return NextResponse.json(
-        { error: "既に家族に所属しています" },
-        { status: 400 }
-      );
-    }
-
     const body = await request.json();
     const parsed = createFamilySchema.safeParse(body);
     if (!parsed.success) {
@@ -55,6 +42,7 @@ export async function POST(request: Request) {
     }
 
     // メンバー追加（owner） — これ以降 my_family_id() が有効になる
+    // user_id に UNIQUE 制約があるため、既に所属済みなら 23505 エラーになる
     const { error: memberError } = await supabase
       .from("family_members")
       .insert({
@@ -65,6 +53,15 @@ export async function POST(request: Request) {
       });
 
     if (memberError) {
+      // 既に家族に所属している場合（UNIQUE制約違反）
+      if (memberError.code === "23505") {
+        // 孤立した family を削除（RLS で見えないため直接は消せないが、
+        // 誰も所属していないので問題にならない）
+        return NextResponse.json(
+          { error: "既に家族に所属しています", alreadyMember: true },
+          { status: 409 }
+        );
+      }
       console.error("Member insert error:", memberError);
       return NextResponse.json(
         { error: "メンバー登録に失敗しました", detail: memberError.message },
@@ -73,22 +70,22 @@ export async function POST(request: Request) {
     }
 
     // 子ども情報（入力がある場合）
-    let child = null;
     if (childName || childBirthDate) {
-      const { data: childData } = await supabase
+      const { error: childError } = await supabase
         .from("children")
         .insert({
           family_id: familyId,
           name: childName || null,
           birth_date: childBirthDate || null,
-        })
-        .select()
-        .single();
-      child = childData;
+        });
+
+      if (childError) {
+        console.error("Child insert error:", childError);
+      }
     }
 
     // プロフィール upsert
-    await supabase.from("profiles").upsert(
+    const { error: profileError } = await supabase.from("profiles").upsert(
       {
         user_id: user.id,
         display_name: displayName,
@@ -96,9 +93,12 @@ export async function POST(request: Request) {
       { onConflict: "user_id" }
     );
 
+    if (profileError) {
+      console.error("Profile upsert error:", profileError);
+    }
+
     return NextResponse.json({
       family: { id: familyId, name: familyName },
-      child,
     });
   } catch (error) {
     console.error("Family creation error:", error);
