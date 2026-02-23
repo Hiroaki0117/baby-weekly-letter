@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createFamilySchema } from "@/schemas/family";
 
@@ -37,25 +38,26 @@ export async function POST(request: Request) {
 
     const { familyName, displayName, childName, childBirthDate } = parsed.data;
 
-    // 家族作成
-    const { data: family, error: familyError } = await supabase
-      .from("families")
-      .insert({ name: familyName })
-      .select()
-      .single();
+    // UUID を事前生成（INSERT 後の SELECT が RLS で弾かれるのを回避）
+    const familyId = randomUUID();
 
-    if (familyError || !family) {
+    // 家族作成
+    const { error: familyError } = await supabase
+      .from("families")
+      .insert({ id: familyId, name: familyName });
+
+    if (familyError) {
       return NextResponse.json(
         { error: "家族の作成に失敗しました" },
         { status: 500 }
       );
     }
 
-    // メンバー追加（owner）
+    // メンバー追加（owner） — これ以降 my_family_id() が有効になる
     const { error: memberError } = await supabase
       .from("family_members")
       .insert({
-        family_id: family.id,
+        family_id: familyId,
         user_id: user.id,
         role: "owner" as const,
         display_name: displayName,
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
       const { data: childData } = await supabase
         .from("children")
         .insert({
-          family_id: family.id,
+          family_id: familyId,
           name: childName || null,
           birth_date: childBirthDate || null,
         })
@@ -92,7 +94,10 @@ export async function POST(request: Request) {
       { onConflict: "user_id" }
     );
 
-    return NextResponse.json({ family, child });
+    return NextResponse.json({
+      family: { id: familyId, name: familyName },
+      child,
+    });
   } catch (error) {
     console.error("Family creation error:", error);
     return NextResponse.json(
