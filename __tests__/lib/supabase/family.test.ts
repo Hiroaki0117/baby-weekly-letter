@@ -9,7 +9,7 @@ function createMockSupabase(
   return {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(singleResult),
+        maybeSingle: vi.fn().mockResolvedValue(singleResult),
       }),
     }),
   } as unknown as SupabaseClient<Database>;
@@ -51,11 +51,11 @@ describe("getMyFamilyId", () => {
   });
 
   it("select で family_id カラムを指定していること", async () => {
-    const singleFn = vi.fn().mockResolvedValue({
+    const maybeSingleFn = vi.fn().mockResolvedValue({
       data: { family_id: "test-id" },
       error: null,
     });
-    const selectFn = vi.fn().mockReturnValue({ single: singleFn });
+    const selectFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
     const fromFn = vi.fn().mockReturnValue({ select: selectFn });
 
     const mockSupabase = { from: fromFn } as unknown as SupabaseClient<Database>;

@@ -11,6 +11,6 @@ export async function getMyFamilyId(
   const { data } = await supabase
     .from("family_members")
     .select("family_id")
-    .single();
+    .maybeSingle();
   return data?.family_id ?? null;
 }

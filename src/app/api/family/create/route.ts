@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const { data: existingMember } = await supabase
       .from("family_members")
       .select("id")
-      .single();
+      .maybeSingle();
 
     if (existingMember) {
       return NextResponse.json(
@@ -47,8 +47,9 @@ export async function POST(request: Request) {
       .insert({ id: familyId, name: familyName });
 
     if (familyError) {
+      console.error("Family insert error:", familyError);
       return NextResponse.json(
-        { error: "家族の作成に失敗しました" },
+        { error: "家族の作成に失敗しました", detail: familyError.message },
         { status: 500 }
       );
     }
@@ -64,8 +65,9 @@ export async function POST(request: Request) {
       });
 
     if (memberError) {
+      console.error("Member insert error:", memberError);
       return NextResponse.json(
-        { error: "メンバー登録に失敗しました" },
+        { error: "メンバー登録に失敗しました", detail: memberError.message },
         { status: 500 }
       );
     }
