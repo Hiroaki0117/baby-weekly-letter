@@ -4,28 +4,24 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 function createMockSupabase(
-  singleResult: { data: { family_id: string } | null; error: unknown }
+  rpcResult: { data: string | null; error: unknown }
 ) {
   return {
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        maybeSingle: vi.fn().mockResolvedValue(singleResult),
-      }),
-    }),
+    rpc: vi.fn().mockResolvedValue(rpcResult),
   } as unknown as SupabaseClient<Database>;
 }
 
 describe("getMyFamilyId", () => {
   it("family_members にレコードがある場合、family_id を返す", async () => {
     const mockSupabase = createMockSupabase({
-      data: { family_id: "family-uuid-123" },
+      data: "family-uuid-123",
       error: null,
     });
 
     const result = await getMyFamilyId(mockSupabase);
 
     expect(result).toBe("family-uuid-123");
-    expect(mockSupabase.from).toHaveBeenCalledWith("family_members");
+    expect(mockSupabase.rpc).toHaveBeenCalledWith("my_family_id");
   });
 
   it("family_members にレコードがない場合、null を返す", async () => {
@@ -50,19 +46,16 @@ describe("getMyFamilyId", () => {
     expect(result).toBeNull();
   });
 
-  it("select で family_id カラムを指定していること", async () => {
-    const maybeSingleFn = vi.fn().mockResolvedValue({
-      data: { family_id: "test-id" },
+  it("my_family_id RPC を呼び出していること", async () => {
+    const rpcFn = vi.fn().mockResolvedValue({
+      data: "test-id",
       error: null,
     });
-    const selectFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
-    const fromFn = vi.fn().mockReturnValue({ select: selectFn });
 
-    const mockSupabase = { from: fromFn } as unknown as SupabaseClient<Database>;
+    const mockSupabase = { rpc: rpcFn } as unknown as SupabaseClient<Database>;
 
     await getMyFamilyId(mockSupabase);
 
-    expect(fromFn).toHaveBeenCalledWith("family_members");
-    expect(selectFn).toHaveBeenCalledWith("family_id");
+    expect(rpcFn).toHaveBeenCalledWith("my_family_id");
   });
 });

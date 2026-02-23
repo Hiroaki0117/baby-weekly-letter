@@ -3,14 +3,11 @@ import type { Database } from "@/types/database";
 
 /**
  * 現在のユーザーが所属する family_id を取得する。
- * RLS により auth.uid() のレコードのみ返るため user_id 指定は不要。
+ * SECURITY DEFINER の my_family_id() RPC を直接呼び、RLS を経由しない。
  */
 export async function getMyFamilyId(
   supabase: SupabaseClient<Database>
 ): Promise<string | null> {
-  const { data } = await supabase
-    .from("family_members")
-    .select("family_id")
-    .maybeSingle();
-  return data?.family_id ?? null;
+  const { data } = await supabase.rpc("my_family_id");
+  return (data as string | null) ?? null;
 }
