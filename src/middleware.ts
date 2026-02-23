@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
     const { data: member } = await supabase
       .from("family_members")
       .select("id")
-      .single();
+      .maybeSingle();
 
     if (!member) {
       const url = request.nextUrl.clone();
@@ -80,7 +80,7 @@ export async function middleware(request: NextRequest) {
     const { data: member } = await supabase
       .from("family_members")
       .select("id")
-      .single();
+      .maybeSingle();
 
     if (member) {
       const url = request.nextUrl.clone();

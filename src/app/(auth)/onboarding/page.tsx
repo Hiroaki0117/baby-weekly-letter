@@ -25,7 +25,7 @@ export default function OnboardingPage() {
       const { data } = await supabaseRef.current
         .from("family_members")
         .select("id")
-        .single();
+        .maybeSingle();
       if (data) {
         router.replace("/");
       } else {

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const { data: existingMember } = await supabase
       .from("family_members")
       .select("id")
-      .single();
+      .maybeSingle();
 
     if (existingMember) {
       return NextResponse.json(
