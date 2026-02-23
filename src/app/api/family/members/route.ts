@@ -21,13 +21,15 @@ export async function GET() {
       );
     }
 
-    // RLS で自分の家族のメンバーのみ返る
+    // family_id を明示的に指定して取得（RLSに加えて確実にフィルタ）
     const { data: members, error } = await supabase
       .from("family_members")
       .select("id, user_id, role, display_name, joined_at")
+      .eq("family_id", familyId)
       .order("joined_at", { ascending: true });
 
     if (error) {
+      console.error("Members fetch error:", error);
       return NextResponse.json(
         { error: "メンバーの取得に失敗しました" },
         { status: 500 }
