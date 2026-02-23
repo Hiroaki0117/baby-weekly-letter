@@ -62,13 +62,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // 認証済み: 家族所属チェック（オンボーディング・招待ページ・API以外）
+  // RLS を経由せず、SECURITY DEFINER の my_family_id() を直接呼ぶ
   if (!isOnboarding && !isInvitePage && !isAuthCallback && !isApiRoute) {
-    const { data: member } = await supabase
-      .from("family_members")
-      .select("id")
-      .maybeSingle();
+    const { data: familyId } = await supabase.rpc("my_family_id");
 
-    if (!member) {
+    if (!familyId) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);
@@ -77,12 +75,9 @@ export async function middleware(request: NextRequest) {
 
   // 認証済み + 家族所属済み + オンボーディングページ → ホームへ
   if (isOnboarding) {
-    const { data: member } = await supabase
-      .from("family_members")
-      .select("id")
-      .maybeSingle();
+    const { data: familyId } = await supabase.rpc("my_family_id");
 
-    if (member) {
+    if (familyId) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);

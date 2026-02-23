@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -20,20 +18,18 @@ export default function OnboardingPage() {
   const [childBirthDate, setChildBirthDate] = useState("");
 
   // 既に家族所属済みならホームへリダイレクト
+  // RLSを経由せずSECURITY DEFINERのmy_family_id()を直接呼ぶ
   useEffect(() => {
     async function checkFamily() {
-      const { data } = await supabaseRef.current
-        .from("family_members")
-        .select("id")
-        .maybeSingle();
-      if (data) {
-        router.replace("/");
+      const { data: familyId } = await supabaseRef.current.rpc("my_family_id");
+      if (familyId) {
+        window.location.href = "/";
       } else {
         setChecking(false);
       }
     }
     checkFamily();
-  }, [router]);
+  }, []);
 
   async function handleComplete() {
     setLoading(true);
