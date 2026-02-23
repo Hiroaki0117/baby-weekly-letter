@@ -1,6 +1,24 @@
 import type { Database } from "./database";
 
+export type Family = Database["public"]["Tables"]["families"]["Row"];
+export type FamilyInsert = Database["public"]["Tables"]["families"]["Insert"];
+
+export type FamilyMember =
+  Database["public"]["Tables"]["family_members"]["Row"];
+export type FamilyMemberInsert =
+  Database["public"]["Tables"]["family_members"]["Insert"];
+
+export type Child = Database["public"]["Tables"]["children"]["Row"];
+export type ChildInsert = Database["public"]["Tables"]["children"]["Insert"];
+export type ChildUpdate = Database["public"]["Tables"]["children"]["Update"];
+
+export type FamilyInvitation =
+  Database["public"]["Tables"]["family_invitations"]["Row"];
+export type FamilyInvitationInsert =
+  Database["public"]["Tables"]["family_invitations"]["Insert"];
+
 export type DailyLog = Database["public"]["Tables"]["daily_logs"]["Row"];
+export type DailyLogWithAuthor = DailyLog & { authorDisplayName?: string | null };
 export type DailyLogInsert =
   Database["public"]["Tables"]["daily_logs"]["Insert"];
 export type DailyLogUpdate =

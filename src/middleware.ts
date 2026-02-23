@@ -33,12 +33,22 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthPage =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/signup");
+  const pathname = request.nextUrl.pathname;
 
-  // 未認証ユーザーが認証必要ページにアクセス → ログインへ
-  if (!user && !isAuthPage && !request.nextUrl.pathname.startsWith("/auth")) {
+  const isAuthPage =
+    pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isOnboarding = pathname.startsWith("/onboarding");
+  const isInvitePage = pathname.startsWith("/invite");
+  const isAuthCallback = pathname.startsWith("/auth");
+  const isApiRoute = pathname.startsWith("/api");
+
+  // 未認証ユーザー
+  if (!user) {
+    // 認証ページ・招待ページ・コールバック・API は通す
+    if (isAuthPage || isInvitePage || isAuthCallback || isApiRoute) {
+      return supabaseResponse;
+    }
+    // それ以外はログインへ
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -49,6 +59,34 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // 認証済み: 家族所属チェック（オンボーディング・招待ページ・API以外）
+  if (!isOnboarding && !isInvitePage && !isAuthCallback && !isApiRoute) {
+    const { data: member } = await supabase
+      .from("family_members")
+      .select("id")
+      .single();
+
+    if (!member) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // 認証済み + 家族所属済み + オンボーディングページ → ホームへ
+  if (isOnboarding) {
+    const { data: member } = await supabase
+      .from("family_members")
+      .select("id")
+      .single();
+
+    if (member) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

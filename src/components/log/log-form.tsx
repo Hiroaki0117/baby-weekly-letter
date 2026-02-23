@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString } from "@/lib/date";
+import { getMyFamilyId } from "@/lib/supabase/family";
 import { logFormSchema, type LogFormValues } from "@/schemas/log";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -60,6 +61,9 @@ export function LogForm({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("認証エラー");
 
+      const familyId = await getMyFamilyId(supabase);
+      if (!familyId) throw new Error("家族が設定されていません");
+
       let photoPath = editingLog?.photo_storage_path ?? null;
 
       if (editingLog) {
@@ -79,7 +83,7 @@ export function LogForm({
           if (photoPath) {
             await supabase.storage.from("log-photos").remove([photoPath]);
           }
-          photoPath = `logs/${user.id}/${editingLog.id}/${photoFile.name}`;
+          photoPath = `logs/${familyId}/${editingLog.id}/${photoFile.name}`;
           const { error: uploadError } = await supabase.storage
             .from("log-photos")
             .upload(photoPath, photoFile);
@@ -96,7 +100,8 @@ export function LogForm({
         const { data: newLogData, error } = await supabase
           .from("daily_logs")
           .insert({
-            user_id: user.id,
+            family_id: familyId,
+            author_id: user.id,
             text: values.text,
             mood: values.mood,
             categories: values.categories,
@@ -110,7 +115,7 @@ export function LogForm({
         const newLog = newLogData as DailyLog | null;
 
         if (photoFile && newLog) {
-          photoPath = `logs/${user.id}/${newLog.id}/${photoFile.name}`;
+          photoPath = `logs/${familyId}/${newLog.id}/${photoFile.name}`;
           const { error: uploadError } = await supabase.storage
             .from("log-photos")
             .upload(photoPath, photoFile);
