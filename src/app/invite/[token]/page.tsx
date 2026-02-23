@@ -64,8 +64,8 @@ export default function InvitePage() {
       }
 
       toast.success(`${familyName}に参加しました！`);
-      router.push("/");
-      router.refresh();
+      // フルリロードでミドルウェアのキャッシュ問題を回避
+      window.location.href = "/";
     } catch {
       toast.error("エラーが発生しました");
     } finally {
