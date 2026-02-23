@@ -91,6 +91,15 @@ export function calcAge(
 }
 
 /**
+ * 指定年月の月初日・月末日を返す（month は 0-indexed）
+ */
+export function getMonthRange(year: number, month: number) {
+  const monthStart = startOfMonth(new Date(year, month));
+  const monthEnd = endOfMonth(monthStart);
+  return { start: monthStart, end: monthEnd };
+}
+
+/**
  * 月次カレンダーの日付配列を生成（月曜始まり、6行×7列=42日）
  */
 export function getCalendarDays(year: number, month: number): Date[] {
