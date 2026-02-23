@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -10,11 +11,29 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const supabaseRef = useRef(createClient());
 
   const [familyName, setFamilyName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [childName, setChildName] = useState("");
   const [childBirthDate, setChildBirthDate] = useState("");
+
+  // 既に家族所属済みならホームへリダイレクト
+  useEffect(() => {
+    async function checkFamily() {
+      const { data } = await supabaseRef.current
+        .from("family_members")
+        .select("id")
+        .single();
+      if (data) {
+        router.replace("/");
+      } else {
+        setChecking(false);
+      }
+    }
+    checkFamily();
+  }, [router]);
 
   async function handleComplete() {
     setLoading(true);
@@ -44,6 +63,14 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checking) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
   }
 
   return (
