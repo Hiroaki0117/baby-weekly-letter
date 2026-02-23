@@ -268,6 +268,8 @@ CREATE POLICY select_family_members ON family_members
   FOR SELECT USING (family_id = my_family_id());
 CREATE POLICY insert_family_members ON family_members
   FOR INSERT WITH CHECK (user_id = auth.uid());  -- 自分自身のメンバーシップのみ作成可能
+CREATE POLICY update_own_family_member ON family_members
+  FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY delete_family_members ON family_members
   FOR DELETE USING (
     family_id = my_family_id()
