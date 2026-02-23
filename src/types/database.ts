@@ -78,6 +78,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      monthly_reports: {
+        Row: {
+          id: string;
+          user_id: string;
+          month: string;
+          content: string;
+          generated_at: string;
+          source_weekly_report_ids: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          month: string;
+          content: string;
+          generated_at?: string;
+          source_weekly_report_ids?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          month?: string;
+          content?: string;
+          generated_at?: string;
+          source_weekly_report_ids?: string[];
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

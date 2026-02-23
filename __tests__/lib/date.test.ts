@@ -7,6 +7,7 @@ import {
   formatDateSlash,
   formatWeekRange,
   calcAge,
+  getMonthRange,
   getCalendarDays,
   getCalendarRange,
   formatMonthJa,
@@ -95,6 +96,26 @@ describe("calcAge", () => {
   it("ちょうど1歳の場合", () => {
     const result = calcAge("2025-02-18", new Date("2026-02-18"));
     expect(result).toBe("1歳");
+  });
+});
+
+describe("getMonthRange", () => {
+  it("2026年2月の月初日と月末日を返す", () => {
+    const { start, end } = getMonthRange(2026, 1); // 0-indexed
+    expect(toDateString(start)).toBe("2026-02-01");
+    expect(toDateString(end)).toBe("2026-02-28");
+  });
+
+  it("2026年1月の月初日と月末日を返す", () => {
+    const { start, end } = getMonthRange(2026, 0);
+    expect(toDateString(start)).toBe("2026-01-01");
+    expect(toDateString(end)).toBe("2026-01-31");
+  });
+
+  it("うるう年の2月を正しく扱う", () => {
+    const { start, end } = getMonthRange(2028, 1); // 2028はうるう年
+    expect(toDateString(start)).toBe("2028-02-01");
+    expect(toDateString(end)).toBe("2028-02-29");
   });
 });
 

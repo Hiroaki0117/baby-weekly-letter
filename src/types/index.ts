@@ -11,6 +11,11 @@ export type WeeklyReport =
 export type WeeklyReportInsert =
   Database["public"]["Tables"]["weekly_reports"]["Insert"];
 
+export type MonthlyReport =
+  Database["public"]["Tables"]["monthly_reports"]["Row"];
+export type MonthlyReportInsert =
+  Database["public"]["Tables"]["monthly_reports"]["Insert"];
+
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
 export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
