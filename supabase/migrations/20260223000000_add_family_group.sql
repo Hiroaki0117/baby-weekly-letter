@@ -108,7 +108,32 @@ END;
 $$;
 
 -- ============================================
--- 3. daily_logs: user_id → author_id + family_id
+-- 3. 旧 RLS ポリシー削除（カラム削除の前に実行する必要あり）
+-- ============================================
+
+-- daily_logs
+DROP POLICY IF EXISTS select_own_logs ON daily_logs;
+DROP POLICY IF EXISTS insert_own_logs ON daily_logs;
+DROP POLICY IF EXISTS update_own_logs ON daily_logs;
+DROP POLICY IF EXISTS delete_own_logs ON daily_logs;
+
+-- weekly_reports
+DROP POLICY IF EXISTS select_own_reports ON weekly_reports;
+DROP POLICY IF EXISTS insert_own_reports ON weekly_reports;
+DROP POLICY IF EXISTS update_own_reports ON weekly_reports;
+
+-- monthly_reports
+DROP POLICY IF EXISTS select_own_monthly_reports ON monthly_reports;
+DROP POLICY IF EXISTS insert_own_monthly_reports ON monthly_reports;
+DROP POLICY IF EXISTS update_own_monthly_reports ON monthly_reports;
+
+-- profiles
+DROP POLICY IF EXISTS select_own_profile ON profiles;
+DROP POLICY IF EXISTS insert_own_profile ON profiles;
+DROP POLICY IF EXISTS update_own_profile ON profiles;
+
+-- ============================================
+-- 4. daily_logs: user_id → author_id + family_id
 -- ============================================
 
 -- author_id カラム追加（user_id のコピー）
@@ -215,31 +240,6 @@ RETURNS void AS $$
   SET used_by = used_by_user, used_at = now()
   WHERE token = invite_token;
 $$ LANGUAGE sql SECURITY DEFINER;
-
--- ============================================
--- 8. 旧 RLS ポリシー削除
--- ============================================
-
--- daily_logs
-DROP POLICY IF EXISTS select_own_logs ON daily_logs;
-DROP POLICY IF EXISTS insert_own_logs ON daily_logs;
-DROP POLICY IF EXISTS update_own_logs ON daily_logs;
-DROP POLICY IF EXISTS delete_own_logs ON daily_logs;
-
--- weekly_reports
-DROP POLICY IF EXISTS select_own_reports ON weekly_reports;
-DROP POLICY IF EXISTS insert_own_reports ON weekly_reports;
-DROP POLICY IF EXISTS update_own_reports ON weekly_reports;
-
--- monthly_reports
-DROP POLICY IF EXISTS select_own_monthly_reports ON monthly_reports;
-DROP POLICY IF EXISTS insert_own_monthly_reports ON monthly_reports;
-DROP POLICY IF EXISTS update_own_monthly_reports ON monthly_reports;
-
--- profiles
-DROP POLICY IF EXISTS select_own_profile ON profiles;
-DROP POLICY IF EXISTS insert_own_profile ON profiles;
-DROP POLICY IF EXISTS update_own_profile ON profiles;
 
 -- ============================================
 -- 9. 新 RLS ポリシー作成
