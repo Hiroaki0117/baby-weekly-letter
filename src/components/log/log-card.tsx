@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
@@ -17,16 +16,23 @@ type LogCardProps = {
 
 export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const moodOption = MOOD_OPTIONS.find((m) => m.value === log.mood);
   const supabase = createClient();
 
-  let photoUrl: string | null = null;
-  if (log.photo_storage_path) {
-    const { data } = supabase.storage
+  useEffect(() => {
+    if (!log.photo_storage_path) return;
+    let cancelled = false;
+    supabase.storage
       .from("log-photos")
-      .getPublicUrl(log.photo_storage_path);
-    photoUrl = data.publicUrl;
-  }
+      .createSignedUrl(log.photo_storage_path, 3600)
+      .then(({ data }) => {
+        if (!cancelled && data?.signedUrl) {
+          setPhotoUrl(data.signedUrl);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [log.photo_storage_path]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -39,12 +45,11 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
             {/* 写真 */}
             {photoUrl && (
               <div className="relative h-44 w-full overflow-hidden">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={photoUrl}
                   alt="ログ写真"
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 640px"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
             )}

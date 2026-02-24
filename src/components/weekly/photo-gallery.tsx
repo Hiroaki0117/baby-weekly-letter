@@ -28,17 +28,21 @@ export function PhotoGallery({ weekStart, weekEnd }: PhotoGalleryProps) {
 
       if (!logs || logs.length === 0) return;
 
+      const paths = logs
+        .filter((log) => log.photo_storage_path)
+        .map((log) => log.photo_storage_path!);
+      const { data: signedData } = await supabase.storage
+        .from("log-photos")
+        .createSignedUrls(paths, 3600);
+      if (!signedData) return;
+
       const photoItems: PhotoItem[] = logs
         .filter((log) => log.photo_storage_path)
-        .map((log) => {
-          const { data } = supabase.storage
-            .from("log-photos")
-            .getPublicUrl(log.photo_storage_path!);
-          return {
-            id: log.id,
-            url: data.publicUrl,
-          };
-        });
+        .map((log, i) => ({
+          id: log.id,
+          url: signedData[i]?.signedUrl ?? "",
+        }))
+        .filter((p) => p.url);
 
       setPhotos(photoItems);
     }
