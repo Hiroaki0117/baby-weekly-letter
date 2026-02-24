@@ -38,12 +38,14 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
 export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
-export type Mood = "happy" | "neutral" | "sad";
+export type Mood = "moved" | "happy" | "neutral" | "tired" | "sad";
 
 export const MOOD_OPTIONS: { value: Mood; emoji: string; label: string }[] = [
-  { value: "happy", emoji: "🙂", label: "いい日" },
+  { value: "moved",   emoji: "🥰", label: "感動した" },
+  { value: "happy",   emoji: "🙂", label: "いい日" },
   { value: "neutral", emoji: "😐", label: "ふつう" },
-  { value: "sad", emoji: "😭", label: "大変だった" },
+  { value: "tired",   emoji: "😴", label: "疲れた" },
+  { value: "sad",     emoji: "😭", label: "大変だった" },
 ];
 
 export type Category = {
