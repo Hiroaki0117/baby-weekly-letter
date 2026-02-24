@@ -16,7 +16,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/50 glass">
+    <header className="sticky top-0 z-50 border-b border-border/50 glass hidden md:block">
       <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2.5 group">
           {/* 印鑑風ロゴマーク */}
