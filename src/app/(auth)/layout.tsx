@@ -11,7 +11,7 @@ export default function AuthLayout({
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 40%, oklch(0.93 0.04 74 / 0.7), transparent)",
+            "radial-gradient(ellipse 80% 60% at 30% 40%, oklch(0.93 0.06 5 / 0.5), transparent), radial-gradient(ellipse 60% 50% at 70% 60%, oklch(0.93 0.05 155 / 0.35), transparent)",
         }}
       />
       {/* 大きな透かし文字 */}

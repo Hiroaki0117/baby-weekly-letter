@@ -71,7 +71,7 @@ export default function WeeklyDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-        <p className="text-xs text-muted-foreground">読み込み中...</p>
+        <p className="text-xs text-muted-foreground">読み込み中…</p>
       </div>
     );
   }
@@ -89,12 +89,12 @@ export default function WeeklyDetailPage() {
       </button>
 
       {/* 手紙カード */}
-      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-md shadow-primary/8">
         {/* エアメールストライプ上部 */}
         <div className="airmail-stripe h-3 w-full" />
 
         {/* 消印エリア */}
-        <div className="flex items-center justify-between border-b border-border/40 bg-muted/20 px-6 py-3">
+        <div className="flex items-center justify-between border-b border-primary/10 bg-primary/5 px-6 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-primary/60 bg-primary/6">
               <span className="text-sm">✉</span>
@@ -125,7 +125,7 @@ export default function WeeklyDetailPage() {
           className="px-6 py-6"
           style={{
             backgroundImage:
-              "linear-gradient(oklch(0.87 0.020 70 / 0.25) 1px, transparent 1px)",
+              "linear-gradient(oklch(0.85 0.015 5 / 0.2) 1px, transparent 1px)",
             backgroundSize: "100% 1.75rem",
             backgroundPositionY: "1.5rem",
           }}
@@ -143,12 +143,12 @@ export default function WeeklyDetailPage() {
       <button
         onClick={handleRegenerate}
         disabled={regenerating}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 bg-card py-3 text-sm text-muted-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-muted/50 hover:text-primary disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-card py-3 text-sm text-muted-foreground shadow-sm transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
       >
         {regenerating ? (
           <>
             <span className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            再生成中...
+            再生成中…
           </>
         ) : (
           "✨ 再生成する"
