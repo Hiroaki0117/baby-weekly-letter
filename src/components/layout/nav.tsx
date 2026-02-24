@@ -35,13 +35,13 @@ export function Nav({ className }: NavProps) {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative flex items-center gap-1.5 px-2.5 py-1.5 text-sm transition-colors",
+              "relative flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-sm transition-colors",
               isActive
                 ? "text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Icon size={14} />
+            <Icon size={14} className="shrink-0" />
             {item.label}
             {isActive && (
               <span className="absolute bottom-0 left-3 right-3 h-px bg-primary" />
