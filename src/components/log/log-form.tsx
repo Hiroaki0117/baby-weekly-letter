@@ -15,6 +15,11 @@ import { PhotoUploader } from "./photo-uploader";
 import { toast } from "sonner";
 import type { DailyLog, Mood } from "@/types";
 
+function safeFileName(file: File): string {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  return `${crypto.randomUUID()}.${ext}`;
+}
+
 type LogFormProps = {
   editingLog?: DailyLog | null;
   existingPhotoUrl?: string | null;
@@ -83,7 +88,7 @@ export function LogForm({
           if (photoPath) {
             await supabase.storage.from("log-photos").remove([photoPath]);
           }
-          photoPath = `logs/${familyId}/${editingLog.id}/${photoFile.name}`;
+          photoPath = `logs/${familyId}/${editingLog.id}/${safeFileName(photoFile)}`;
           const { error: uploadError } = await supabase.storage
             .from("log-photos")
             .upload(photoPath, photoFile);
@@ -115,7 +120,7 @@ export function LogForm({
         const newLog = newLogData as DailyLog | null;
 
         if (photoFile && newLog) {
-          photoPath = `logs/${familyId}/${newLog.id}/${photoFile.name}`;
+          photoPath = `logs/${familyId}/${newLog.id}/${safeFileName(photoFile)}`;
           const { error: uploadError } = await supabase.storage
             .from("log-photos")
             .upload(photoPath, photoFile);
