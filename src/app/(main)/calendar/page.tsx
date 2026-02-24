@@ -87,6 +87,20 @@ export default function CalendarPage() {
     setSelectedDate(null);
   }
 
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+  function handleGoToToday() {
+    setYear(now.getFullYear());
+    setMonth(now.getMonth());
+    setSelectedDate(null);
+  }
+
+  function handleSelectMonth(y: number, m: number) {
+    setYear(y);
+    setMonth(m);
+    setSelectedDate(null);
+  }
+
   function handleSelectDate(dateStr: string) {
     setSelectedDate(selectedDate === dateStr ? null : dateStr);
   }
@@ -135,6 +149,9 @@ export default function CalendarPage() {
         onSelectDate={handleSelectDate}
         onPrevMonth={handlePrevMonth}
         onNextMonth={handleNextMonth}
+        isCurrentMonth={isCurrentMonth}
+        onGoToToday={handleGoToToday}
+        onSelectMonth={handleSelectMonth}
       />
 
       {/* 選択日のログ一覧 */}
