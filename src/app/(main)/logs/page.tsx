@@ -98,10 +98,10 @@ export default function LogsPage() {
   async function handleEdit(log: DailyLog) {
     let photoUrl: string | null = null;
     if (log.photo_storage_path) {
-      const { data } = supabase.storage
+      const { data } = await supabase.storage
         .from("log-photos")
-        .getPublicUrl(log.photo_storage_path);
-      photoUrl = data.publicUrl;
+        .createSignedUrl(log.photo_storage_path, 3600);
+      photoUrl = data?.signedUrl ?? null;
     }
     setEditingPhotoUrl(photoUrl);
     setEditingLog(log);
