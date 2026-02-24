@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { toDateString, formatDateJa } from "@/lib/date";
+import { toDateString, formatDateJa, calcAge } from "@/lib/date";
+import { getMyFamilyId } from "@/lib/supabase/family";
+import { getStreak } from "@/lib/streak";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { toast } from "sonner";
@@ -13,30 +15,37 @@ export default function HomePage() {
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
+  const [childName, setChildName] = useState<string | null>(null);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const today = toDateString(new Date());
 
   async function fetchTodayLogs() {
-    const { data, error } = await supabase
-      .from("daily_logs")
-      .select("*")
-      .eq("log_date", today)
-      .order("created_at", { ascending: false });
+    const [logsRes, streakCount] = await Promise.all([
+      supabase
+        .from("daily_logs")
+        .select("*")
+        .eq("log_date", today)
+        .order("created_at", { ascending: false }),
+      getStreak(supabase),
+    ]);
 
-    if (error) {
+    if (logsRes.error) {
       toast.error("ログの取得に失敗しました");
       return;
     }
 
-    setLogs((data as DailyLog[]) ?? []);
+    setLogs((logsRes.data as DailyLog[]) ?? []);
+    setStreak(streakCount);
   }
 
   useEffect(() => {
     const client = supabaseRef.current;
     const todayStr = toDateString(new Date());
     async function load() {
-      const [logsRes, membersRes] = await Promise.all([
+      const [logsRes, membersRes, streakCount] = await Promise.all([
         client
           .from("daily_logs")
           .select("*")
@@ -45,6 +54,7 @@ export default function HomePage() {
         client
           .from("family_members")
           .select("user_id, display_name"),
+        getStreak(client),
       ]);
 
       if (!logsRes.error) {
@@ -56,6 +66,23 @@ export default function HomePage() {
           if (m.display_name) names[m.user_id] = m.display_name;
         }
         setAuthorNames(names);
+      }
+      setStreak(streakCount);
+
+      // 子ども情報を取得
+      const familyId = await getMyFamilyId(client);
+      if (familyId) {
+        const { data: child } = await client
+          .from("children")
+          .select("name, birth_date")
+          .eq("family_id", familyId)
+          .limit(1)
+          .maybeSingle();
+        if (child) {
+          const c = child as { name: string | null; birth_date: string | null };
+          setChildName(c.name);
+          setBirthDate(c.birth_date);
+        }
       }
     }
     load();
@@ -121,6 +148,29 @@ export default function HomePage() {
         <div className="mt-3 space-y-1.5">
           <div className="h-px bg-border/60" />
           <div className="h-px bg-border/30" />
+        </div>
+
+        {/* 情報エリア */}
+        <div className="mt-3 space-y-1">
+          {birthDate && (
+            <p className="text-xs text-muted-foreground">
+              <span className="mr-1.5">🍼</span>
+              {childName ? `${childName}・` : ""}
+              {calcAge(birthDate)}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            <span className="mr-1.5">📝</span>
+            {logs.length === 0
+              ? "今日はまだきろくがありません"
+              : `今日は${logs.length}件のきろくがあります`}
+          </p>
+          {streak > 0 && (
+            <p className="text-xs text-primary/80 font-medium">
+              <span className="mr-1.5">🔥</span>
+              {streak}日連続きろく中！
+            </p>
+          )}
         </div>
       </div>
 
