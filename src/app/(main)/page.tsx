@@ -18,6 +18,7 @@ export default function HomePage() {
   const [childName, setChildName] = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
+  const [cardLoaded, setCardLoaded] = useState(false);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const today = toDateString(new Date());
@@ -84,6 +85,7 @@ export default function HomePage() {
           setBirthDate(c.birth_date);
         }
       }
+      setCardLoaded(true);
     }
     load();
   }, []);
@@ -152,24 +154,33 @@ export default function HomePage() {
 
         {/* 情報エリア */}
         <div className="mt-3 space-y-1">
-          {birthDate && (
-            <p className="text-xs text-muted-foreground">
-              <span className="mr-1.5">🍼</span>
-              {childName ? `${childName}・` : ""}
-              {calcAge(birthDate)}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            <span className="mr-1.5">📝</span>
-            {logs.length === 0
-              ? "今日はまだきろくがありません"
-              : `今日は${logs.length}件のきろくがあります`}
-          </p>
-          {streak > 0 && (
-            <p className="text-xs text-primary/80 font-medium">
-              <span className="mr-1.5">🔥</span>
-              {streak}日連続きろく中！
-            </p>
+          {!cardLoaded ? (
+            <>
+              <div className="h-4 w-40 animate-pulse rounded bg-muted/60" />
+              <div className="h-4 w-52 animate-pulse rounded bg-muted/40" />
+            </>
+          ) : (
+            <>
+              {birthDate && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="mr-1.5">🍼</span>
+                  {childName ? `${childName}・` : ""}
+                  {calcAge(birthDate)}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                <span className="mr-1.5">📝</span>
+                {logs.length === 0
+                  ? "今日はまだきろくがありません"
+                  : `今日は${logs.length}件のきろくがあります`}
+              </p>
+              {streak > 0 && (
+                <p className="text-xs text-primary/80 font-medium">
+                  <span className="mr-1.5">🔥</span>
+                  {streak}日連続きろく中！
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>
