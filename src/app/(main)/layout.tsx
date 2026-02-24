@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 export default function MainLayout({
   children,
@@ -8,7 +9,10 @@ export default function MainLayout({
   return (
     <div className="min-h-screen bg-background paper-grid">
       <Header />
-      <main className="mx-auto max-w-2xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-2xl px-4 py-8 pb-24 md:pb-8">
+        {children}
+      </main>
+      <BottomNav />
     </div>
   );
 }

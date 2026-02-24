@@ -161,6 +161,13 @@
   border: 1px solid color-mix(in oklab, var(--color-border) 50%, transparent);
 }
 
+/* タッチ操作の 300ms 遅延を除去 */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
 /* エアメール斜めストライプ（primary色使用） */
 @utility airmail-stripe {
   background: repeating-linear-gradient(

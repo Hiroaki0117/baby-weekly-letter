@@ -12,11 +12,15 @@ const navItems = [
   { href: "/family", label: "家族" },
 ];
 
-export function Nav() {
+type NavProps = {
+  className?: string;
+};
+
+export function Nav({ className }: NavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1" aria-label="メインナビゲーション">
+    <nav className={cn(className, "flex gap-1")} aria-label="メインナビゲーション">
       {navItems.map((item) => {
         const isActive =
           item.href === "/"
