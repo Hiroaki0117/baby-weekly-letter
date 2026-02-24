@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 type MonthPickerProps = {
@@ -17,6 +18,7 @@ const MONTH_LABELS = [
 ];
 
 export function MonthPicker({ year, month, onSelect, onClose }: MonthPickerProps) {
+  const [displayYear, setDisplayYear] = useState(year);
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -35,17 +37,17 @@ export function MonthPicker({ year, month, onSelect, onClose }: MonthPickerProps
         <div className="flex items-center justify-between border-b border-border/40 bg-muted/30 px-4 py-2.5">
           <button
             type="button"
-            onClick={() => onSelect(year - 1, month)}
+            onClick={() => setDisplayYear(displayYear - 1)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             ‹
           </button>
           <span className="text-sm font-semibold text-foreground">
-            {year}年
+            {displayYear}年
           </span>
           <button
             type="button"
-            onClick={() => onSelect(year + 1, month)}
+            onClick={() => setDisplayYear(displayYear + 1)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             ›
@@ -55,15 +57,15 @@ export function MonthPicker({ year, month, onSelect, onClose }: MonthPickerProps
         {/* 月グリッド */}
         <div className="grid grid-cols-3 gap-1 p-3">
           {MONTH_LABELS.map((label, i) => {
-            const isSelected = year === currentYear && i === currentMonth;
-            const isCurrent = i === month;
+            const isToday = displayYear === currentYear && i === currentMonth;
+            const isCurrent = displayYear === year && i === month;
 
             return (
               <button
                 key={i}
                 type="button"
                 onClick={() => {
-                  onSelect(year, i);
+                  onSelect(displayYear, i);
                   onClose();
                 }}
                 className={cn(
@@ -71,8 +73,8 @@ export function MonthPicker({ year, month, onSelect, onClose }: MonthPickerProps
                   "hover:bg-primary/8",
                   "active:scale-95",
                   isCurrent && "bg-primary/12 font-semibold text-primary ring-2 ring-primary/40",
-                  isSelected && !isCurrent && "font-medium text-primary",
-                  !isCurrent && !isSelected && "text-foreground"
+                  isToday && !isCurrent && "font-medium text-primary",
+                  !isCurrent && !isToday && "text-foreground"
                 )}
               >
                 {label}
