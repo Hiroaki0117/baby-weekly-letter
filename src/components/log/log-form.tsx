@@ -145,10 +145,10 @@ export function LogForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
+      className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-primary/5"
     >
       {/* フォームヘッダー */}
-      <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
+      <div className="border-b border-primary/10 bg-primary/5 px-5 py-3">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           {editingLog ? "ログを編集" : "きょうのきろく"}
         </p>
@@ -221,7 +221,7 @@ export function LogForm({
       </div>
 
       {/* ボタン */}
-      <div className="flex gap-2 border-t border-border/40 bg-muted/20 px-5 py-3">
+      <div className="flex gap-2 border-t border-primary/10 bg-primary/5 px-5 py-3">
         <button
           type="submit"
           disabled={saving}

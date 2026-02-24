@@ -29,7 +29,7 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
   }
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm shadow-foreground/5 transition-all duration-200 hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5">
+    <div className="group overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-primary/5 transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-1">
       <div className="flex">
         {/* 左アクセントストリップ（付箋テープ風） */}
         <div className="w-1 flex-shrink-0 bg-gradient-to-b from-primary via-primary/70 to-primary/30" />
@@ -116,7 +116,7 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
                     <Badge
                       key={cat}
                       variant="secondary"
-                      className="border border-border/50 bg-muted/60 text-[10px] text-muted-foreground"
+                      className="border border-primary/20 bg-primary/8 text-[10px] text-primary/80"
                     >
                       {label}
                     </Badge>

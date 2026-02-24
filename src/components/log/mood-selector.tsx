@@ -8,28 +8,45 @@ type MoodSelectorProps = {
   onChange: (mood: Mood) => void;
 };
 
+const moodColors: Record<string, { idle: string; active: string }> = {
+  happy: {
+    idle: "border-yellow-300 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100",
+    active: "border-yellow-400 bg-yellow-100 shadow-lg shadow-yellow-200",
+  },
+  neutral: {
+    idle: "border-sky-300 bg-sky-50 hover:border-sky-400 hover:bg-sky-100",
+    active: "border-sky-400 bg-sky-100 shadow-lg shadow-sky-200",
+  },
+  sad: {
+    idle: "border-violet-300 bg-violet-50 hover:border-violet-400 hover:bg-violet-100",
+    active: "border-violet-400 bg-violet-100 shadow-lg shadow-violet-200",
+  },
+};
+
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-3">
       {MOOD_OPTIONS.map((option) => {
         const isSelected = value === option.value;
+        const colors = moodColors[option.value] ?? {
+          idle: "border-border bg-card hover:border-primary/40 hover:bg-muted/80",
+          active: "border-primary bg-primary/10 shadow-lg shadow-primary/20",
+        };
         return (
           <button
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex h-18 w-18 flex-col items-center justify-center gap-1 rounded-full border-2 transition-all duration-200",
+              "flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 transition-all duration-200",
               "hover:scale-105 active:scale-95",
-              isSelected
-                ? "border-primary bg-primary/10 shadow-lg shadow-primary/20 scale-110"
-                : "border-border bg-card hover:border-primary/40 hover:bg-muted/80"
+              isSelected ? cn(colors.active, "scale-110") : colors.idle
             )}
-            style={{ width: "4.5rem", height: "4.5rem" }}
+            style={{ width: "5rem", height: "5rem" }}
           >
             <span
               className={cn(
-                "text-2xl leading-none transition-transform duration-200",
+                "text-3xl leading-none transition-transform duration-200",
                 isSelected && "scale-110"
               )}
             >
@@ -37,8 +54,8 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
             </span>
             <span
               className={cn(
-                "text-[10px] font-medium leading-none transition-colors",
-                isSelected ? "text-primary" : "text-muted-foreground"
+                "text-[10px] font-medium leading-none",
+                isSelected ? "text-foreground" : "text-muted-foreground"
               )}
             >
               {option.label}
