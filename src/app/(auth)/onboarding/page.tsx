@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const supabaseRef = useRef(createClient());
 
   const [familyName, setFamilyName] = useState("");
@@ -32,6 +34,7 @@ export default function OnboardingPage() {
   }, []);
 
   async function handleComplete() {
+    setErrorMessage(null);
     setLoading(true);
     try {
       const res = await fetch("/api/family/create", {
@@ -52,7 +55,7 @@ export default function OnboardingPage() {
           window.location.href = "/";
           return;
         }
-        toast.error(data.error ?? "家族の作成に失敗しました");
+        setErrorMessage(data.error ?? "家族の作成に失敗しました");
         return;
       }
 
@@ -60,7 +63,7 @@ export default function OnboardingPage() {
       // フルリロードでミドルウェアのキャッシュ問題を回避
       window.location.href = "/";
     } catch {
-      toast.error("エラーが発生しました");
+      setErrorMessage("エラーが発生しました");
     } finally {
       setLoading(false);
     }
@@ -101,6 +104,11 @@ export default function OnboardingPage() {
       </div>
 
       <div className="p-8">
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-5">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
         {/* ステップ 1: 家族名 */}
         {step === 1 && (
           <div className="space-y-5">

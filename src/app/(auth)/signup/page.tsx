@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ function SignupPageInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
@@ -41,6 +43,7 @@ function SignupPageInner() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    setErrorMessage(null);
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
@@ -49,9 +52,7 @@ function SignupPageInner() {
     });
 
     if (error) {
-      toast.error("登録に失敗しました", {
-        description: error.message,
-      });
+      setErrorMessage("登録に失敗しました: " + error.message);
       setLoading(false);
       return;
     }
@@ -75,9 +76,7 @@ function SignupPageInner() {
     });
 
     if (error) {
-      toast.error("Googleログインに失敗しました", {
-        description: error.message,
-      });
+      setErrorMessage("Googleログインに失敗しました: " + error.message);
     }
   }
 
@@ -88,6 +87,11 @@ function SignupPageInner() {
         <CardDescription>アカウントを作成</CardDescription>
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSignup} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">メールアドレス</Label>
