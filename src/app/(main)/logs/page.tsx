@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
+import { LogFilter } from "@/components/log/log-filter";
 import { toast } from "sonner";
-import type { DailyLog } from "@/types";
+import type { DailyLog, Mood } from "@/types";
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -17,6 +18,37 @@ export default function LogsPage() {
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const router = useRouter();
+
+  // フィルター状態
+  const [selectedMoods, setSelectedMoods] = useState<Mood[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchText, setSearchText] = useState("");
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      if (
+        selectedMoods.length > 0 &&
+        !selectedMoods.includes(log.mood as Mood)
+      )
+        return false;
+      if (
+        selectedCategories.length > 0 &&
+        !selectedCategories.some((c) => log.categories.includes(c))
+      )
+        return false;
+      if (searchText.trim()) {
+        const needle = searchText.trim().toLowerCase();
+        if (!log.text.toLowerCase().includes(needle)) return false;
+      }
+      return true;
+    });
+  }, [logs, selectedMoods, selectedCategories, searchText]);
+
+  function clearFilters() {
+    setSelectedMoods([]);
+    setSelectedCategories([]);
+    setSearchText("");
+  }
 
   async function fetchLogs() {
     const { data, error } = await supabase
@@ -132,6 +164,21 @@ export default function LogsPage() {
 
       <div className="h-px bg-border/60" />
 
+      {/* フィルター */}
+      {logs.length > 0 && (
+        <LogFilter
+          selectedMoods={selectedMoods}
+          onMoodsChange={setSelectedMoods}
+          selectedCategories={selectedCategories}
+          onCategoriesChange={setSelectedCategories}
+          searchText={searchText}
+          onSearchTextChange={setSearchText}
+          totalCount={logs.length}
+          filteredCount={filteredLogs.length}
+          onClear={clearFilters}
+        />
+      )}
+
       {/* 編集フォーム */}
       {editingLog && (
         <LogForm
@@ -159,9 +206,27 @@ export default function LogsPage() {
             </p>
           </div>
         </div>
+      ) : filteredLogs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border text-2xl">
+            🔍
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              条件に合うログがありません
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-2 text-xs text-primary transition-colors hover:text-primary/80"
+            >
+              フィルターをクリア
+            </button>
+          </div>
+        </div>
       ) : (
         <div className="space-y-3">
-          {logs.map((log) => (
+          {filteredLogs.map((log) => (
             <LogCard
               key={log.id}
               log={log}

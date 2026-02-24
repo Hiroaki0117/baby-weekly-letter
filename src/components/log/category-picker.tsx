@@ -8,7 +8,7 @@ type CategoryPickerProps = {
   onChange: (categories: string[]) => void;
 };
 
-const CATEGORY_COLORS: Record<string, { idle: string; active: string }> = {
+export const CATEGORY_COLORS: Record<string, { idle: string; active: string }> = {
   meal:           { idle: "border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100",  active: "border-orange-400 bg-orange-200 text-orange-800" },
   sleep:          { idle: "border-violet-200 bg-violet-50 text-violet-600 hover:bg-violet-100", active: "border-violet-400 bg-violet-200 text-violet-800" },
   play:           { idle: "border-yellow-200 bg-yellow-50 text-yellow-600 hover:bg-yellow-100", active: "border-yellow-400 bg-yellow-200 text-yellow-800" },
