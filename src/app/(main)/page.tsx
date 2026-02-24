@@ -104,7 +104,7 @@ export default function HomePage() {
   return (
     <div className="space-y-6">
       {/* 日付ヘッダー（手帳ページ風） */}
-      <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card px-6 py-5 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-card to-primary/5 px-6 py-5 shadow-sm shadow-primary/8">
         {/* 右上の小さなドット飾り */}
         <div className="absolute right-4 top-4 flex gap-1 opacity-30">
           {[...Array(3)].map((_, i) => (
@@ -145,7 +145,7 @@ export default function HomePage() {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border/50" />
-            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            <span className="text-[10px] font-medium uppercase tracking-widest text-primary/70">
               {logs.length}件のきろく
             </span>
             <div className="h-px flex-1 bg-border/50" />

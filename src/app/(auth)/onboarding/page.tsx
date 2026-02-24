@@ -79,7 +79,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xl shadow-foreground/5">
-      <div className="border-b border-border/50 bg-secondary/40 px-8 py-7 text-center">
+      <div className="border-b border-primary/10 bg-gradient-to-b from-primary/8 to-primary/3 px-8 py-7 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-primary/50 bg-primary/8">
           <span className="font-mincho text-xl font-bold text-primary">日</span>
         </div>
