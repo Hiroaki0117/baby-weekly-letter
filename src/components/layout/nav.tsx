@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, Calendar, BookOpen, Mail, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
-const navItems = [
-  { href: "/", label: "きょう" },
-  { href: "/calendar", label: "カレンダー" },
-  { href: "/logs", label: "きろく" },
-  { href: "/weekly", label: "通信" },
-  { href: "/family", label: "家族" },
+const navItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "きょう", icon: Home },
+  { href: "/calendar", label: "カレンダー", icon: Calendar },
+  { href: "/logs", label: "きろく", icon: BookOpen },
+  { href: "/weekly", label: "通信", icon: Mail },
+  { href: "/family", label: "家族", icon: Users },
 ];
 
 type NavProps = {
@@ -26,18 +28,20 @@ export function Nav({ className }: NavProps) {
           item.href === "/"
             ? pathname === "/"
             : pathname.startsWith(item.href);
+        const Icon = item.icon;
 
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "relative px-2.5 py-1.5 text-sm transition-colors",
+              "relative flex items-center gap-1.5 px-2.5 py-1.5 text-sm transition-colors",
               isActive
                 ? "text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
+            <Icon size={14} />
             {item.label}
             {isActive && (
               <span className="absolute bottom-0 left-3 right-3 h-px bg-primary" />
