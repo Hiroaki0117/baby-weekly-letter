@@ -65,7 +65,7 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="flex items-center gap-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                 {confirming ? (
                   <>
                     <span className="text-xs text-destructive mr-1">本当に削除しますか？</span>

@@ -28,8 +28,8 @@ export function Header() {
           </span>
         </Link>
         <div className="flex items-center gap-3">
-          <Nav />
-          <div className="flex items-center gap-1.5 border-l border-border/40 pl-3">
+          <Nav className="hidden md:flex" />
+          <div className="flex items-center gap-1.5 md:border-l md:border-border/40 md:pl-3">
             <Link
               href="/settings"
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -52,7 +52,7 @@ export function Header() {
             </Link>
             <button
               onClick={handleLogout}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden md:inline-block text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               ログアウト
             </button>

@@ -32,7 +32,7 @@ export function CalendarDayCell({
       type="button"
       onClick={() => onSelect(date)}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 transition-all duration-150",
+        "relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 min-h-[48px] transition-all duration-150",
         "hover:bg-primary/5",
         !inMonth && "opacity-30",
         isSelected && "bg-primary/12 ring-2 ring-primary/40",
