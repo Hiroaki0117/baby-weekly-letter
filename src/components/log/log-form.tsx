@@ -227,7 +227,7 @@ export function LogForm({
           disabled={saving}
           className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
         >
-          {saving ? "保存中..." : editingLog ? "更新する" : "保存する"}
+          {saving ? "保存中…" : editingLog ? "更新する" : "保存する"}
         </button>
         {onCancel && (
           <button

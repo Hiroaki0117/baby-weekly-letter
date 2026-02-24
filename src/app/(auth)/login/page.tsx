@@ -89,7 +89,7 @@ function LoginPageInner() {
 
       <div className="p-8">
         {errorMessage && (
-          <Alert variant="destructive" className="mb-5">
+          <Alert variant="destructive" className="mb-5" aria-live="polite">
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
@@ -103,8 +103,11 @@ function LoginPageInner() {
             </Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="mail@example.com"
+              autoComplete="email"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -120,7 +123,9 @@ function LoginPageInner() {
             </Label>
             <Input
               id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -132,7 +137,7 @@ function LoginPageInner() {
             disabled={loading}
             className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
           >
-            {loading ? "ログイン中..." : "ログイン"}
+            {loading ? "ログイン中…" : "ログイン"}
           </button>
         </form>
 
@@ -151,7 +156,7 @@ function LoginPageInner() {
           onClick={handleGoogleLogin}
           className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border/70 bg-background/60 py-2.5 text-sm text-foreground transition-all hover:border-border hover:bg-secondary/60"
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24">
+          <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

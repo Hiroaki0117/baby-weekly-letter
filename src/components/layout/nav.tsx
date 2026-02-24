@@ -16,7 +16,7 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1">
+    <nav className="flex gap-1" aria-label="メインナビゲーション">
       {navItems.map((item) => {
         const isActive =
           item.href === "/"
