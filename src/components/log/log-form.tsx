@@ -34,6 +34,7 @@ export function LogForm({
   onCancel,
 }: LogFormProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoResetKey, setPhotoResetKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
 
@@ -135,6 +136,7 @@ export function LogForm({
         toast.success("ログを保存しました");
         reset();
         setPhotoFile(null);
+        setPhotoResetKey((k) => k + 1);
       }
 
       onSaved();
@@ -218,6 +220,7 @@ export function LogForm({
             写真
           </Label>
           <PhotoUploader
+            key={photoResetKey}
             existingUrl={editingLog ? existingPhotoUrl : undefined}
             onChange={setPhotoFile}
           />
