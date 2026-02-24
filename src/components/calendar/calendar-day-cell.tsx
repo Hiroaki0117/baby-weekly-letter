@@ -32,11 +32,11 @@ export function CalendarDayCell({
       type="button"
       onClick={() => onSelect(date)}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 transition-all duration-150",
-        "hover:bg-muted/80",
+        "relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 transition-all duration-150",
+        "hover:bg-primary/5",
         !inMonth && "opacity-30",
-        isSelected && "bg-primary/10 ring-1 ring-primary/50",
-        today && !isSelected && "ring-1 ring-primary/30"
+        isSelected && "bg-primary/12 ring-2 ring-primary/40",
+        today && !isSelected && "ring-2 ring-primary/25 bg-primary/5"
       )}
     >
       {/* 日付数字 */}
@@ -55,9 +55,9 @@ export function CalendarDayCell({
 
       {/* 気分 emoji */}
       {hasLogs ? (
-        <span className="text-sm leading-none">{firstMood?.emoji}</span>
+        <span className="text-base leading-none">{firstMood?.emoji}</span>
       ) : (
-        <span className="h-[1.125rem]" /> /* プレースホルダー */
+        <span className="h-5" /> /* プレースホルダー */
       )}
 
       {/* 複数ログバッジ */}

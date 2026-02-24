@@ -17,18 +17,18 @@ export function WeeklyReportCard({ report }: WeeklyReportCardProps) {
 
   return (
     <Link href={`/weekly/${report.id}`}>
-      <div className="group overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5">
+      <div className="group overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-primary/5 transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-1">
         {/* エアメール斜めストライプ */}
-        <div className="airmail-stripe h-2.5 w-full" />
+        <div className="airmail-stripe h-3 w-full" />
 
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
             {/* ポストマーク風 */}
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-primary/50 bg-primary/6">
-              <span className="text-base leading-none">✉</span>
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-primary/60 bg-primary/8">
+              <span className="text-lg leading-none">✉</span>
             </div>
             <div>
-              <p className="font-mincho text-sm font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {formatWeekRange(report.week_start, report.week_end)}
               </p>
               {preview && (
@@ -38,7 +38,7 @@ export function WeeklyReportCard({ report }: WeeklyReportCardProps) {
               )}
             </div>
           </div>
-          <span className="text-xs text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary">
+          <span className="text-sm text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-primary">
             →
           </span>
         </div>
