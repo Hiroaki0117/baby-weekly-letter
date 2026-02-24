@@ -9,6 +9,7 @@ const navItems = [
   { href: "/calendar", label: "カレンダー" },
   { href: "/logs", label: "きろく" },
   { href: "/weekly", label: "通信" },
+  { href: "/family", label: "家族" },
 ];
 
 export function Nav() {
@@ -27,7 +28,7 @@ export function Nav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative px-3 py-1.5 text-sm transition-colors",
+              "relative px-2.5 py-1.5 text-sm transition-colors",
               isActive
                 ? "text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground"
