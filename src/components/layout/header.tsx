@@ -33,7 +33,7 @@ export function Header() {
             <Link
               href="/settings"
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="設定"
+              aria-label="設定"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

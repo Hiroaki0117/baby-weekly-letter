@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { formatDateJa } from "@/lib/date";
@@ -15,6 +16,7 @@ type LogCardProps = {
 };
 
 export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardProps) {
+  const [confirming, setConfirming] = useState(false);
   const moodOption = MOOD_OPTIONS.find((m) => m.value === log.mood);
   const supabase = createClient();
 
@@ -64,18 +66,38 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
                 </div>
               </div>
               <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  onClick={() => onEdit(log)}
-                  className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  編集
-                </button>
-                <button
-                  onClick={() => onDelete(log.id)}
-                  className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  削除
-                </button>
+                {confirming ? (
+                  <>
+                    <span className="text-xs text-destructive mr-1">本当に削除しますか？</span>
+                    <button
+                      onClick={() => { onDelete(log.id); setConfirming(false); }}
+                      className="rounded px-2 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                    >
+                      削除する
+                    </button>
+                    <button
+                      onClick={() => setConfirming(false)}
+                      className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted"
+                    >
+                      キャンセル
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => onEdit(log)}
+                      className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => setConfirming(true)}
+                      className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      削除
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

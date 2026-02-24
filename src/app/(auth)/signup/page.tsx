@@ -89,7 +89,7 @@ function SignupPageInner() {
       </CardHeader>
       <CardContent>
         {errorMessage && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mb-4" aria-live="polite">
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
@@ -98,8 +98,11 @@ function SignupPageInner() {
             <Label htmlFor="email">メールアドレス</Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="mail@example.com"
+              autoComplete="email"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -109,8 +112,10 @@ function SignupPageInner() {
             <Label htmlFor="password">パスワード</Label>
             <Input
               id="password"
+              name="password"
               type="password"
               placeholder="6文字以上"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -118,7 +123,7 @@ function SignupPageInner() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "登録中..." : "アカウント登録"}
+            {loading ? "登録中…" : "アカウント登録"}
           </Button>
         </form>
 

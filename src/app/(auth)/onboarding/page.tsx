@@ -105,7 +105,7 @@ export default function OnboardingPage() {
 
       <div className="p-8">
         {errorMessage && (
-          <Alert variant="destructive" className="mb-5">
+          <Alert variant="destructive" className="mb-5" aria-live="polite">
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
@@ -238,7 +238,7 @@ export default function OnboardingPage() {
                 disabled={loading}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
               >
-                {loading ? "作成中..." : "はじめる"}
+                {loading ? "作成中…" : "はじめる"}
               </button>
             </div>
           </div>

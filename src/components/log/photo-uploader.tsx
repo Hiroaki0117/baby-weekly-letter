@@ -63,12 +63,15 @@ export function PhotoUploader({
           <img
             src={preview}
             alt="プレビュー"
+            width={128}
+            height={128}
             className="h-32 w-32 rounded-lg object-cover"
           />
           <Button
             type="button"
             variant="destructive"
             size="sm"
+            aria-label="写真を削除"
             className="absolute -right-2 -top-2 h-6 w-6 rounded-full p-0 text-xs"
             onClick={handleRemove}
           >
