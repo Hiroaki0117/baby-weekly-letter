@@ -17,8 +17,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 glass hidden md:block">
-      <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2.5 group">
+      <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2.5 whitespace-nowrap shrink-0 group">
           {/* 印鑑風ロゴマーク */}
           <span className="flex h-7 w-7 items-center justify-center rounded-sm border border-primary/60 bg-primary/8 text-[11px] font-bold text-primary transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
             日
@@ -52,7 +52,7 @@ export function Header() {
             </Link>
             <button
               onClick={handleLogout}
-              className="hidden md:inline-block text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden md:inline-block whitespace-nowrap text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               ログアウト
             </button>
