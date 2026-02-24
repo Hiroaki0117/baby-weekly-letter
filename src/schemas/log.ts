@@ -5,7 +5,7 @@ export const logFormSchema = z.object({
     .string()
     .min(1, "今日の出来事を入力してください")
     .max(2000, "2000文字以内で入力してください"),
-  mood: z.enum(["happy", "neutral", "sad"], {
+  mood: z.enum(["moved", "happy", "neutral", "tired", "sad"], {
     message: "気分を選択してください",
   }),
   categories: z.array(z.string()),

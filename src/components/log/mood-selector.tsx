@@ -9,6 +9,10 @@ type MoodSelectorProps = {
 };
 
 const moodColors: Record<string, { idle: string; active: string }> = {
+  moved: {
+    idle: "border-rose-300 bg-rose-50 hover:border-rose-400 hover:bg-rose-100",
+    active: "border-rose-400 bg-rose-100 shadow-lg shadow-rose-200",
+  },
   happy: {
     idle: "border-yellow-300 bg-yellow-50 hover:border-yellow-400 hover:bg-yellow-100",
     active: "border-yellow-400 bg-yellow-100 shadow-lg shadow-yellow-200",
@@ -16,6 +20,10 @@ const moodColors: Record<string, { idle: string; active: string }> = {
   neutral: {
     idle: "border-sky-300 bg-sky-50 hover:border-sky-400 hover:bg-sky-100",
     active: "border-sky-400 bg-sky-100 shadow-lg shadow-sky-200",
+  },
+  tired: {
+    idle: "border-indigo-200 bg-indigo-50 hover:border-indigo-300 hover:bg-indigo-100",
+    active: "border-indigo-300 bg-indigo-100 shadow-lg shadow-indigo-200",
   },
   sad: {
     idle: "border-violet-300 bg-violet-50 hover:border-violet-400 hover:bg-violet-100",

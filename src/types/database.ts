@@ -121,7 +121,7 @@ export interface Database {
           author_id: string;
           log_date: string;
           text: string;
-          mood: "happy" | "neutral" | "sad";
+          mood: "moved" | "happy" | "neutral" | "tired" | "sad";
           categories: string[];
           photo_storage_path: string | null;
           created_at: string;
@@ -133,7 +133,7 @@ export interface Database {
           author_id: string;
           log_date?: string;
           text: string;
-          mood: "happy" | "neutral" | "sad";
+          mood: "moved" | "happy" | "neutral" | "tired" | "sad";
           categories?: string[];
           photo_storage_path?: string | null;
           created_at?: string;
@@ -145,7 +145,7 @@ export interface Database {
           author_id?: string;
           log_date?: string;
           text?: string;
-          mood?: "happy" | "neutral" | "sad";
+          mood?: "moved" | "happy" | "neutral" | "tired" | "sad";
           categories?: string[];
           photo_storage_path?: string | null;
           created_at?: string;
