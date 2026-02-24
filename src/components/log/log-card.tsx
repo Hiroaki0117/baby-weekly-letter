@@ -16,6 +16,7 @@ type LogCardProps = {
 
 export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const moodOption = MOOD_OPTIONS.find((m) => m.value === log.mood);
   const supabase = createClient();
@@ -42,16 +43,20 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
           <div className="w-1 flex-shrink-0 bg-gradient-to-b from-primary via-primary/70 to-primary/30" />
 
           <div className="flex-1 min-w-0">
-            {/* 写真 */}
+            {/* 写真サムネイル */}
             {photoUrl && (
-              <div className="relative h-44 w-full overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowLightbox(true)}
+                className="relative h-44 w-full overflow-hidden cursor-zoom-in"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photoUrl}
                   alt="ログ写真"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-              </div>
+              </button>
             )}
 
             <div className="space-y-2.5 p-4">
@@ -114,6 +119,33 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
           </div>
         </div>
       </div>
+
+      {/* 写真ライトボックス */}
+      {showLightbox && photoUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setShowLightbox(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setShowLightbox(false)}
+            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/80 transition-colors hover:bg-black/70 hover:text-white"
+            aria-label="閉じる"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" x2="6" y1="6" y2="18" />
+              <line x1="6" x2="18" y1="6" y2="18" />
+            </svg>
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoUrl}
+            alt="ログ写真"
+            className="max-h-[85vh] max-w-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* 削除確認ダイアログ */}
       {showDeleteDialog && (
