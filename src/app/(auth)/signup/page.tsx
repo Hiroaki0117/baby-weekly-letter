@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthErrorMessage } from "@/lib/auth-error";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,7 @@ function SignupPageInner() {
     });
 
     if (error) {
-      setErrorMessage("登録に失敗しました: " + error.message);
+      setErrorMessage(getAuthErrorMessage(error));
       setLoading(false);
       return;
     }
@@ -76,7 +77,7 @@ function SignupPageInner() {
     });
 
     if (error) {
-      setErrorMessage("Googleログインに失敗しました: " + error.message);
+      setErrorMessage(getAuthErrorMessage(error));
     }
   }
 

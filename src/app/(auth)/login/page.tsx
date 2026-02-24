@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthErrorMessage } from "@/lib/auth-error";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +44,7 @@ function LoginPageInner() {
     });
 
     if (error) {
-      setErrorMessage("ログインに失敗しました: " + error.message);
+      setErrorMessage(getAuthErrorMessage(error));
       setLoading(false);
       return;
     }
@@ -67,7 +68,7 @@ function LoginPageInner() {
     });
 
     if (error) {
-      setErrorMessage("Googleログインに失敗しました: " + error.message);
+      setErrorMessage(getAuthErrorMessage(error));
     }
   }
 
