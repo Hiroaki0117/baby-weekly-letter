@@ -4,9 +4,9 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 
 export default function LoginPage() {
   return (
@@ -26,6 +26,7 @@ function LoginPageInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
@@ -33,6 +34,7 @@ function LoginPageInner() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setErrorMessage(null);
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -41,7 +43,7 @@ function LoginPageInner() {
     });
 
     if (error) {
-      toast.error("ログインに失敗しました", { description: error.message });
+      setErrorMessage("ログインに失敗しました: " + error.message);
       setLoading(false);
       return;
     }
@@ -65,9 +67,7 @@ function LoginPageInner() {
     });
 
     if (error) {
-      toast.error("Googleログインに失敗しました", {
-        description: error.message,
-      });
+      setErrorMessage("Googleログインに失敗しました: " + error.message);
     }
   }
 
@@ -87,6 +87,11 @@ function LoginPageInner() {
       </div>
 
       <div className="p-8">
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-5">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1.5">
             <Label
