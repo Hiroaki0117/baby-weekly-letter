@@ -44,15 +44,16 @@ export function CalendarGrid({
         <button
           type="button"
           onClick={onPrevMonth}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="z-10 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           ‹
         </button>
 
+        {/* 中央固定の年月ラベル */}
         <button
           type="button"
           onClick={() => setShowMonthPicker(!showMonthPicker)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-muted"
+          className="absolute inset-0 z-0 flex items-center justify-center gap-1"
         >
           <h2 className="font-mincho text-sm font-semibold tracking-wide text-foreground">
             {formatMonthJa(year, month)}
@@ -73,7 +74,7 @@ export function CalendarGrid({
           </svg>
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="z-10 flex items-center gap-1">
           {!isCurrentMonth && (
             <button
               type="button"
