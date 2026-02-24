@@ -186,7 +186,7 @@ export function LogForm({
               className="resize-none border-border/60 bg-background/60 leading-8 focus:border-primary/50"
               style={{
                 backgroundImage:
-                  "linear-gradient(oklch(0.87 0.020 70 / 0.35) 1px, transparent 1px)",
+                  "linear-gradient(oklch(0.85 0.015 5 / 0.2) 1px, transparent 1px)",
                 backgroundSize: "100% 2rem",
                 backgroundPositionY: "1.5rem",
               }}
