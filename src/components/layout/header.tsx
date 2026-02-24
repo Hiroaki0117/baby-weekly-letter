@@ -17,19 +17,19 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 glass hidden md:block">
-      <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2.5 whitespace-nowrap shrink-0 group">
+      <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-1.5 shrink-0 group">
           {/* 印鑑風ロゴマーク */}
-          <span className="flex h-7 w-7 items-center justify-center rounded-sm border border-primary/60 bg-primary/8 text-[11px] font-bold text-primary transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-sm border border-primary/60 bg-primary/8 text-[10px] font-bold text-primary transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
             日
           </span>
-          <span className="font-mincho text-base font-semibold tracking-wider text-foreground">
+          <span className="font-mincho text-sm font-semibold tracking-wide text-foreground">
             すくすく日記
           </span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           <Nav className="hidden md:flex" />
-          <div className="hidden md:flex items-center gap-1.5 md:border-l md:border-border/40 md:pl-3">
+          <div className="hidden md:flex items-center gap-1 md:border-l md:border-border/40 md:pl-2">
             <Link
               href="/settings"
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
