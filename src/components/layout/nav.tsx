@@ -35,16 +35,16 @@ export function Nav({ className }: NavProps) {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-sm transition-colors",
+              "relative flex items-center gap-1 whitespace-nowrap px-1.5 py-1.5 text-xs transition-colors",
               isActive
                 ? "text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Icon size={14} className="shrink-0" />
+            <Icon size={12} className="shrink-0" />
             {item.label}
             {isActive && (
-              <span className="absolute bottom-0 left-3 right-3 h-px bg-primary" />
+              <span className="absolute bottom-0 left-2 right-2 h-px bg-primary" />
             )}
           </Link>
         );
