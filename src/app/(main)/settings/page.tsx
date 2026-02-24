@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -8,15 +9,23 @@ import {
   profileFormSchema,
   type ProfileFormValues,
 } from "@/schemas/profile";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -106,6 +115,37 @@ export default function SettingsPage() {
 
       <div className="h-px bg-border/60" />
 
+      {/* 家族 */}
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm md:hidden">
+        <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            家族
+          </p>
+        </div>
+        <div className="p-5">
+          <Link
+            href="/family"
+            className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            家族の管理・招待はこちら
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+
       {/* あなたの情報 */}
       <form
         onSubmit={profileForm.handleSubmit(onSubmitProfile)}
@@ -145,6 +185,16 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* ログアウト（モバイルのみ） */}
+      <div className="md:hidden">
+        <button
+          onClick={handleLogout}
+          className="w-full rounded-xl border border-border/60 bg-card px-5 py-3.5 text-left text-sm text-destructive shadow-sm transition-colors hover:bg-destructive/5"
+        >
+          ログアウト
+        </button>
+      </div>
     </div>
   );
 }
