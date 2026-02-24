@@ -33,7 +33,7 @@ const moodColors: Record<string, { idle: string; active: string }> = {
 
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+    <div className="grid grid-cols-5 gap-2 sm:gap-3">
       {MOOD_OPTIONS.map((option) => {
         const isSelected = value === option.value;
         const colors = moodColors[option.value] ?? {
@@ -46,15 +46,15 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
             type="button"
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 transition-all duration-200",
-              "w-16 h-16 sm:w-20 sm:h-20",
+              "flex flex-col items-center justify-center gap-1 rounded-2xl border-2 transition-all duration-200",
+              "aspect-square",
               "hover:scale-105 active:scale-95",
               isSelected ? cn(colors.active, "scale-110") : colors.idle
             )}
           >
             <span
               className={cn(
-                "text-3xl leading-none transition-transform duration-200",
+                "text-2xl sm:text-3xl leading-none transition-transform duration-200",
                 isSelected && "scale-110"
               )}
             >
@@ -62,7 +62,7 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
             </span>
             <span
               className={cn(
-                "text-[10px] font-medium leading-none",
+                "text-[9px] sm:text-[10px] font-medium leading-none",
                 isSelected ? "text-foreground" : "text-muted-foreground"
               )}
             >
