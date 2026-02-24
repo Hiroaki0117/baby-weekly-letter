@@ -180,8 +180,8 @@ export function LogForm({
           <div className="relative">
             <Textarea
               id="text"
-              placeholder="今日あったことや気持ちを自由に書いてください..."
-              rows={5}
+              placeholder="今日あったことや気持ちを自由に..."
+              rows={3}
               {...register("text")}
               className="resize-none border-border/60 bg-background/60 leading-8 focus:border-primary/50"
               style={{
