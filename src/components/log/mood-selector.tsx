@@ -8,7 +8,7 @@ type MoodSelectorProps = {
   onChange: (mood: Mood) => void;
 };
 
-const moodColors: Record<string, { idle: string; active: string }> = {
+export const moodColors: Record<string, { idle: string; active: string }> = {
   moved: {
     idle: "border-rose-300 bg-rose-50 hover:border-rose-400 hover:bg-rose-100",
     active: "border-rose-400 bg-rose-100 shadow-lg shadow-rose-200",
