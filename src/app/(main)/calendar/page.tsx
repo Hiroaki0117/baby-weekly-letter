@@ -110,11 +110,11 @@ export default function CalendarPage() {
 
   // 編集・削除はログ一覧ページで行う想定。カレンダーでは閲覧のみ。
   function handleEditNoop() {
-    toast.info("ログの編集は「きろく」ページで行えます");
+    toast.info("ログの編集は「記録」ページで行えます");
   }
 
   function handleDeleteNoop() {
-    toast.info("ログの削除は「きろく」ページで行えます");
+    toast.info("ログの削除は「記録」ページで行えます");
   }
 
   if (loading) {

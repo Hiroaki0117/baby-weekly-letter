@@ -6,9 +6,9 @@ import { Home, Calendar, BookOpen, Mail, Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "きょう", icon: Home },
+  { href: "/", label: "今日", icon: Home },
   { href: "/calendar", label: "カレンダー", icon: Calendar },
-  { href: "/logs", label: "きろく", icon: BookOpen },
+  { href: "/logs", label: "記録", icon: BookOpen },
   { href: "/weekly", label: "通信", icon: Mail },
   { href: "/family", label: "家族", icon: Users },
   { href: "/settings", label: "設定", icon: Settings },

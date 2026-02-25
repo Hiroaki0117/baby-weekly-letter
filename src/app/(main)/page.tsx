@@ -171,13 +171,13 @@ export default function HomePage() {
               <p className="text-xs text-muted-foreground">
                 <span className="mr-1.5">📝</span>
                 {logs.length === 0
-                  ? "今日はまだきろくがありません"
-                  : `今日は${logs.length}件のきろくがあります`}
+                  ? "今日はまだ記録がありません"
+                  : `今日は${logs.length}件の記録があります`}
               </p>
               {streak > 0 && (
                 <p className="text-xs text-primary/80 font-medium">
                   <span className="mr-1.5">🔥</span>
-                  {streak}日連続きろく中！
+                  {streak}日連続記録中！
                 </p>
               )}
             </>
@@ -207,7 +207,7 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border/50" />
             <span className="text-[10px] font-medium uppercase tracking-widest text-primary/70">
-              {logs.length}件のきろく
+              {logs.length}件の記録
             </span>
             <div className="h-px flex-1 bg-border/50" />
           </div>

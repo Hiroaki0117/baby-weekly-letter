@@ -179,7 +179,7 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
                 </svg>
               </div>
               <p className="text-sm font-medium text-foreground">
-                このきろくを削除しますか？
+                この記録を削除しますか？
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 この操作は取り消せません

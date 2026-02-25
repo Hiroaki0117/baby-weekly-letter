@@ -152,7 +152,7 @@ export default function LogsPage() {
             All Records
           </p>
           <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
-            きろく一覧
+            記録一覧
           </h1>
         </div>
         {logs.length > 0 && (
@@ -202,7 +202,7 @@ export default function LogsPage() {
           <div className="text-center">
             <p className="text-sm text-muted-foreground">まだログがありません</p>
             <p className="mt-1 text-xs text-muted-foreground/70">
-              ホームから最初のきろくを残してみましょう
+              ホームから最初の記録を残してみましょう
             </p>
           </div>
         </div>
