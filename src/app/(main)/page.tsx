@@ -170,10 +170,12 @@ export default function HomePage() {
                   : `今日は${logs.length}件の記録があります`}
               </p>
               {streak > 0 && (
-                <p className="text-xs text-primary/80 font-medium">
-                  <span className="mr-1.5">🔥</span>
-                  {streak}日連続記録中！
-                </p>
+                <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1">
+                  <span className="text-base leading-none">🔥</span>
+                  <span className="text-sm font-bold text-primary">
+                    {streak}日連続記録中！
+                  </span>
+                </div>
               )}
             </>
           )}
