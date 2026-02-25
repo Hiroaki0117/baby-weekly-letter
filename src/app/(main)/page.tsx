@@ -7,6 +7,7 @@ import { getMyFamilyId } from "@/lib/supabase/family";
 import { getStreak } from "@/lib/streak";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
+import { MemoriesSection } from "@/components/memory/memories-section";
 import { toast } from "sonner";
 import type { Child, DailyLog } from "@/types";
 
@@ -186,6 +187,9 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {/* ○年前の今日 */}
+      <MemoriesSection childrenList={childrenList} />
 
       {/* ログフォーム */}
       <LogForm
