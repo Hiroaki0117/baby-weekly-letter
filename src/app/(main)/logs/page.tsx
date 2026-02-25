@@ -249,7 +249,7 @@ export default function LogsPage() {
             <LogCard
               key={log.id}
               log={log}
-              childName={childrenList.find((c) => c.id === log.child_id)?.name}
+              childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
               authorDisplayName={authorNames[log.author_id]}
               onEdit={handleEdit}
               onDelete={handleDelete}
