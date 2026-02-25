@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -63,6 +63,13 @@ export function LogForm({
   const childId = watch("child_id");
   const mood = watch("mood");
   const categories = watch("categories");
+
+  // childrenList が非同期で読み込まれた後に child_id をセットする
+  useEffect(() => {
+    if (!childId && childrenList.length === 1) {
+      setValue("child_id", childrenList[0].id);
+    }
+  }, [childrenList, childId, setValue]);
 
   async function onSubmit(values: LogFormValues) {
     setSaving(true);
