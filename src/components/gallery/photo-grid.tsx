@@ -145,7 +145,7 @@ function MonthSection({
       {/* 月ヘッダー */}
       <div className="flex items-center gap-3 mb-3">
         <div className="h-px flex-1 bg-border/50" />
-        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+        <span className="text-xs font-medium tracking-wide text-muted-foreground">
           {group.label}
           {" ・ "}
           {group.photos.length}枚
