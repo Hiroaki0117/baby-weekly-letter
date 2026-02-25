@@ -184,20 +184,12 @@ export function LogForm({
           >
             今日の出来事
           </Label>
-          <div className="relative">
-            <Textarea
-              id="text"
-              placeholder="今日あったことや気持ちを自由に書いてください..."
-              {...register("text")}
-              className="resize-none border-border/60 bg-background/60 leading-8 focus:border-primary/50 h-[6rem] sm:h-[10rem]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(oklch(0.85 0.015 5 / 0.2) 1px, transparent 1px)",
-                backgroundSize: "100% 2rem",
-                backgroundPositionY: "1.5rem",
-              }}
-            />
-          </div>
+          <Textarea
+            id="text"
+            placeholder="今日あったことや気持ちを自由に書いてください..."
+            {...register("text")}
+            className="resize-none border-border/60 bg-background/60 leading-8 focus:border-primary/50 h-[6rem] sm:h-[10rem] sm:notebook-lines"
+          />
           {errors.text && (
             <p className="text-xs text-destructive">{errors.text.message}</p>
           )}
