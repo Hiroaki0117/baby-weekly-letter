@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Nav } from "./nav";
 
@@ -30,6 +31,13 @@ export function Header() {
         <div className="flex items-center gap-1">
           <Nav className="hidden md:flex" />
           <div className="hidden md:flex items-center gap-1 md:border-l md:border-border/40 md:pl-2">
+            <Link
+              href="/settings"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="設定"
+            >
+              <Settings size={14} />
+            </Link>
             <button
               onClick={handleLogout}
               className="hidden md:inline-block whitespace-nowrap text-xs text-muted-foreground transition-colors hover:text-foreground"
