@@ -60,8 +60,8 @@ export function CalendarDayCell({
         <span className="h-5" /> /* プレースホルダー */
       )}
 
-      {/* 複数ログバッジ */}
-      {logs.length > 1 && (
+      {/* ログ件数バッジ */}
+      {hasLogs && (
         <span className="absolute right-0.5 top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary/80 text-[8px] font-bold text-primary-foreground">
           {logs.length}
         </span>
