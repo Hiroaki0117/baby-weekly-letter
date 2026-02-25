@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString, getCalendarRange, formatDateJa } from "@/lib/date";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { LogCard } from "@/components/log/log-card";
+import { LogForm } from "@/components/log/log-form";
 import { toast } from "sonner";
 import type { DailyLog } from "@/types";
 
@@ -15,9 +17,12 @@ export default function CalendarPage() {
   const [logsByDate, setLogsByDate] = useState<Record<string, DailyLog[]>>({});
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
+  const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
   const membersFetchedRef = useRef(false);
+  const router = useRouter();
 
   useEffect(() => {
     const client = supabaseRef.current;
@@ -105,16 +110,64 @@ export default function CalendarPage() {
     setSelectedDate(selectedDate === dateStr ? null : dateStr);
   }
 
-  // 選択日のログを編集不可で表示（閲覧のみ）
   const selectedLogs = selectedDate ? (logsByDate[selectedDate] ?? []) : [];
+  const supabase = supabaseRef.current;
 
-  // 編集・削除はログ一覧ページで行う想定。カレンダーでは閲覧のみ。
-  function handleEditNoop() {
-    toast.info("ログの編集は「記録」ページで行えます");
+  async function reloadMonth() {
+    const { start, end } = getCalendarRange(year, month);
+    const { data } = await supabase
+      .from("daily_logs")
+      .select("*")
+      .gte("log_date", toDateString(start))
+      .lte("log_date", toDateString(end))
+      .order("created_at", { ascending: true });
+
+    const logs = (data as DailyLog[]) ?? [];
+    const grouped: Record<string, DailyLog[]> = {};
+    for (const log of logs) {
+      if (!grouped[log.log_date]) grouped[log.log_date] = [];
+      grouped[log.log_date].push(log);
+    }
+    setLogsByDate(grouped);
   }
 
-  function handleDeleteNoop() {
-    toast.info("ログの削除は「記録」ページで行えます");
+  async function handleEdit(log: DailyLog) {
+    let photoUrl: string | null = null;
+    if (log.photo_storage_path) {
+      const { data } = await supabase.storage
+        .from("log-photos")
+        .createSignedUrl(log.photo_storage_path, 3600);
+      photoUrl = data?.signedUrl ?? null;
+    }
+    setEditingPhotoUrl(photoUrl);
+    setEditingLog(log);
+  }
+
+  async function handleDelete(id: string) {
+    const allLogs = Object.values(logsByDate).flat();
+    const log = allLogs.find((l) => l.id === id);
+
+    if (log?.photo_storage_path) {
+      await supabase.storage
+        .from("log-photos")
+        .remove([log.photo_storage_path]);
+    }
+
+    const { error } = await supabase.from("daily_logs").delete().eq("id", id);
+    if (error) {
+      toast.error("削除に失敗しました");
+      return;
+    }
+
+    toast.success("ログを削除しました");
+    reloadMonth();
+  }
+
+  function handleSaved() {
+    setEditingLog(null);
+    setEditingPhotoUrl(null);
+    reloadMonth();
+    router.refresh();
   }
 
   if (loading) {
@@ -168,6 +221,20 @@ export default function CalendarPage() {
             <div className="h-px flex-1 bg-border/50" />
           </div>
 
+          {/* 編集フォーム */}
+          {editingLog && (
+            <LogForm
+              key={editingLog.id}
+              editingLog={editingLog}
+              existingPhotoUrl={editingPhotoUrl}
+              onSaved={handleSaved}
+              onCancel={() => {
+                setEditingLog(null);
+                setEditingPhotoUrl(null);
+              }}
+            />
+          )}
+
           {selectedLogs.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-muted-foreground">
@@ -180,8 +247,8 @@ export default function CalendarPage() {
                 key={log.id}
                 log={log}
                 authorDisplayName={authorNames[log.author_id]}
-                onEdit={handleEditNoop}
-                onDelete={handleDeleteNoop}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
             ))
           )}
