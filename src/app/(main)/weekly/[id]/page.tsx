@@ -83,9 +83,12 @@ export default function WeeklyDetailPage() {
       {/* 戻るリンク */}
       <button
         onClick={() => router.push("/weekly")}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="flex items-center gap-2 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
       >
-        ← 通信一覧へ
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        通信一覧へ
       </button>
 
       {/* 手紙カード */}
