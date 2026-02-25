@@ -75,9 +75,14 @@ baby-weekly-letter/
 │   │   │   ├── toast.tsx
 │   │   │   └── ...
 │   │   │
+│   │   ├── child/                # 子供関連コンポーネント
+│   │   │   ├── child-selector.tsx # 子供選択（記録フォーム用）
+│   │   │   └── child-badge.tsx    # 子供名バッジ（記録カード用）
+│   │   │
 │   │   ├── log/                  # ログ関連コンポーネント
 │   │   │   ├── log-form.tsx      # ログ入力・編集フォーム
 │   │   │   ├── log-card.tsx      # ログ一覧のカード
+│   │   │   ├── log-filter.tsx    # ログ絞り込み（気分・カテゴリ・テキスト・子供）
 │   │   │   ├── mood-selector.tsx # 気分スタンプ選択
 │   │   │   ├── category-picker.tsx # カテゴリ選択
 │   │   │   └── photo-uploader.tsx  # 写真アップロード
@@ -87,9 +92,17 @@ baby-weekly-letter/
 │   │   │   ├── weekly-report-detail.tsx # 通信詳細表示
 │   │   │   └── photo-gallery.tsx       # 写真一覧表示
 │   │   │
+│   │   ├── monthly/              # 月次まとめ関連コンポーネント
+│   │   │   └── monthly-photo-gallery.tsx # 月次写真一覧表示
+│   │   │
+│   │   ├── calendar/             # カレンダー関連コンポーネント
+│   │   │   ├── calendar-grid.tsx  # カレンダーグリッド
+│   │   │   └── month-picker.tsx   # 月選択ピッカー
+│   │   │
 │   │   └── layout/               # レイアウト関連コンポーネント
 │   │       ├── header.tsx        # ヘッダー
-│   │       └── nav.tsx           # ナビゲーション
+│   │       ├── nav.tsx           # ナビゲーション
+│   │       └── bottom-nav.tsx    # モバイル用ボトムナビ
 │   │
 │   ├── lib/                      # ユーティリティ・ライブラリ
 │   │   ├── supabase/
@@ -148,8 +161,11 @@ baby-weekly-letter/
 | `src/app/(main)/` | メイン機能画面。認証済みユーザー向けレイアウト |
 | `src/app/api/` | Route Handlers。サーバーサイドAPI |
 | `src/components/ui/` | shadcn/ui のコンポーネント。直接編集しない |
+| `src/components/child/` | 子供関連コンポーネント（セレクタ・バッジ） |
 | `src/components/log/` | ログ機能に関連するコンポーネント |
 | `src/components/weekly/` | 週次通信機能に関連するコンポーネント |
+| `src/components/monthly/` | 月次まとめ機能に関連するコンポーネント |
+| `src/components/calendar/` | カレンダー機能に関連するコンポーネント |
 | `src/components/layout/` | ヘッダー・ナビなどレイアウト部品 |
 | `src/lib/` | ビジネスロジック・外部サービスクライアント・ユーティリティ |
 | `src/hooks/` | React カスタムフック |

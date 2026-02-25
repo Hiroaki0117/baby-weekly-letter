@@ -37,19 +37,42 @@ graph TB
 
 ```mermaid
 erDiagram
-    users ||--o{ daily_logs : "has many"
-    users ||--o{ weekly_reports : "has many"
+    families ||--o{ family_members : "has many"
+    families ||--o{ children : "has many"
+    children ||--o{ daily_logs : "has many"
+    children ||--o{ weekly_reports : "has many"
+    children ||--o{ monthly_reports : "has many"
     daily_logs }o--o| weekly_reports : "source_log_ids"
 
-    users {
+    families {
         uuid id PK
-        string email
+        text name
         timestamptz created_at
+    }
+
+    family_members {
+        uuid id PK
+        uuid family_id FK
+        uuid user_id FK
+        text role
+        text display_name
+        timestamptz joined_at
+    }
+
+    children {
+        uuid id PK
+        uuid family_id FK
+        text name
+        date birth_date
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     daily_logs {
         uuid id PK
-        uuid user_id FK
+        uuid family_id FK
+        uuid child_id FK
+        uuid author_id FK
         date log_date
         text text
         text mood
@@ -61,7 +84,8 @@ erDiagram
 
     weekly_reports {
         uuid id PK
-        uuid user_id FK
+        uuid family_id FK
+        uuid child_id FK
         date week_start
         date week_end
         text content
@@ -69,33 +93,61 @@ erDiagram
         uuid[] source_log_ids
         timestamptz created_at
     }
+
+    monthly_reports {
+        uuid id PK
+        uuid family_id FK
+        uuid child_id FK
+        date month
+        text content
+        timestamptz generated_at
+        uuid[] source_weekly_report_ids
+        timestamptz created_at
+    }
 ```
 
 ### 2.2 テーブル詳細
+
+#### children
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| family_id | uuid | NOT NULL | | FK → families |
+| name | text | NULL | | 子供の名前 |
+| birth_date | date | NULL | | 生年月日 |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- インデックス: (family_id)
+- RLS: family_id がユーザーの所属する家族と一致
 
 #### daily_logs
 
 | カラム | 型 | NULL | デフォルト | 備考 |
 |--------|-----|------|-----------|------|
 | id | uuid | NOT NULL | gen_random_uuid() | PK |
-| user_id | uuid | NOT NULL | auth.uid() | FK → auth.users |
+| family_id | uuid | NOT NULL | | FK → families |
+| child_id | uuid | NOT NULL | | FK → children（対象の子供） |
+| author_id | uuid | NOT NULL | auth.uid() | FK → auth.users |
 | log_date | date | NOT NULL | CURRENT_DATE | ログ対象日 |
 | text | text | NOT NULL | | フリーテキスト |
-| mood | text | NOT NULL | | happy / neutral / sad |
+| mood | text | NOT NULL | | moved / happy / neutral / tired / sad |
 | categories | text[] | NULL | '{}' | カテゴリ配列 |
 | photo_storage_path | text | NULL | | Storage上のパス |
 | created_at | timestamptz | NOT NULL | now() | |
 | updated_at | timestamptz | NOT NULL | now() | |
 
-- インデックス: (user_id, log_date)
-- RLS: user_id = auth.uid()
+- インデックス: (family_id, log_date), (child_id)
+- RLS: family_id がユーザーの所属する家族と一致
 
 #### weekly_reports
 
 | カラム | 型 | NULL | デフォルト | 備考 |
 |--------|-----|------|-----------|------|
 | id | uuid | NOT NULL | gen_random_uuid() | PK |
-| user_id | uuid | NOT NULL | auth.uid() | FK → auth.users |
+| family_id | uuid | NOT NULL | | FK → families |
+| child_id | uuid | NOT NULL | | FK → children（対象の子供） |
 | week_start | date | NOT NULL | | 月曜日 |
 | week_end | date | NOT NULL | | 日曜日 |
 | content | text | NOT NULL | | 生成された通信本文 |
@@ -103,9 +155,25 @@ erDiagram
 | source_log_ids | uuid[] | NULL | '{}' | 元ログID配列 |
 | created_at | timestamptz | NOT NULL | now() | |
 
-- ユニーク制約: (user_id, week_start)
-- インデックス: (user_id, week_start)
-- RLS: user_id = auth.uid()
+- ユニーク制約: (family_id, child_id, week_start)
+- インデックス: (family_id, child_id, week_start)
+- RLS: family_id がユーザーの所属する家族と一致
+
+#### monthly_reports
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| family_id | uuid | NOT NULL | | FK → families |
+| child_id | uuid | NOT NULL | | FK → children（対象の子供） |
+| month | date | NOT NULL | | 対象月 |
+| content | text | NOT NULL | | 生成された月次まとめ本文 |
+| generated_at | timestamptz | NOT NULL | now() | 生成日時 |
+| source_weekly_report_ids | uuid[] | NULL | '{}' | 元週次通信ID配列 |
+| created_at | timestamptz | NOT NULL | now() | |
+
+- ユニーク制約: (family_id, child_id, month)
+- RLS: family_id がユーザーの所属する家族と一致
 
 ---
 
@@ -169,6 +237,7 @@ erDiagram
 
 ```json
 {
+  "childId": "uuid",
   "weekStart": "2026-02-16",
   "weekEnd": "2026-02-22"
 }
@@ -177,10 +246,10 @@ erDiagram
 **処理フロー:**
 
 1. 認証チェック（Supabase Auth セッション検証）
-2. 対象期間のログを取得
+2. 指定された child_id の対象期間のログを取得
 3. ログが0件の場合はエラーを返す
 4. Gemini API にプロンプト + ログデータを送信
-5. 生成結果を weekly_reports に upsert（week_start で上書き）
+5. 生成結果を weekly_reports に upsert（child_id + week_start で上書き）
 6. 生成結果を返す
 
 **レスポンス（成功）:**
@@ -423,12 +492,15 @@ app/
 
 | コンポーネント | 用途 |
 |---------------|------|
-| MoodSelector | 気分スタンプ選択（🙂😐😭） |
+| MoodSelector | 気分スタンプ選択（🥰🙂😐😴😭） |
 | CategoryPicker | カテゴリ複数選択 |
 | PhotoUploader | 写真アップロード（プレビュー付き） |
+| ChildSelector | 子供選択（複数子供時にフォーム上部に表示） |
+| ChildBadge | 子供名バッジ（記録カードに表示） |
 | LogCard | ログ一覧のカード表示 |
 | WeeklyReportCard | 週次通信一覧のカード表示 |
 | LogForm | ログ入力・編集フォーム |
+| LogFilter | ログ絞り込み（気分・カテゴリ・テキスト・子供） |
 | PhotoGallery | 写真一覧表示（週次通信詳細用） |
 
 ---
