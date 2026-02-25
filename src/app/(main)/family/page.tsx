@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
+import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calcAge } from "@/lib/date";
 import { Input } from "@/components/ui/input";
@@ -181,13 +183,22 @@ export default function FamilyPage() {
   return (
     <div className="space-y-5">
       {/* ページヘッダー */}
-      <div>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-          Family
-        </p>
-        <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
-          家族
-        </h1>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            Family
+          </p>
+          <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
+            家族
+          </h1>
+        </div>
+        <Link
+          href="/settings"
+          className="flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+        >
+          <Settings size={14} />
+          設定
+        </Link>
       </div>
 
       <div className="h-px bg-border/60" />

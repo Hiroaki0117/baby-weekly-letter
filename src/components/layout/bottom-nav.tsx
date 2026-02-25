@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, BookOpen, Mail, Users, Settings } from "lucide-react";
+import { Home, Calendar, BookOpen, ImageIcon, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "今日", icon: Home },
   { href: "/calendar", label: "カレンダー", icon: Calendar },
   { href: "/logs", label: "記録", icon: BookOpen },
-  { href: "/weekly", label: "通信", icon: Mail },
+  { href: "/gallery", label: "写真", icon: ImageIcon },
   { href: "/family", label: "家族", icon: Users },
-  { href: "/settings", label: "設定", icon: Settings },
 ];
 
 export function BottomNav() {
@@ -22,7 +21,7 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden glass border-t border-border/50 pb-[env(safe-area-inset-bottom)]"
       aria-label="メインナビゲーション"
     >
-      <div className="grid w-full grid-cols-6">
+      <div className="grid w-full grid-cols-5">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
