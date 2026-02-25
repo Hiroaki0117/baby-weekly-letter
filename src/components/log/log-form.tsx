@@ -157,7 +157,7 @@ export function LogForm({
       {/* フォームヘッダー */}
       <div className="border-b border-primary/10 bg-primary/5 px-5 py-3">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          {editingLog ? "ログを編集" : "きょうのきろく"}
+          {editingLog ? "ログを編集" : "今日の記録"}
         </p>
       </div>
 

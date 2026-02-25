@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 const navItems: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/", label: "きょう", icon: Home },
+  { href: "/", label: "今日", icon: Home },
   { href: "/calendar", label: "カレンダー", icon: Calendar },
-  { href: "/logs", label: "きろく", icon: BookOpen },
+  { href: "/logs", label: "記録", icon: BookOpen },
   { href: "/weekly", label: "通信", icon: Mail },
   { href: "/family", label: "家族", icon: Users },
 ];
