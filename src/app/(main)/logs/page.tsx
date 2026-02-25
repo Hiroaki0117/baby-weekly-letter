@@ -146,7 +146,7 @@ export default function LogsPage() {
   return (
     <div className="space-y-5">
       {/* ページヘッダー */}
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-end justify-between">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
             All Records
@@ -156,7 +156,7 @@ export default function LogsPage() {
           </h1>
         </div>
         {logs.length > 0 && (
-          <span className="font-mono text-2xl font-light text-muted-foreground/50">
+          <span className="font-mono text-2xl font-light leading-none text-muted-foreground/50">
             {String(logs.length).padStart(3, "0")}
           </span>
         )}
