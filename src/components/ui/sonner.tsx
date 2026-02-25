@@ -33,7 +33,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties
       }
       position="top-center"
-      closeButton
+      duration={3000}
       {...props}
     />
   )
