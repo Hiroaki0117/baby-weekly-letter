@@ -44,20 +44,20 @@
 
 | # | 機能名 | 概要 |
 |---|--------|------|
-| 1 | 日次ログ登録 | 育児ログをフリーテキスト・気分・カテゴリ・写真で登録 |
+| 1 | 日次ログ登録 | 育児ログをフリーテキスト・気分・カテゴリ・写真で登録（対象の子供を選択） |
 | 2 | 日次ログ参照・編集 | 過去のログを日付単位で参照・編集 |
-| 3 | 週次通信生成 | 1週間分のログからAIで「ちょい感動系」の週次通信を生成 |
-| 4 | 週次通信参照 | 生成済みの週次通信を一覧・詳細表示 |
+| 3 | 週次通信生成 | 1週間分のログからAIで「ちょい感動系」の週次通信を子供ごとに生成 |
+| 4 | 週次通信参照 | 生成済みの週次通信を一覧・詳細表示（子供タブで切り替え） |
 | 5 | 写真の週次表示 | 週次通信詳細画面にその週の写真を一覧表示 |
 | 6 | 認証 | メール+パスワード / Google OAuth によるログイン |
+| 7 | 家族・子供管理 | 家族グループの作成、複数子供の登録・編集 |
+| 8 | 月次まとめ生成 | 1ヶ月分の週次通信からAIで月次まとめを子供ごとに生成 |
 
 ### MVP外（後回し）
 
 - グラフ表示
-- カレンダー可視化
 - 通知（自動で日曜に生成・送信）
 - AIによる写真のベストショット選定（Vision解析）
-- 月次まとめ
 - 詳細な数値入力（睡眠時間、ミルク量など）
 
 ---
@@ -143,8 +143,9 @@
 
 | 項目 | 必須 | 型 | 備考 |
 |------|------|-----|------|
+| 対象の子供 | 必須 | uuid | 子供が1人の場合は自動選択 |
 | フリーテキスト | 必須 | string | 今日の出来事＋気持ち |
-| 気分スタンプ | 必須 | enum | 🙂 / 😐 / 😭 |
+| 気分スタンプ | 必須 | enum | 🥰 / 🙂 / 😐 / 😴 / 😭 |
 | カテゴリ | 任意 | string[] | 複数選択可 |
 | 写真 | 任意 | file | 1ログにつき1枚 |
 
@@ -230,23 +231,26 @@
 | カラム | 型 | 備考 |
 |--------|-----|------|
 | id | uuid | PK |
-| user_id | uuid | FK → auth.users |
+| family_id | uuid | FK → families |
+| child_id | uuid | FK → children（対象の子供） |
+| author_id | uuid | FK → auth.users（記録者） |
 | log_date | date | ログ対象日 |
 | text | text | フリーテキスト |
-| mood | text | 気分スタンプ（happy / neutral / sad） |
+| mood | text | 気分スタンプ（moved / happy / neutral / tired / sad） |
 | categories | text[] | カテゴリ配列 |
 | photo_storage_path | text | 写真のStorageパス（任意） |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-※ 同一日に複数件登録可能（unique制約なし）
+※ 同一日・同一子供に複数件登録可能（unique制約なし）
 
 #### weekly_reports（週次通信）
 
 | カラム | 型 | 備考 |
 |--------|-----|------|
 | id | uuid | PK |
-| user_id | uuid | FK → auth.users |
+| family_id | uuid | FK → families |
+| child_id | uuid | FK → children（対象の子供） |
 | week_start | date | 週の開始日（月曜） |
 | week_end | date | 週の終了日（日曜） |
 | content | text | 生成された週次通信本文 |
@@ -254,7 +258,22 @@
 | source_log_ids | uuid[] | 元になったログのID配列 |
 | created_at | timestamptz | |
 
-制約: unique(user_id, week_start)
+制約: unique(family_id, child_id, week_start)
+
+#### monthly_reports（月次まとめ）
+
+| カラム | 型 | 備考 |
+|--------|-----|------|
+| id | uuid | PK |
+| family_id | uuid | FK → families |
+| child_id | uuid | FK → children（対象の子供） |
+| month | date | 対象月 |
+| content | text | 生成された月次まとめ本文 |
+| generated_at | timestamptz | 生成日時 |
+| source_weekly_report_ids | uuid[] | 元になった週次通信のID配列 |
+| created_at | timestamptz | |
+
+制約: unique(family_id, child_id, month)
 
 ### 9.4 Storage設計
 
@@ -268,6 +287,7 @@
 
 ### 10.1 今日のログ入力画面
 
+- 子供選択（複数子供の場合のみ表示、1人の場合は自動選択）
 - フリーテキスト入力
 - 気分スタンプ選択
 - カテゴリ選択（複数可）
@@ -281,7 +301,8 @@
 
 ### 10.3 週次通信生成・表示画面
 
-- 「今週の通信を作る」ボタン
+- 子供タブで切り替え（複数子供の場合のみ表示）
+- 「今週の通信を作る」ボタン（選択中の子供に紐づく）
 - 生成済みなら通信本文を表示
 - その週の写真一覧を併せて表示
 

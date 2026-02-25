@@ -4,10 +4,14 @@
 
 | 日本語 | 英語 | コード上の名前 | 定義 |
 |--------|------|---------------|------|
-| 日次ログ | Daily Log | `DailyLog` / `daily_logs` | ユーザーが1件ずつ登録する育児の記録。フリーテキスト・気分・カテゴリ・写真で構成される |
-| 週次通信 | Weekly Report | `WeeklyReport` / `weekly_reports` | 1週間分の日次ログをもとにAIが生成する「ちょい感動系」の振り返り文章 |
+| 日次ログ | Daily Log | `DailyLog` / `daily_logs` | 特定の子供について1件ずつ登録する育児の記録。フリーテキスト・気分・カテゴリ・写真で構成される |
+| 週次通信 | Weekly Report | `WeeklyReport` / `weekly_reports` | 1週間分の日次ログをもとにAIが子供ごとに生成する「ちょい感動系」の振り返り文章 |
+| 月次まとめ | Monthly Report | `MonthlyReport` / `monthly_reports` | 1ヶ月分の週次通信をもとにAIが子供ごとに生成する月単位の振り返り文章 |
+| 家族 | Family | `Family` / `families` | 複数の親が子供の育児ログを共有するグループ単位 |
+| 家族メンバー | Family Member | `FamilyMember` / `family_members` | 家族グループに所属するユーザー。owner / member のロールを持つ |
+| 子供 | Child | `Child` / `children` | 家族に登録された子供。各ログ・通信は特定の子供に紐づく。1家族に複数人登録可能 |
 | ログ対象日 | Log Date | `logDate` / `log_date` | 日次ログが記録する対象の日付 |
-| 気分スタンプ | Mood | `mood` | ログに付与する感情の指標。happy / neutral / sad の3種類 |
+| 気分スタンプ | Mood | `mood` | ログに付与する感情の指標。moved / happy / neutral / tired / sad の5種類 |
 | カテゴリ | Category | `categories` | ログの分類タグ。食事・睡眠・遊び・ことば・運動・体調・成長・パパ/ママの気持ち |
 | 週の開始日 | Week Start | `weekStart` / `week_start` | 週次通信の対象期間の開始日（月曜日） |
 | 週の終了日 | Week End | `weekEnd` / `week_end` | 週次通信の対象期間の終了日（日曜日） |
@@ -58,7 +62,11 @@
 |--------|---------------|------|
 | ログイン画面 | `(auth)/login` | メール+パスワード / Google OAuth でのログイン |
 | アカウント登録画面 | `(auth)/signup` | 新規ユーザー登録 |
-| ホーム画面 | `(main)/page` | 今日のログ入力 + 当日のログ一覧 |
-| ログ一覧画面 | `(main)/logs` | 過去のログを日付順に一覧表示 |
-| 週次通信一覧画面 | `(main)/weekly` | 生成済みの週次通信を一覧表示 |
+| ホーム画面 | `(main)/page` | 今日のログ入力 + 当日のログ一覧 + 全子供の月齢表示 |
+| カレンダー画面 | `(main)/calendar` | 月カレンダーでログを日付単位で閲覧・編集 |
+| 記録一覧画面 | `(main)/logs` | 過去のログを日付順に一覧表示（子供フィルター対応） |
+| 通信一覧画面 | `(main)/weekly` | 週次通信・月次まとめを一覧表示（子供タブで切り替え） |
 | 週次通信詳細画面 | `(main)/weekly/[id]` | 週次通信の本文 + その週の写真一覧 |
+| 月次まとめ詳細画面 | `(main)/weekly/monthly/[id]` | 月次まとめの本文 + その月の写真一覧 |
+| 家族画面 | `(main)/family` | 家族メンバー管理 + 子供の追加・編集 |
+| 設定画面 | `(main)/settings` | プロフィール編集・ログアウト |
