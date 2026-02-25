@@ -13,7 +13,8 @@ import { MoodSelector } from "./mood-selector";
 import { CategoryPicker } from "./category-picker";
 import { PhotoUploader } from "./photo-uploader";
 import { toast } from "sonner";
-import type { DailyLog, Mood } from "@/types";
+import { ChildSelector } from "@/components/child/child-selector";
+import type { Child, DailyLog, Mood } from "@/types";
 
 function safeFileName(file: File): string {
   const ext = file.name.split(".").pop() ?? "jpg";
@@ -21,6 +22,7 @@ function safeFileName(file: File): string {
 }
 
 type LogFormProps = {
+  childrenList: Child[];
   editingLog?: DailyLog | null;
   existingPhotoUrl?: string | null;
   onSaved: () => void;
@@ -28,6 +30,7 @@ type LogFormProps = {
 };
 
 export function LogForm({
+  childrenList,
   editingLog,
   existingPhotoUrl,
   onSaved,
@@ -48,6 +51,8 @@ export function LogForm({
   } = useForm<LogFormValues>({
     resolver: zodResolver(logFormSchema),
     defaultValues: {
+      child_id:
+        editingLog?.child_id ?? (childrenList.length === 1 ? childrenList[0].id : ""),
       text: editingLog?.text ?? "",
       mood: editingLog?.mood ?? undefined,
       categories: editingLog?.categories ?? [],
@@ -55,6 +60,7 @@ export function LogForm({
     },
   });
 
+  const childId = watch("child_id");
   const mood = watch("mood");
   const categories = watch("categories");
 
@@ -107,6 +113,7 @@ export function LogForm({
           .from("daily_logs")
           .insert({
             family_id: familyId,
+            child_id: values.child_id,
             author_id: user.id,
             text: values.text,
             mood: values.mood,
@@ -162,6 +169,25 @@ export function LogForm({
       </div>
 
       <div className="space-y-5 p-5">
+        {/* 子供セレクタ（2人以上の場合のみ表示） */}
+        {childrenList.length >= 2 && (
+          <div className="space-y-2.5">
+            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              だれの記録？
+            </Label>
+            <ChildSelector
+              childrenList={childrenList}
+              selectedId={childId}
+              onChange={(id) => setValue("child_id", id)}
+            />
+            {errors.child_id && (
+              <p className="text-xs text-destructive">
+                {errors.child_id.message}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* 気分 */}
         <div className="space-y-2.5">
           <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

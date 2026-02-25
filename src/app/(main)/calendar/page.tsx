@@ -8,7 +8,7 @@ import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { toast } from "sonner";
-import type { DailyLog } from "@/types";
+import type { Child, DailyLog } from "@/types";
 
 export default function CalendarPage() {
   const now = new Date();
@@ -16,6 +16,7 @@ export default function CalendarPage() {
   const [month, setMonth] = useState(now.getMonth());
   const [logsByDate, setLogsByDate] = useState<Record<string, DailyLog[]>>({});
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
@@ -55,15 +56,19 @@ export default function CalendarPage() {
 
       if (!membersFetchedRef.current) {
         membersFetchedRef.current = true;
-        const { data: members } = await client
-          .from("family_members")
-          .select("user_id, display_name");
-        if (members) {
+        const [membersRes, childrenRes] = await Promise.all([
+          client.from("family_members").select("user_id, display_name"),
+          client.from("children").select("*").order("created_at", { ascending: true }),
+        ]);
+        if (membersRes.data) {
           const names: Record<string, string> = {};
-          for (const m of members as { user_id: string; display_name: string | null }[]) {
+          for (const m of membersRes.data as { user_id: string; display_name: string | null }[]) {
             if (m.display_name) names[m.user_id] = m.display_name;
           }
           setAuthorNames(names);
+        }
+        if (childrenRes.data) {
+          setChildrenList(childrenRes.data as Child[]);
         }
       }
 
@@ -225,6 +230,7 @@ export default function CalendarPage() {
           {editingLog && (
             <LogForm
               key={editingLog.id}
+              childrenList={childrenList}
               editingLog={editingLog}
               existingPhotoUrl={editingPhotoUrl}
               onSaved={handleSaved}
@@ -246,6 +252,7 @@ export default function CalendarPage() {
               <LogCard
                 key={log.id}
                 log={log}
+                childName={childrenList.find((c) => c.id === log.child_id)?.name}
                 authorDisplayName={authorNames[log.author_id]}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

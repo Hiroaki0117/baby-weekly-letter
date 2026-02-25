@@ -7,10 +7,11 @@ import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
 import { toast } from "sonner";
-import type { DailyLog, Mood } from "@/types";
+import type { Child, DailyLog, Mood } from "@/types";
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
@@ -22,10 +23,16 @@ export default function LogsPage() {
   // フィルター状態
   const [selectedMoods, setSelectedMoods] = useState<Mood[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [searchText, setSearchText] = useState("");
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
+      if (
+        selectedChildIds.length > 0 &&
+        !selectedChildIds.includes(log.child_id)
+      )
+        return false;
       if (
         selectedMoods.length > 0 &&
         !selectedMoods.includes(log.mood as Mood)
@@ -42,9 +49,10 @@ export default function LogsPage() {
       }
       return true;
     });
-  }, [logs, selectedMoods, selectedCategories, searchText]);
+  }, [logs, selectedChildIds, selectedMoods, selectedCategories, searchText]);
 
   function clearFilters() {
+    setSelectedChildIds([]);
     setSelectedMoods([]);
     setSelectedCategories([]);
     setSearchText("");
@@ -69,7 +77,7 @@ export default function LogsPage() {
   useEffect(() => {
     const client = supabaseRef.current;
     async function load() {
-      const [logsRes, membersRes] = await Promise.all([
+      const [logsRes, membersRes, childrenRes] = await Promise.all([
         client
           .from("daily_logs")
           .select("*")
@@ -78,6 +86,10 @@ export default function LogsPage() {
         client
           .from("family_members")
           .select("user_id, display_name"),
+        client
+          .from("children")
+          .select("*")
+          .order("created_at", { ascending: true }),
       ]);
 
       if (!logsRes.error) {
@@ -89,6 +101,9 @@ export default function LogsPage() {
           if (m.display_name) names[m.user_id] = m.display_name;
         }
         setAuthorNames(names);
+      }
+      if (!childrenRes.error) {
+        setChildrenList((childrenRes.data as Child[]) ?? []);
       }
       setLoading(false);
     }
@@ -167,6 +182,9 @@ export default function LogsPage() {
       {/* フィルター */}
       {logs.length > 0 && (
         <LogFilter
+          childrenList={childrenList}
+          selectedChildIds={selectedChildIds}
+          onChildIdsChange={setSelectedChildIds}
           selectedMoods={selectedMoods}
           onMoodsChange={setSelectedMoods}
           selectedCategories={selectedCategories}
@@ -183,6 +201,7 @@ export default function LogsPage() {
       {editingLog && (
         <LogForm
           key={editingLog.id}
+          childrenList={childrenList}
           editingLog={editingLog}
           existingPhotoUrl={editingPhotoUrl}
           onSaved={handleSaved}
@@ -230,6 +249,7 @@ export default function LogsPage() {
             <LogCard
               key={log.id}
               log={log}
+              childName={childrenList.find((c) => c.id === log.child_id)?.name}
               authorDisplayName={authorNames[log.author_id]}
               onEdit={handleEdit}
               onDelete={handleDelete}

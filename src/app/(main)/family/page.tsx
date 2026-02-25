@@ -1,40 +1,34 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
-import {
-  childFormSchema,
-  type ChildFormValues,
-} from "@/schemas/profile";
 import { calcAge } from "@/lib/date";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberList } from "@/components/family/member-list";
 import { InviteLink } from "@/components/family/invite-link";
 import { toast } from "sonner";
+import type { Child } from "@/types";
 
 export default function FamilyPage() {
   const [loading, setLoading] = useState(true);
-  const [savingChild, setSavingChild] = useState(false);
   const [savingFamilyName, setSavingFamilyName] = useState(false);
   const [currentUserId, setCurrentUserId] = useState("");
   const [isOwner, setIsOwner] = useState(false);
-  const [childId, setChildId] = useState<string | null>(null);
   const [familyId, setFamilyId] = useState<string | null>(null);
   const [familyName, setFamilyName] = useState("");
   const [editingFamilyName, setEditingFamilyName] = useState(false);
   const [familyNameInput, setFamilyNameInput] = useState("");
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [editingChildId, setEditingChildId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBirthDate, setEditBirthDate] = useState("");
+  const [savingChild, setSavingChild] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newBirthDate, setNewBirthDate] = useState("");
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
-
-  const childForm = useForm<ChildFormValues>({
-    resolver: zodResolver(childFormSchema),
-    defaultValues: { name: "", birth_date: "" },
-  });
-
-  const birthDate = childForm.watch("birth_date");
 
   useEffect(() => {
     const client = supabaseRef.current;
@@ -45,7 +39,6 @@ export default function FamilyPage() {
       if (!user) return;
       setCurrentUserId(user.id);
 
-      // family_id を RPC で取得
       const { data: myFamilyId } = await client.rpc("my_family_id");
       if (!myFamilyId) {
         setLoading(false);
@@ -53,8 +46,7 @@ export default function FamilyPage() {
       }
       setFamilyId(myFamilyId as string);
 
-      // 並列で取得
-      const [memberRes, familyRes, childRes] = await Promise.all([
+      const [memberRes, familyRes, childrenRes] = await Promise.all([
         client
           .from("family_members")
           .select("role")
@@ -70,8 +62,7 @@ export default function FamilyPage() {
           .from("children")
           .select("*")
           .eq("family_id", myFamilyId as string)
-          .limit(1)
-          .maybeSingle(),
+          .order("created_at", { ascending: true }),
       ]);
 
       if (memberRes.data) {
@@ -86,23 +77,14 @@ export default function FamilyPage() {
         setFamilyNameInput(name);
       }
 
-      if (childRes.data) {
-        const child = childRes.data as {
-          id: string;
-          name: string | null;
-          birth_date: string | null;
-        };
-        setChildId(child.id);
-        childForm.reset({
-          name: child.name ?? "",
-          birth_date: child.birth_date ?? "",
-        });
+      if (childrenRes.data) {
+        setChildrenList(childrenRes.data as Child[]);
       }
 
       setLoading(false);
     }
     load();
-  }, [childForm]);
+  }, []);
 
   async function handleSaveFamilyName() {
     if (!familyId || !familyNameInput.trim()) return;
@@ -125,39 +107,63 @@ export default function FamilyPage() {
     }
   }
 
-  async function onSubmitChild(values: ChildFormValues) {
+  function startEditChild(child: Child) {
+    setEditingChildId(child.id);
+    setEditName(child.name ?? "");
+    setEditBirthDate(child.birth_date ?? "");
+  }
+
+  async function handleSaveChild() {
+    if (!editingChildId) return;
     setSavingChild(true);
     try {
-      if (!familyId) throw new Error("家族が設定されていません");
+      const { error } = await supabase
+        .from("children")
+        .update({
+          name: editName || null,
+          birth_date: editBirthDate || null,
+        })
+        .eq("id", editingChildId);
+      if (error) throw error;
 
-      if (childId) {
-        const { error } = await supabase
-          .from("children")
-          .update({
-            name: values.name || null,
-            birth_date: values.birth_date || null,
-          })
-          .eq("id", childId);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from("children")
-          .insert({
-            family_id: familyId,
-            name: values.name || null,
-            birth_date: values.birth_date || null,
-          })
-          .select()
-          .single();
-        if (error) throw error;
-        if (data) setChildId((data as { id: string }).id);
-      }
+      setChildrenList((prev) =>
+        prev.map((c) =>
+          c.id === editingChildId
+            ? { ...c, name: editName || null, birth_date: editBirthDate || null }
+            : c
+        )
+      );
+      setEditingChildId(null);
+      toast.success("お子さまの情報を更新しました");
+    } catch {
+      toast.error("更新に失敗しました");
+    } finally {
+      setSavingChild(false);
+    }
+  }
 
-      toast.success("お子さまの情報を保存しました");
-    } catch (error) {
-      toast.error("保存に失敗しました", {
-        description: error instanceof Error ? error.message : "不明なエラー",
-      });
+  async function handleAddChild() {
+    if (!familyId) return;
+    setSavingChild(true);
+    try {
+      const { data, error } = await supabase
+        .from("children")
+        .insert({
+          family_id: familyId,
+          name: newName || null,
+          birth_date: newBirthDate || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      setChildrenList((prev) => [...prev, data as Child]);
+      setShowAddForm(false);
+      setNewName("");
+      setNewBirthDate("");
+      toast.success("お子さまを追加しました");
+    } catch {
+      toast.error("追加に失敗しました");
     } finally {
       setSavingChild(false);
     }
@@ -236,67 +242,139 @@ export default function FamilyPage() {
         </div>
       </div>
 
-      {/* お子さまの情報 */}
-      <form
-        onSubmit={childForm.handleSubmit(onSubmitChild)}
-        className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
-      >
+      {/* お子さま一覧 */}
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            お子さまの情報
+            お子さま
           </p>
         </div>
-        <div className="space-y-5 p-5">
-          <div className="space-y-2">
-            <Label
-              htmlFor="child_name"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-            >
-              お名前
-            </Label>
-            <Input
-              id="child_name"
-              placeholder="例: さくた"
-              {...childForm.register("name")}
-              className="border-border/60 bg-background/60 focus:border-primary/50"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              通信にお名前が入ります（任意）
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label
-              htmlFor="child_birth_date"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-            >
-              生年月日
-            </Label>
-            <Input
-              id="child_birth_date"
-              type="date"
-              {...childForm.register("birth_date")}
-              className="border-border/60 bg-background/60 focus:border-primary/50"
-            />
-            {birthDate && (
-              <p className="text-sm text-primary font-medium">
-                現在の月齢: {calcAge(birthDate)}
-              </p>
-            )}
-            <p className="text-[11px] text-muted-foreground">
-              月齢を自動計算して通信に反映します（任意）
-            </p>
-          </div>
+        <div className="divide-y divide-border/30">
+          {childrenList.map((child) => (
+            <div key={child.id} className="p-5">
+              {editingChildId === child.id ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      お名前
+                    </Label>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="例: さくた"
+                      className="border-border/60 bg-background/60 focus:border-primary/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      生年月日
+                    </Label>
+                    <Input
+                      type="date"
+                      value={editBirthDate}
+                      onChange={(e) => setEditBirthDate(e.target.value)}
+                      className="border-border/60 bg-background/60 focus:border-primary/50"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveChild}
+                      disabled={savingChild}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {savingChild ? "保存中..." : "保存"}
+                    </button>
+                    <button
+                      onClick={() => setEditingChildId(null)}
+                      className="rounded-lg border border-border/60 px-4 py-2 text-sm text-muted-foreground transition-all hover:bg-secondary/60"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-foreground">
+                      {child.name ?? "名前未設定"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {child.birth_date
+                        ? `${child.birth_date} ・ ${calcAge(child.birth_date)}`
+                        : "生年月日未設定"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => startEditChild(child)}
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    編集
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* 追加フォーム */}
+          {showAddForm ? (
+            <div className="space-y-4 p-5">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  お名前
+                </Label>
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="例: さくた"
+                  className="border-border/60 bg-background/60 focus:border-primary/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  生年月日
+                </Label>
+                <Input
+                  type="date"
+                  value={newBirthDate}
+                  onChange={(e) => setNewBirthDate(e.target.value)}
+                  className="border-border/60 bg-background/60 focus:border-primary/50"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddChild}
+                  disabled={savingChild}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {savingChild ? "追加中..." : "追加する"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewName("");
+                    setNewBirthDate("");
+                  }}
+                  className="rounded-lg border border-border/60 px-4 py-2 text-sm text-muted-foreground transition-all hover:bg-secondary/60"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-5">
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="flex items-center gap-2 text-sm text-primary transition-colors hover:text-primary/80"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 text-xs">
+                  +
+                </span>
+                お子さまを追加
+              </button>
+            </div>
+          )}
         </div>
-        <div className="border-t border-border/40 bg-muted/20 px-5 py-3">
-          <button
-            type="submit"
-            disabled={savingChild}
-            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
-          >
-            {savingChild ? "保存中..." : "保存する"}
-          </button>
-        </div>
-      </form>
+      </div>
 
       {/* 家族メンバー */}
       <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">

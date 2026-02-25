@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const logFormSchema = z.object({
+  child_id: z.string().min(1, "お子さまを選択してください"),
   text: z
     .string()
     .min(1, "今日の出来事を入力してください")

@@ -5,16 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
 import { AuthorBadge } from "./author-badge";
+import { ChildBadge } from "@/components/child/child-badge";
 import { createClient } from "@/lib/supabase/client";
 
 type LogCardProps = {
   log: DailyLog;
+  childName?: string | null;
   authorDisplayName?: string | null;
   onEdit: (log: DailyLog) => void;
   onDelete: (id: string) => void;
 };
 
-export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardProps) {
+export function LogCard({ log, childName, authorDisplayName, onEdit, onDelete }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -69,6 +71,7 @@ export function LogCard({ log, authorDisplayName, onEdit, onDelete }: LogCardPro
                       <p className="text-sm font-medium text-foreground">
                         {formatDateJa(log.log_date)}
                       </p>
+                      {childName && <ChildBadge name={childName} />}
                       <AuthorBadge displayName={authorDisplayName ?? null} />
                     </div>
                     <p className="text-[11px] text-muted-foreground">

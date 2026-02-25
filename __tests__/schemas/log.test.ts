@@ -17,14 +17,12 @@ describe("logFormSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  // TODO: Phase 3 (Task 3.1) でスキーマに child_id を追加後に有効化
-  it.todo("child_idが未指定の場合はエラー", () => {
+  it("child_idが未指定の場合はエラー", () => {
     const result = logFormSchema.safeParse(validBase);
     expect(result.success).toBe(false);
   });
 
-  // TODO: Phase 3 (Task 3.1) でスキーマに child_id を追加後に有効化
-  it.todo("child_idが空文字の場合はエラー", () => {
+  it("child_idが空文字の場合はエラー", () => {
     const result = logFormSchema.safeParse({
       ...validBase,
       child_id: "",

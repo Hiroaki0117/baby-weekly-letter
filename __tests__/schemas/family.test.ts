@@ -41,8 +41,7 @@ describe("createFamilySchema", () => {
     expect(result.success).toBe(true);
   });
 
-  // TODO: Phase 6 (Task 6.2) でスキーマを children 配列に変更後に有効化
-  it.todo("children配列が空の場合はエラー", () => {
+  it("children配列が空の場合はエラー", () => {
     const result = createFamilySchema.safeParse({
       familyName: "田中家",
       displayName: "パパ",
@@ -51,8 +50,7 @@ describe("createFamilySchema", () => {
     expect(result.success).toBe(false);
   });
 
-  // TODO: Phase 6 (Task 6.2) でスキーマを children 配列に変更後に有効化
-  it.todo("childrenが未指定の場合はエラー", () => {
+  it("childrenが未指定の場合はエラー", () => {
     const result = createFamilySchema.safeParse({
       familyName: "田中家",
       displayName: "パパ",
@@ -96,8 +94,7 @@ describe("createFamilySchema", () => {
     expect(result.success).toBe(false);
   });
 
-  // TODO: Phase 6 (Task 6.2) でスキーマを children 配列に変更後に有効化
-  it.todo("子供の名前が50文字を超えるとエラー", () => {
+  it("子供の名前が50文字を超えるとエラー", () => {
     const result = createFamilySchema.safeParse({
       familyName: "田中家",
       displayName: "パパ",

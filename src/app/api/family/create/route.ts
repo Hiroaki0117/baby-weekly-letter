@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { familyName, displayName, childName, childBirthDate } = parsed.data;
+    const { familyName, displayName, children } = parsed.data;
 
     // UUID を事前生成（INSERT 後の SELECT が RLS で弾かれるのを回避）
     const familyId = randomUUID();
@@ -69,15 +69,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 子ども情報（入力がある場合）
-    if (childName || childBirthDate) {
+    // 子ども情報（複数対応）
+    if (children && children.length > 0) {
+      const childRows = children.map((c) => ({
+        family_id: familyId,
+        name: c.name || null,
+        birth_date: c.birthDate || null,
+      }));
       const { error: childError } = await supabase
         .from("children")
-        .insert({
-          family_id: familyId,
-          name: childName || null,
-          birth_date: childBirthDate || null,
-        });
+        .insert(childRows);
 
       if (childError) {
         console.error("Child insert error:", childError);

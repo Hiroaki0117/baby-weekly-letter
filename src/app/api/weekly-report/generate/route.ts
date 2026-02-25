@@ -48,22 +48,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const { weekStart, weekEnd } = parsed.data;
+    const { weekStart, weekEnd, childId } = parsed.data;
 
-    // 子ども情報取得（children テーブルから最初の1件）
+    // 子ども情報取得
     const { data: childData } = await supabase
       .from("children")
       .select("*")
-      .limit(1)
+      .eq("id", childId)
       .single();
 
     const child = childData as Child | null;
 
-    // 前回の通信を取得（今回の weekStart より前の直近1件）
-    // RLS で family_id が自動フィルタされる
+    // 前回の通信を取得（同じ子供の直近1件）
     const { data: prevReportData } = await supabase
       .from("weekly_reports")
       .select("content")
+      .eq("child_id", childId)
       .lt("week_start", weekStart)
       .order("week_start", { ascending: false })
       .limit(1)
@@ -73,10 +73,11 @@ export async function POST(request: Request) {
       ? extractEnding((prevReportData as { content: string }).content)
       : null;
 
-    // 対象期間のログを取得（RLS で family のログのみ）
+    // 対象期間・対象子供のログを取得
     const { data: logs, error: logsError } = await supabase
       .from("daily_logs")
       .select("*")
+      .eq("child_id", childId)
       .gte("log_date", weekStart)
       .lte("log_date", weekEnd)
       .order("log_date", { ascending: true });
@@ -110,13 +111,14 @@ export async function POST(request: Request) {
       .upsert(
         {
           family_id: familyId,
+          child_id: childId,
           week_start: weekStart,
           week_end: weekEnd,
           content,
           generated_at: new Date().toISOString(),
           source_log_ids: sourceLogIds,
         },
-        { onConflict: "family_id,week_start" }
+        { onConflict: "family_id,child_id,week_start" }
       )
       .select()
       .single();
