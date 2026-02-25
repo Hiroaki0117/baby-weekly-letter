@@ -6,13 +6,13 @@ CREATE INDEX idx_daily_logs_child ON daily_logs(child_id);
 
 -- Step 2: weekly_reports に child_id を追加（nullable）
 ALTER TABLE weekly_reports ADD COLUMN child_id uuid REFERENCES children(id);
-DROP INDEX IF EXISTS weekly_reports_family_id_week_start_key;
+ALTER TABLE weekly_reports DROP CONSTRAINT IF EXISTS weekly_reports_family_id_week_start_key;
 CREATE UNIQUE INDEX weekly_reports_family_child_week
   ON weekly_reports(family_id, child_id, week_start);
 
 -- Step 3: monthly_reports に child_id を追加（nullable）
 ALTER TABLE monthly_reports ADD COLUMN child_id uuid REFERENCES children(id);
-DROP INDEX IF EXISTS monthly_reports_family_id_month_key;
+ALTER TABLE monthly_reports DROP CONSTRAINT IF EXISTS monthly_reports_family_id_month_key;
 CREATE UNIQUE INDEX monthly_reports_family_child_month
   ON monthly_reports(family_id, child_id, month);
 
