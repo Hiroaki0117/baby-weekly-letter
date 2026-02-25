@@ -16,8 +16,7 @@ export default function OnboardingPage() {
 
   const [familyName, setFamilyName] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [childName, setChildName] = useState("");
-  const [childBirthDate, setChildBirthDate] = useState("");
+  const [children, setChildren] = useState([{ name: "", birthDate: "" }]);
 
   // 既に家族所属済みならホームへリダイレクト
   // RLSを経由せずSECURITY DEFINERのmy_family_id()を直接呼ぶ
@@ -43,8 +42,10 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           familyName,
           displayName,
-          childName: childName || undefined,
-          childBirthDate: childBirthDate || undefined,
+          children: children.map((c) => ({
+            name: c.name || undefined,
+            birthDate: c.birthDate || undefined,
+          })),
         }),
       });
 
@@ -195,36 +196,82 @@ export default function OnboardingPage() {
               </p>
             </div>
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="childName"
-                  className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              {children.map((child, index) => (
+                <div
+                  key={index}
+                  className="space-y-3 rounded-lg border border-border/40 p-4"
                 >
-                  お名前
-                </Label>
-                <Input
-                  id="childName"
-                  placeholder="例: さくた"
-                  value={childName}
-                  onChange={(e) => setChildName(e.target.value)}
-                  className="border-border/70 bg-background/60 focus:border-primary/60"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="childBirthDate"
-                  className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
-                  生年月日
-                </Label>
-                <Input
-                  id="childBirthDate"
-                  type="date"
-                  value={childBirthDate}
-                  onChange={(e) => setChildBirthDate(e.target.value)}
-                  className="border-border/70 bg-background/60 focus:border-primary/60"
-                />
-              </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {index + 1}人目
+                    </p>
+                    {children.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setChildren((prev) =>
+                            prev.filter((_, i) => i !== index)
+                          )
+                        }
+                        className="text-xs text-destructive/70 transition-colors hover:text-destructive"
+                      >
+                        削除
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      お名前
+                    </Label>
+                    <Input
+                      placeholder="例: さくた"
+                      value={child.name}
+                      onChange={(e) =>
+                        setChildren((prev) =>
+                          prev.map((c, i) =>
+                            i === index ? { ...c, name: e.target.value } : c
+                          )
+                        )
+                      }
+                      className="border-border/70 bg-background/60 focus:border-primary/60"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      生年月日
+                    </Label>
+                    <Input
+                      type="date"
+                      value={child.birthDate}
+                      onChange={(e) =>
+                        setChildren((prev) =>
+                          prev.map((c, i) =>
+                            i === index
+                              ? { ...c, birthDate: e.target.value }
+                              : c
+                          )
+                        )
+                      }
+                      className="border-border/70 bg-background/60 focus:border-primary/60"
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() =>
+                  setChildren((prev) => [
+                    ...prev,
+                    { name: "", birthDate: "" },
+                  ])
+                }
+                className="flex items-center gap-2 text-sm text-primary transition-colors hover:text-primary/80"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 text-xs">
+                  +
+                </span>
+                もう1人追加
+              </button>
             </div>
             <div className="flex gap-3">
               <button

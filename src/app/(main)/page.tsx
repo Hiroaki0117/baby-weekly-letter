@@ -8,15 +8,14 @@ import { getStreak } from "@/lib/streak";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { toast } from "sonner";
-import type { DailyLog } from "@/types";
+import type { Child, DailyLog } from "@/types";
 
 export default function HomePage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
-  const [childName, setChildName] = useState<string | null>(null);
-  const [birthDate, setBirthDate] = useState<string | null>(null);
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [streak, setStreak] = useState(0);
   const [cardLoaded, setCardLoaded] = useState(false);
   const supabaseRef = useRef(createClient());
@@ -70,19 +69,16 @@ export default function HomePage() {
       }
       setStreak(streakCount);
 
-      // 子ども情報を取得
+      // 子ども情報を取得（複数対応）
       const familyId = await getMyFamilyId(client);
       if (familyId) {
-        const { data: child } = await client
+        const { data: childrenData } = await client
           .from("children")
-          .select("name, birth_date")
+          .select("*")
           .eq("family_id", familyId)
-          .limit(1)
-          .maybeSingle();
-        if (child) {
-          const c = child as { name: string | null; birth_date: string | null };
-          setChildName(c.name);
-          setBirthDate(c.birth_date);
+          .order("created_at", { ascending: true });
+        if (childrenData) {
+          setChildrenList(childrenData as Child[]);
         }
       }
       setCardLoaded(true);
@@ -161,12 +157,18 @@ export default function HomePage() {
             </>
           ) : (
             <>
-              {birthDate && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="mr-1.5">🍼</span>
-                  {childName ? `${childName}・` : ""}
-                  {calcAge(birthDate)}
-                </p>
+              {childrenList.map(
+                (child) =>
+                  child.birth_date && (
+                    <p
+                      key={child.id}
+                      className="text-xs text-muted-foreground"
+                    >
+                      <span className="mr-1.5">🍼</span>
+                      {child.name ? `${child.name}・` : ""}
+                      {calcAge(child.birth_date)}
+                    </p>
+                  )
               )}
               <p className="text-xs text-muted-foreground">
                 <span className="mr-1.5">📝</span>
@@ -188,6 +190,7 @@ export default function HomePage() {
       {/* ログフォーム */}
       <LogForm
         key={editingLog?.id ?? "new"}
+        childrenList={childrenList}
         editingLog={editingLog}
         existingPhotoUrl={editingPhotoUrl}
         onSaved={handleSaved}
@@ -215,6 +218,7 @@ export default function HomePage() {
             <LogCard
               key={log.id}
               log={log}
+              childName={childrenList.find((c) => c.id === log.child_id)?.name}
               authorDisplayName={authorNames[log.author_id]}
               onEdit={handleEdit}
               onDelete={handleDelete}

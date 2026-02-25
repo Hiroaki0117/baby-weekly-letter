@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { month: monthStr } = parsed.data;
+    const { month: monthStr, childId } = parsed.data;
     const [yearNum, monthNum] = monthStr.split("-").map(Number);
     const { start: monthStart, end: monthEnd } = getMonthRange(
       yearNum,
@@ -56,20 +56,20 @@ export async function POST(request: Request) {
     );
     const monthDate = toDateString(monthStart); // "YYYY-MM-01"
 
-    // 子ども情報取得（children テーブルから最初の1件）
+    // 子ども情報取得
     const { data: childData } = await supabase
       .from("children")
       .select("*")
-      .limit(1)
+      .eq("id", childId)
       .single();
 
     const child = childData as Child | null;
 
-    // 該当月の週次通信を取得（week_start が月内に含まれるもの）
-    // RLS で family_id が自動フィルタされる
+    // 該当月・該当子供の週次通信を取得
     const { data: weeklyReports, error: weeklyError } = await supabase
       .from("weekly_reports")
       .select("*")
+      .eq("child_id", childId)
       .gte("week_start", toDateString(monthStart))
       .lte("week_start", toDateString(monthEnd))
       .order("week_start", { ascending: true });
@@ -90,11 +90,11 @@ export async function POST(request: Request) {
 
     const typedReports = weeklyReports as WeeklyReport[];
 
-    // 前月の月次まとめを取得（文脈連続性）
-    // RLS で family_id が自動フィルタされる
+    // 前月の月次まとめを取得（同じ子供、文脈連続性）
     const { data: prevMonthlyData } = await supabase
       .from("monthly_reports")
       .select("content")
+      .eq("child_id", childId)
       .lt("month", monthDate)
       .order("month", { ascending: false })
       .limit(1)
@@ -123,12 +123,13 @@ export async function POST(request: Request) {
       .upsert(
         {
           family_id: familyId,
+          child_id: childId,
           month: monthDate,
           content,
           generated_at: new Date().toISOString(),
           source_weekly_report_ids: sourceWeeklyReportIds,
         },
-        { onConflict: "family_id,month" }
+        { onConflict: "family_id,child_id,month" }
       )
       .select()
       .single();

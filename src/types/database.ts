@@ -118,6 +118,7 @@ export interface Database {
         Row: {
           id: string;
           family_id: string;
+          child_id: string;
           author_id: string;
           log_date: string;
           text: string;
@@ -130,6 +131,7 @@ export interface Database {
         Insert: {
           id?: string;
           family_id: string;
+          child_id: string;
           author_id: string;
           log_date?: string;
           text: string;
@@ -142,6 +144,7 @@ export interface Database {
         Update: {
           id?: string;
           family_id?: string;
+          child_id?: string;
           author_id?: string;
           log_date?: string;
           text?: string;
@@ -157,6 +160,7 @@ export interface Database {
         Row: {
           id: string;
           family_id: string;
+          child_id: string;
           week_start: string;
           week_end: string;
           content: string;
@@ -167,6 +171,7 @@ export interface Database {
         Insert: {
           id?: string;
           family_id: string;
+          child_id: string;
           week_start: string;
           week_end: string;
           content: string;
@@ -177,6 +182,7 @@ export interface Database {
         Update: {
           id?: string;
           family_id?: string;
+          child_id?: string;
           week_start?: string;
           week_end?: string;
           content?: string;
@@ -190,6 +196,7 @@ export interface Database {
         Row: {
           id: string;
           family_id: string;
+          child_id: string;
           month: string;
           content: string;
           generated_at: string;
@@ -199,6 +206,7 @@ export interface Database {
         Insert: {
           id?: string;
           family_id: string;
+          child_id: string;
           month: string;
           content: string;
           generated_at?: string;
@@ -208,6 +216,7 @@ export interface Database {
         Update: {
           id?: string;
           family_id?: string;
+          child_id?: string;
           month?: string;
           content?: string;
           generated_at?: string;

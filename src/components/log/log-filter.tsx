@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { MOOD_OPTIONS, CATEGORY_OPTIONS, type Mood } from "@/types";
+import { MOOD_OPTIONS, CATEGORY_OPTIONS, type Mood, type Child } from "@/types";
 import { moodColors } from "./mood-selector";
 import { CATEGORY_COLORS } from "./category-picker";
 import { Input } from "@/components/ui/input";
 
 type LogFilterProps = {
+  childrenList: Child[];
+  selectedChildIds: string[];
+  onChildIdsChange: (ids: string[]) => void;
   selectedMoods: Mood[];
   onMoodsChange: (moods: Mood[]) => void;
   selectedCategories: string[];
@@ -20,6 +23,9 @@ type LogFilterProps = {
 };
 
 export function LogFilter({
+  childrenList,
+  selectedChildIds,
+  onChildIdsChange,
   selectedMoods,
   onMoodsChange,
   selectedCategories,
@@ -32,8 +38,17 @@ export function LogFilter({
 }: LogFilterProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const activeFilterCount = selectedMoods.length + selectedCategories.length;
+  const activeFilterCount =
+    selectedChildIds.length + selectedMoods.length + selectedCategories.length;
   const isFiltering = activeFilterCount > 0 || searchText.trim() !== "";
+
+  function toggleChild(childId: string) {
+    if (selectedChildIds.includes(childId)) {
+      onChildIdsChange(selectedChildIds.filter((id) => id !== childId));
+    } else {
+      onChildIdsChange([...selectedChildIds, childId]);
+    }
+  }
 
   function toggleMood(mood: Mood) {
     if (selectedMoods.includes(mood)) {
@@ -114,6 +129,36 @@ export function LogFilter({
       {/* 展開エリア: 気分 + カテゴリ */}
       {isExpanded && (
         <div className="space-y-4 rounded-xl border border-border/50 bg-card/50 p-4">
+          {/* 子供フィルター（2人以上の場合のみ） */}
+          {childrenList.length >= 2 && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                お子さま
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {childrenList.map((child) => {
+                  const selected = selectedChildIds.includes(child.id);
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      onClick={() => toggleChild(child.id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150",
+                        "hover:scale-105 active:scale-95",
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-card text-muted-foreground hover:bg-muted"
+                      )}
+                    >
+                      {child.name ?? "名前なし"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 気分フィルター */}
           <div className="space-y-2">
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">

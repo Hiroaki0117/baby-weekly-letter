@@ -7,7 +7,8 @@ import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
 import { ReportTabs } from "@/components/weekly/report-tabs";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
 import { toast } from "sonner";
-import type { WeeklyReport, MonthlyReport } from "@/types";
+import { ChildSelector } from "@/components/child/child-selector";
+import type { Child, WeeklyReport, MonthlyReport } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 
@@ -34,6 +35,8 @@ function WeeklyListPageInner() {
   const [activeTab, setActiveTab] = useState<"weekly" | "monthly">(initialTab);
   const [reports, setReports] = useState<WeeklyReport[]>([]);
   const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const supabase = createClient();
@@ -68,10 +71,22 @@ function WeeklyListPageInner() {
   }, [supabase]);
 
   useEffect(() => {
-    Promise.all([fetchReports(), fetchMonthlyReports()]).then(() => {
-      setLoading(false);
-    });
-  }, [fetchReports, fetchMonthlyReports]);
+    async function loadChildren() {
+      const { data } = await supabase
+        .from("children")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (data && data.length > 0) {
+        setChildrenList(data as Child[]);
+        setSelectedChildId((data as Child[])[0].id);
+      }
+    }
+    Promise.all([fetchReports(), fetchMonthlyReports(), loadChildren()]).then(
+      () => {
+        setLoading(false);
+      }
+    );
+  }, [fetchReports, fetchMonthlyReports, supabase]);
 
   function handleTabChange(tab: "weekly" | "monthly") {
     setActiveTab(tab);
@@ -95,7 +110,7 @@ function WeeklyListPageInner() {
       const res = await fetch("/api/weekly-report/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekStart, weekEnd }),
+        body: JSON.stringify({ weekStart, weekEnd, childId: selectedChildId }),
       });
 
       const data = await res.json();
@@ -124,7 +139,7 @@ function WeeklyListPageInner() {
       const res = await fetch("/api/monthly-report/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month }),
+        body: JSON.stringify({ month, childId: selectedChildId }),
       });
 
       const data = await res.json();
@@ -154,6 +169,14 @@ function WeeklyListPageInner() {
 
   const now = new Date();
   const currentMonthLabel = formatMonthJa(now.getFullYear(), now.getMonth());
+
+  // 選択中の子供でフィルター
+  const filteredReports = selectedChildId
+    ? reports.filter((r) => r.child_id === selectedChildId)
+    : reports;
+  const filteredMonthlyReports = selectedChildId
+    ? monthlyReports.filter((r) => r.child_id === selectedChildId)
+    : monthlyReports;
 
   return (
     <div className="space-y-5">
@@ -206,6 +229,15 @@ function WeeklyListPageInner() {
         )}
       </div>
 
+      {/* 子供タブ（2人以上の場合のみ） */}
+      {childrenList.length >= 2 && (
+        <ChildSelector
+          childrenList={childrenList}
+          selectedId={selectedChildId}
+          onChange={setSelectedChildId}
+        />
+      )}
+
       {/* タブ切替 */}
       <ReportTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -214,7 +246,7 @@ function WeeklyListPageInner() {
       {/* 週次タブ */}
       {activeTab === "weekly" && (
         <>
-          {reports.length === 0 ? (
+          {filteredReports.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
                 <div className="airmail-stripe absolute inset-x-0 top-0 h-2.5" />
@@ -231,7 +263,7 @@ function WeeklyListPageInner() {
             </div>
           ) : (
             <div className="space-y-3">
-              {reports.map((report) => (
+              {filteredReports.map((report) => (
                 <WeeklyReportCard key={report.id} report={report} />
               ))}
             </div>
@@ -242,7 +274,7 @@ function WeeklyListPageInner() {
       {/* 月次タブ */}
       {activeTab === "monthly" && (
         <>
-          {monthlyReports.length === 0 ? (
+          {filteredMonthlyReports.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
                 <div className="h-2.5 w-full bg-gradient-to-r from-primary/60 via-primary/40 to-primary/20 absolute inset-x-0 top-0" />
@@ -259,7 +291,7 @@ function WeeklyListPageInner() {
             </div>
           ) : (
             <div className="space-y-3">
-              {monthlyReports.map((report) => (
+              {filteredMonthlyReports.map((report) => (
                 <MonthlyReportCard key={report.id} report={report} />
               ))}
             </div>
