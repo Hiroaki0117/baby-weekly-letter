@@ -178,3 +178,13 @@ a,
     oklch(1.0 0.003 80) 11px
   );
 }
+
+/* 便箋風の横線 */
+@utility notebook-lines {
+  background-image: linear-gradient(
+    oklch(0.85 0.015 5 / 0.2) 1px,
+    transparent 1px
+  );
+  background-size: 100% 2rem;
+  background-position-y: 1.5rem;
+}
