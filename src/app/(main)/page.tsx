@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toDateString, formatDateJa, calcAge } from "@/lib/date";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { getStreak } from "@/lib/streak";
+import { deleteLog } from "@/lib/log-actions";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { MemoriesSection } from "@/components/memory/memories-section";
@@ -101,20 +102,11 @@ export default function HomePage() {
 
   async function handleDelete(id: string) {
     const log = logs.find((l) => l.id === id);
-
-    if (log?.photo_storage_path) {
-      await supabase.storage
-        .from("log-photos")
-        .remove([log.photo_storage_path]);
-    }
-
-    const { error } = await supabase.from("daily_logs").delete().eq("id", id);
-
-    if (error) {
-      toast.error("削除に失敗しました");
+    const errorMsg = await deleteLog(supabase, id, log?.photo_storage_path ?? null);
+    if (errorMsg) {
+      toast.error(errorMsg);
       return;
     }
-
     toast.success("ログを削除しました");
     fetchTodayLogs();
   }
