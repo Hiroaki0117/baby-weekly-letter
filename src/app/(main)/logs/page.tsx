@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getWeekRange, toDateString, formatMonthJa } from "@/lib/date";
+import { deleteLog } from "@/lib/log-actions";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
@@ -189,20 +190,11 @@ function LogsPageInner() {
 
   async function handleDelete(id: string) {
     const log = logs.find((l) => l.id === id);
-
-    if (log?.photo_storage_path) {
-      await supabase.storage
-        .from("log-photos")
-        .remove([log.photo_storage_path]);
-    }
-
-    const { error } = await supabase.from("daily_logs").delete().eq("id", id);
-
-    if (error) {
-      toast.error("削除に失敗しました");
+    const errorMsg = await deleteLog(supabase, id, log?.photo_storage_path ?? null);
+    if (errorMsg) {
+      toast.error(errorMsg);
       return;
     }
-
     toast.success("ログを削除しました");
     fetchLogs();
   }
