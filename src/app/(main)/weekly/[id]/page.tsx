@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString, formatWeekRange } from "@/lib/date";
+import { fetchPhotoUrls, exportAsPng, exportAsPdf, buildExportFilename } from "@/lib/export";
 import { PhotoGallery } from "@/components/weekly/photo-gallery";
+import { ShareMenu } from "@/components/export/share-menu";
+import { ExportLayout } from "@/components/export/export-layout";
 import { toast } from "sonner";
 import type { WeeklyReport } from "@/types";
 
@@ -14,6 +17,9 @@ export default function WeeklyDetailPage() {
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exportData, setExportData] = useState<{ photoUrls: string[]; format: "png" | "pdf" } | null>(null);
   const supabase = createClient();
 
   const fetchReport = useCallback(async () => {
@@ -36,6 +42,64 @@ export default function WeeklyDetailPage() {
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  // ExportLayout が描画され、写真が読み込まれたらキャプチャ
+  useEffect(() => {
+    if (!exportData || !exportRef.current) return;
+
+    async function doExport() {
+      const el = exportRef.current;
+      if (!el) return;
+
+      // 写真の読み込み完了を待つ
+      const imgs = el.querySelectorAll("img");
+      await Promise.all(
+        Array.from(imgs).map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      // 少し待ってから描画（レイアウト安定のため）
+      await new Promise((r) => setTimeout(r, 100));
+
+      const dateLabel = `${report!.week_start}_${report!.week_end}`;
+      const filename = buildExportFilename("weekly", dateLabel, exportData!.format);
+
+      try {
+        if (exportData!.format === "png") {
+          await exportAsPng(el, filename);
+        } else {
+          await exportAsPdf(el, filename);
+        }
+        toast.success("エクスポートしました");
+      } catch {
+        toast.error("エクスポートに失敗しました");
+      } finally {
+        setExportData(null);
+        setExporting(false);
+      }
+    }
+
+    doExport();
+  }, [exportData, report]);
+
+  async function handleExport(format: "png" | "pdf") {
+    if (!report) return;
+    setExporting(true);
+
+    try {
+      const photoUrls = await fetchPhotoUrls(supabase, report.week_start, report.week_end);
+      setExportData({ photoUrls, format });
+    } catch {
+      toast.error("エクスポートの準備に失敗しました");
+      setExporting(false);
+    }
+  }
 
   async function handleRegenerate() {
     if (!report) return;
@@ -142,6 +206,9 @@ export default function WeeklyDetailPage() {
       {/* フォトギャラリー */}
       <PhotoGallery weekStart={report.week_start} weekEnd={report.week_end} />
 
+      {/* 共有メニュー */}
+      <ShareMenu onExport={handleExport} exporting={exporting} />
+
       {/* 再生成ボタン */}
       <button
         onClick={handleRegenerate}
@@ -157,6 +224,19 @@ export default function WeeklyDetailPage() {
           "✨ 再生成する"
         )}
       </button>
+
+      {/* エクスポート用（画面外に描画） */}
+      {exportData && (
+        <div style={{ position: "fixed", left: -9999, top: 0 }}>
+          <ExportLayout
+            ref={exportRef}
+            type="weekly"
+            title={formatWeekRange(report.week_start, report.week_end)}
+            content={report.content}
+            photoUrls={exportData.photoUrls}
+          />
+        </div>
+      )}
     </div>
   );
 }
