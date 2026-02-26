@@ -55,6 +55,18 @@ export function buildReactionMap(
 }
 
 /**
+ * ログIDに対するデフォルトの空 ReactionSummary[] を生成する。
+ */
+export function emptyReactionSummaries(): ReactionSummary[] {
+  return REACTION_STAMPS.map((stamp) => ({
+    emoji: stamp.key,
+    count: 0,
+    reacted: false,
+    userIds: [],
+  }));
+}
+
+/**
  * リアクションをトグル（INSERT or DELETE）する。
  */
 export async function toggleReaction(

@@ -6,7 +6,7 @@ import { toDateString, formatDateJa, calcAge } from "@/lib/date";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { getStreak } from "@/lib/streak";
 import { deleteLog } from "@/lib/log-actions";
-import { buildReactionMap, toggleReaction, type ReactionSummary } from "@/lib/reactions";
+import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { MemoriesSection } from "@/components/memory/memories-section";
@@ -177,7 +177,8 @@ export default function HomePage() {
       // 楽観的更新
       setReactionMap((prev) => {
         const updated = { ...prev };
-        const entries = (updated[logId] ?? []).map((r) =>
+        const base = updated[logId] ?? emptyReactionSummaries();
+        updated[logId] = base.map((r) =>
           r.emoji === emoji
             ? {
                 ...r,
@@ -189,7 +190,6 @@ export default function HomePage() {
               }
             : r
         );
-        updated[logId] = entries;
         return updated;
       });
 
