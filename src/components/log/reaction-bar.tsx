@@ -6,16 +6,20 @@ import { cn } from "@/lib/utils";
 type ReactionBarProps = {
   logId: string;
   reactions: ReactionSummary[];
+  nameMap: Record<string, string>;
   onToggle: (logId: string, emoji: string) => void;
 };
 
-export function ReactionBar({ logId, reactions, onToggle }: ReactionBarProps) {
+export function ReactionBar({ logId, reactions, nameMap, onToggle }: ReactionBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {REACTION_STAMPS.map((stamp) => {
         const summary = reactions.find((r) => r.emoji === stamp.key);
         const count = summary?.count ?? 0;
         const reacted = summary?.reacted ?? false;
+        const names = (summary?.userIds ?? [])
+          .map((id) => nameMap[id])
+          .filter(Boolean);
 
         return (
           <button
@@ -32,8 +36,8 @@ export function ReactionBar({ logId, reactions, onToggle }: ReactionBarProps) {
           >
             <span className="text-sm leading-none">{stamp.emoji}</span>
             {count > 0 && (
-              <span className={cn("font-medium", reacted ? "text-primary" : "")}>
-                {count}
+              <span className={cn("font-medium", reacted ? "text-primary" : "text-muted-foreground")}>
+                {names.length > 0 ? names.join(", ") : count}
               </span>
             )}
           </button>

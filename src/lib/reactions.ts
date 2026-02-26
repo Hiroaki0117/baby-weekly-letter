@@ -5,6 +5,7 @@ export type ReactionSummary = {
   emoji: string;
   count: number;
   reacted: boolean;
+  userIds: string[];
 };
 
 export const REACTION_STAMPS = [
@@ -45,6 +46,7 @@ export function buildReactionMap(
         emoji: stamp.key,
         count: matching.length,
         reacted: matching.some((r) => r.user_id === currentUserId),
+        userIds: matching.map((r) => r.user_id),
       };
     });
   }
