@@ -76,7 +76,7 @@ export function MoodChart({ data, scrollable }: Props) {
           tickLine={false}
           axisLine={false}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--primary) / 0.06)" }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
         {MOOD_CONFIG.map((mood) => (
           <Bar
             key={mood.key}
