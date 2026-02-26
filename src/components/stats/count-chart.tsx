@@ -27,9 +27,9 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 shadow-sm">
+    <div className="rounded-lg border border-orange-200 bg-white px-3 py-2 shadow-sm">
       <p className="text-xs font-semibold text-foreground">{label}</p>
-      <p className="text-sm font-bold text-primary">{payload[0].value ?? 0}件</p>
+      <p className="text-sm font-bold text-orange-500">{payload[0].value ?? 0}件</p>
     </div>
   );
 }
@@ -51,10 +51,10 @@ export function CountChart({ data, scrollable }: Props) {
           tickLine={false}
           axisLine={false}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--primary) / 0.06)" }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(251, 146, 60, 0.08)" }} />
         <Bar
           dataKey="count"
-          fill="hsl(var(--primary))"
+          fill="#fb923c"
           radius={[4, 4, 0, 0]}
         />
       </BarChart>
@@ -64,10 +64,10 @@ export function CountChart({ data, scrollable }: Props) {
   if (scrollable) {
     return (
       <div className="overflow-x-auto">
-        <div className="h-56 min-w-[480px] rounded-lg bg-primary/5">{chart}</div>
+        <div className="h-56 min-w-[480px] rounded-lg bg-white">{chart}</div>
       </div>
     );
   }
 
-  return <div className="h-56 rounded-lg bg-primary/5">{chart}</div>;
+  return <div className="h-56 rounded-lg bg-white">{chart}</div>;
 }
