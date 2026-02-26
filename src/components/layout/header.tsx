@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Settings, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Nav } from "./nav";
 
@@ -31,6 +31,13 @@ export function Header() {
         <div className="flex items-center gap-1">
           <Nav className="hidden md:flex" />
           <div className="hidden md:flex items-center gap-1 md:border-l md:border-border/40 md:pl-2">
+            <Link
+              href="/family"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="家族"
+            >
+              <Users size={14} />
+            </Link>
             <Link
               href="/settings"
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
