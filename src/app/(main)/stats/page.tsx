@@ -1,27 +1,45 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { startOfWeek, addWeeks, addDays, format, isAfter } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import {
+  calcWeeklyCounts,
+  calcWeeklyMoods,
   calcMonthlyCounts,
   calcMonthlyMoods,
+  calcYearlyCounts,
+  calcYearlyMoods,
   calcCategoryCounts,
 } from "@/lib/stats";
-import { MonthlyCountChart } from "@/components/stats/monthly-count-chart";
-import { MoodTrendChart } from "@/components/stats/mood-trend-chart";
+import type { PeriodType } from "@/lib/stats";
+import { PeriodTabs } from "@/components/stats/period-tabs";
+import { CountChart } from "@/components/stats/count-chart";
+import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { ChildSelector } from "@/components/child/child-selector";
 import type { Child, DailyLog } from "@/types";
+
+function getMonday(date: Date): Date {
+  return startOfWeek(date, { weekStartsOn: 1 });
+}
+
+function formatWeekLabel(weekStart: Date): string {
+  const weekEnd = addDays(weekStart, 6);
+  return `${format(weekStart, "yyyy年M月d日")}〜${format(weekEnd, "M月d日")}`;
+}
 
 export default function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState("");
   const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
+  const [period, setPeriod] = useState<PeriodType>("weekly");
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const supabaseRef = useRef(createClient());
 
-  // 初回: 家族のログと子ども一覧を取得
   useEffect(() => {
     const client = supabaseRef.current;
 
@@ -61,14 +79,69 @@ export default function StatsPage() {
     load();
   }, []);
 
-  // 子ども切替時: フィルタして集計（useMemoで派生）
+  // 子どもでフィルタ
   const filtered = useMemo(
     () => (selectedChildId ? allLogs.filter((l) => l.child_id === selectedChildId) : []),
     [selectedChildId, allLogs]
   );
-  const monthlyCounts = useMemo(() => calcMonthlyCounts(filtered), [filtered]);
-  const monthlyMoods = useMemo(() => calcMonthlyMoods(filtered), [filtered]);
+
+  // 期間に応じた集計
+  const countData = useMemo(() => {
+    switch (period) {
+      case "weekly":
+        return calcWeeklyCounts(filtered, weekStart);
+      case "monthly":
+        return calcMonthlyCounts(filtered, selectedYear);
+      case "yearly":
+        return calcYearlyCounts(filtered);
+    }
+  }, [filtered, period, weekStart, selectedYear]);
+
+  const moodData = useMemo(() => {
+    switch (period) {
+      case "weekly":
+        return calcWeeklyMoods(filtered, weekStart);
+      case "monthly":
+        return calcMonthlyMoods(filtered, selectedYear);
+      case "yearly":
+        return calcYearlyMoods(filtered);
+    }
+  }, [filtered, period, weekStart, selectedYear]);
+
   const categoryCounts = useMemo(() => calcCategoryCounts(filtered), [filtered]);
+
+  // ナビゲーション
+  const currentMonday = getMonday(new Date());
+  const currentYear = new Date().getFullYear();
+
+  const handlePrev = useCallback(() => {
+    if (period === "weekly") setWeekStart((prev) => addWeeks(prev, -1));
+    if (period === "monthly") setSelectedYear((prev) => prev - 1);
+  }, [period]);
+
+  const handleNext = useCallback(() => {
+    if (period === "weekly") setWeekStart((prev) => addWeeks(prev, 1));
+    if (period === "monthly") setSelectedYear((prev) => prev + 1);
+  }, [period]);
+
+  const canGoNext = useMemo(() => {
+    if (period === "weekly") return !isAfter(addWeeks(weekStart, 1), currentMonday);
+    if (period === "monthly") return selectedYear < currentYear;
+    return false;
+  }, [period, weekStart, currentMonday, selectedYear, currentYear]);
+
+  const periodLabel = useMemo(() => {
+    switch (period) {
+      case "weekly":
+        return formatWeekLabel(weekStart);
+      case "monthly":
+        return `${selectedYear}年`;
+      case "yearly":
+        return `${currentYear - 4}年〜${currentYear}年`;
+    }
+  }, [period, weekStart, selectedYear, currentYear]);
+
+  const scrollable = period === "monthly";
 
   if (loading) {
     return (
@@ -87,7 +160,6 @@ export default function StatsPage() {
     <div className="space-y-6">
       <h1 className="text-lg font-semibold text-foreground">統計</h1>
 
-      {/* 子ども切り替え */}
       {childrenList.length >= 2 && (
         <ChildSelector
           childrenList={childrenList}
@@ -103,13 +175,30 @@ export default function StatsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
+          {/* 期間タブ */}
+          <PeriodTabs
+            period={period}
+            onChangePeriod={setPeriod}
+            label={periodLabel}
+            onPrev={period !== "yearly" ? handlePrev : undefined}
+            onNext={period !== "yearly" ? handleNext : undefined}
+            canGoNext={canGoNext}
+          />
+
+          {/* 記録数 */}
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <MonthlyCountChart data={monthlyCounts} />
+            <h3 className="mb-3 text-sm font-semibold text-foreground">記録数</h3>
+            <CountChart data={countData} scrollable={scrollable} />
           </div>
+
+          {/* 気分の推移 */}
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <MoodTrendChart data={monthlyMoods} />
+            <h3 className="mb-3 text-sm font-semibold text-foreground">気分の推移</h3>
+            <MoodChart data={moodData} scrollable={scrollable} />
           </div>
+
+          {/* カテゴリ別（全期間） */}
           {categoryCounts.length > 0 && (
             <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
               <CategoryPieChart data={categoryCounts} />
