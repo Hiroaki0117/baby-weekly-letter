@@ -20,7 +20,7 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
         <button
           key={tab.key}
           onClick={() => onTabChange(tab.key)}
-          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+          className={`flex-1 whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium transition-all ${
             activeTab === tab.key
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
