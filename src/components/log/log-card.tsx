@@ -124,10 +124,10 @@ export function LogCard({ log, childName, authorDisplayName, reactions, onEdit, 
               )}
 
               {/* リアクション */}
-              {reactions && onToggleReaction && (
+              {onToggleReaction && (
                 <ReactionBar
                   logId={log.id}
-                  reactions={reactions}
+                  reactions={reactions ?? []}
                   onToggle={onToggleReaction}
                 />
               )}
