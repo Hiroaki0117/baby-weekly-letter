@@ -15,12 +15,13 @@ type LogCardProps = {
   childName?: string | null;
   authorDisplayName?: string | null;
   reactions?: ReactionSummary[];
+  nameMap?: Record<string, string>;
   onEdit: (log: DailyLog) => void;
   onDelete: (id: string) => void;
   onToggleReaction?: (logId: string, emoji: string) => void;
 };
 
-export function LogCard({ log, childName, authorDisplayName, reactions, onEdit, onDelete, onToggleReaction }: LogCardProps) {
+export function LogCard({ log, childName, authorDisplayName, reactions, nameMap, onEdit, onDelete, onToggleReaction }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -128,6 +129,7 @@ export function LogCard({ log, childName, authorDisplayName, reactions, onEdit, 
                 <ReactionBar
                   logId={log.id}
                   reactions={reactions ?? []}
+                  nameMap={nameMap ?? {}}
                   onToggle={onToggleReaction}
                 />
               )}

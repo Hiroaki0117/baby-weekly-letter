@@ -179,7 +179,14 @@ export default function HomePage() {
         const updated = { ...prev };
         const entries = (updated[logId] ?? []).map((r) =>
           r.emoji === emoji
-            ? { ...r, count: r.count + (wasReacted ? -1 : 1), reacted: !wasReacted }
+            ? {
+                ...r,
+                count: r.count + (wasReacted ? -1 : 1),
+                reacted: !wasReacted,
+                userIds: wasReacted
+                  ? r.userIds.filter((id) => id !== currentUserId)
+                  : [...r.userIds, currentUserId],
+              }
             : r
         );
         updated[logId] = entries;
@@ -296,6 +303,7 @@ export default function HomePage() {
               childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
               authorDisplayName={authorNames[log.author_id]}
               reactions={reactionMap[log.id]}
+              nameMap={authorNames}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggleReaction={handleToggleReaction}

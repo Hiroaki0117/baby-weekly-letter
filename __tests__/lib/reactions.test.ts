@@ -20,10 +20,10 @@ describe("buildReactionMap", () => {
     expect(result[LOG_1]).toHaveLength(REACTION_STAMPS.length);
 
     const heart = result[LOG_1].find((r) => r.emoji === "heart");
-    expect(heart).toEqual({ emoji: "heart", count: 1, reacted: true });
+    expect(heart).toEqual({ emoji: "heart", count: 1, reacted: true, userIds: [USER_A] });
 
     const clap = result[LOG_1].find((r) => r.emoji === "clap");
-    expect(clap).toEqual({ emoji: "clap", count: 0, reacted: false });
+    expect(clap).toEqual({ emoji: "clap", count: 0, reacted: false, userIds: [] });
   });
 
   it("同じログに複数ユーザーのリアクションを集計する", () => {
@@ -35,10 +35,10 @@ describe("buildReactionMap", () => {
     const result = buildReactionMap(raw, USER_A);
 
     const heart = result[LOG_1].find((r) => r.emoji === "heart");
-    expect(heart).toEqual({ emoji: "heart", count: 2, reacted: true });
+    expect(heart).toEqual({ emoji: "heart", count: 2, reacted: true, userIds: [USER_A, USER_B] });
 
     const clap = result[LOG_1].find((r) => r.emoji === "clap");
-    expect(clap).toEqual({ emoji: "clap", count: 1, reacted: false });
+    expect(clap).toEqual({ emoji: "clap", count: 1, reacted: false, userIds: [USER_B] });
   });
 
   it("複数ログのリアクションをログID別に集計する", () => {
@@ -51,10 +51,10 @@ describe("buildReactionMap", () => {
     expect(Object.keys(result)).toHaveLength(2);
 
     const log1Smile = result[LOG_1].find((r) => r.emoji === "smile");
-    expect(log1Smile).toEqual({ emoji: "smile", count: 1, reacted: true });
+    expect(log1Smile).toEqual({ emoji: "smile", count: 1, reacted: true, userIds: [USER_A] });
 
     const log2Muscle = result[LOG_2].find((r) => r.emoji === "muscle");
-    expect(log2Muscle).toEqual({ emoji: "muscle", count: 1, reacted: false });
+    expect(log2Muscle).toEqual({ emoji: "muscle", count: 1, reacted: false, userIds: [USER_B] });
   });
 
   it("自分がリアクションしていない場合 reacted が false になる", () => {
@@ -64,7 +64,7 @@ describe("buildReactionMap", () => {
     const result = buildReactionMap(raw, USER_A);
 
     const sparkle = result[LOG_1].find((r) => r.emoji === "sparkle");
-    expect(sparkle).toEqual({ emoji: "sparkle", count: 1, reacted: false });
+    expect(sparkle).toEqual({ emoji: "sparkle", count: 1, reacted: false, userIds: [USER_B] });
   });
 
   it("全スタンプ種別のエントリが必ず返される", () => {

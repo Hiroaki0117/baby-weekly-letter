@@ -257,7 +257,14 @@ function LogsPageInner() {
         const updated = { ...prev };
         const entries = (updated[logId] ?? []).map((r) =>
           r.emoji === emoji
-            ? { ...r, count: r.count + (wasReacted ? -1 : 1), reacted: !wasReacted }
+            ? {
+                ...r,
+                count: r.count + (wasReacted ? -1 : 1),
+                reacted: !wasReacted,
+                userIds: wasReacted
+                  ? r.userIds.filter((id) => id !== currentUserId)
+                  : [...r.userIds, currentUserId],
+              }
             : r
         );
         updated[logId] = entries;
@@ -503,6 +510,7 @@ function LogsPageInner() {
                   }
                   authorDisplayName={authorNames[log.author_id]}
                   reactions={reactionMap[log.id]}
+                  nameMap={authorNames}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onToggleReaction={handleToggleReaction}
