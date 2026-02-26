@@ -53,7 +53,7 @@ export function PeriodTabs({
           <button
             type="button"
             onClick={onPrev}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             ‹
           </button>
@@ -65,7 +65,7 @@ export function PeriodTabs({
             onClick={onNext}
             disabled={!canGoNext}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+              "flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors",
               canGoNext
                 ? "text-muted-foreground hover:bg-muted hover:text-foreground"
                 : "text-muted-foreground/30 cursor-not-allowed"
