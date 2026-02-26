@@ -5,17 +5,13 @@ import { startOfWeek, addWeeks, addDays, format, isAfter } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import {
-  calcWeeklyCounts,
   calcWeeklyMoods,
-  calcMonthlyCounts,
   calcMonthlyMoods,
-  calcYearlyCounts,
   calcYearlyMoods,
   calcCategoryCounts,
 } from "@/lib/stats";
 import type { PeriodType } from "@/lib/stats";
 import { PeriodTabs } from "@/components/stats/period-tabs";
-import { CountChart } from "@/components/stats/count-chart";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { ChildSelector } from "@/components/child/child-selector";
@@ -86,17 +82,6 @@ export default function StatsPage() {
   );
 
   // 期間に応じた集計
-  const countData = useMemo(() => {
-    switch (period) {
-      case "weekly":
-        return calcWeeklyCounts(filtered, weekStart);
-      case "monthly":
-        return calcMonthlyCounts(filtered, selectedYear);
-      case "yearly":
-        return calcYearlyCounts(filtered);
-    }
-  }, [filtered, period, weekStart, selectedYear]);
-
   const moodData = useMemo(() => {
     switch (period) {
       case "weekly":
@@ -186,15 +171,9 @@ export default function StatsPage() {
             canGoNext={canGoNext}
           />
 
-          {/* 記録数 */}
+          {/* 記録の様子 */}
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">記録数</h3>
-            <CountChart data={countData} scrollable={scrollable} />
-          </div>
-
-          {/* 気分の推移 */}
-          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">気分の推移</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">記録の様子</h3>
             <MoodChart data={moodData} scrollable={scrollable} />
           </div>
 
