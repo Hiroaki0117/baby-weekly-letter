@@ -156,6 +156,30 @@ export interface Database {
         };
         Relationships: [];
       };
+      log_reactions: {
+        Row: {
+          id: string;
+          log_id: string;
+          user_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          log_id: string;
+          user_id: string;
+          emoji: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          log_id?: string;
+          user_id?: string;
+          emoji?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       weekly_reports: {
         Row: {
           id: string;

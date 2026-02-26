@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString, formatDateJa, calcAge } from "@/lib/date";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { getStreak } from "@/lib/streak";
 import { deleteLog } from "@/lib/log-actions";
+import { buildReactionMap, toggleReaction, type ReactionSummary } from "@/lib/reactions";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { MemoriesSection } from "@/components/memory/memories-section";
+import { ReactionNotice } from "@/components/home/reaction-notice";
 import { toast } from "sonner";
 import type { Child, DailyLog } from "@/types";
 
@@ -20,6 +22,9 @@ export default function HomePage() {
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [streak, setStreak] = useState(0);
   const [cardLoaded, setCardLoaded] = useState(false);
+  const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
+  const [newReactionCount, setNewReactionCount] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState("");
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const today = toDateString(new Date());
@@ -39,15 +44,28 @@ export default function HomePage() {
       return;
     }
 
-    setLogs((logsRes.data as DailyLog[]) ?? []);
+    const fetchedLogs = (logsRes.data as DailyLog[]) ?? [];
+    setLogs(fetchedLogs);
     setStreak(streakCount);
+
+    // リアクション取得
+    if (fetchedLogs.length > 0 && currentUserId) {
+      const logIds = fetchedLogs.map((l) => l.id);
+      const { data: reactionsData } = await supabase
+        .from("log_reactions")
+        .select("log_id, user_id, emoji")
+        .in("log_id", logIds);
+      if (reactionsData) {
+        setReactionMap(buildReactionMap(reactionsData, currentUserId));
+      }
+    }
   }
 
   useEffect(() => {
     const client = supabaseRef.current;
     const todayStr = toDateString(new Date());
     async function load() {
-      const [logsRes, membersRes, streakCount] = await Promise.all([
+      const [logsRes, membersRes, streakCount, userRes] = await Promise.all([
         client
           .from("daily_logs")
           .select("*")
@@ -57,10 +75,17 @@ export default function HomePage() {
           .from("family_members")
           .select("user_id, display_name"),
         getStreak(client),
+        client.auth.getUser(),
       ]);
 
+      const userId = userRes.data.user?.id ?? "";
+      setCurrentUserId(userId);
+
+      const fetchedLogs: DailyLog[] = [];
       if (!logsRes.error) {
-        setLogs((logsRes.data as DailyLog[]) ?? []);
+        const data = (logsRes.data as DailyLog[]) ?? [];
+        fetchedLogs.push(...data);
+        setLogs(data);
       }
       if (!membersRes.error && membersRes.data) {
         const names: Record<string, string> = {};
@@ -83,6 +108,31 @@ export default function HomePage() {
           setChildrenList(childrenData as Child[]);
         }
       }
+
+      // リアクション取得
+      if (fetchedLogs.length > 0 && userId) {
+        const logIds = fetchedLogs.map((l) => l.id);
+        const { data: reactionsData } = await client
+          .from("log_reactions")
+          .select("log_id, user_id, emoji")
+          .in("log_id", logIds);
+        if (reactionsData) {
+          setReactionMap(buildReactionMap(reactionsData, userId));
+        }
+      }
+
+      // 新着リアクション件数（自分が書いたログへの他人のリアクション）
+      if (userId) {
+        const lastChecked = localStorage.getItem("lastReactionCheckedAt") ?? "1970-01-01T00:00:00Z";
+        const { count } = await client
+          .from("log_reactions")
+          .select("id, daily_logs!inner(author_id)", { count: "exact", head: true })
+          .eq("daily_logs.author_id", userId)
+          .neq("user_id", userId)
+          .gt("created_at", lastChecked);
+        setNewReactionCount(count ?? 0);
+      }
+
       setCardLoaded(true);
     }
     load();
@@ -116,6 +166,30 @@ export default function HomePage() {
     setEditingPhotoUrl(null);
     fetchTodayLogs();
   }
+
+  const handleToggleReaction = useCallback(
+    async (logId: string, emoji: string) => {
+      if (!currentUserId) return;
+      const current = reactionMap[logId] ?? [];
+      const summary = current.find((r) => r.emoji === emoji);
+      const wasReacted = summary?.reacted ?? false;
+
+      // 楽観的更新
+      setReactionMap((prev) => {
+        const updated = { ...prev };
+        const entries = (updated[logId] ?? []).map((r) =>
+          r.emoji === emoji
+            ? { ...r, count: r.count + (wasReacted ? -1 : 1), reacted: !wasReacted }
+            : r
+        );
+        updated[logId] = entries;
+        return updated;
+      });
+
+      await toggleReaction(supabase, logId, currentUserId, emoji, wasReacted);
+    },
+    [currentUserId, reactionMap, supabase]
+  );
 
   const now = new Date();
 
@@ -182,6 +256,9 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* 新着リアクション通知 */}
+      <ReactionNotice count={newReactionCount} />
+
       {/* ○年前の今日 */}
       <MemoriesSection childrenList={childrenList} />
 
@@ -218,8 +295,10 @@ export default function HomePage() {
               log={log}
               childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
               authorDisplayName={authorNames[log.author_id]}
+              reactions={reactionMap[log.id]}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onToggleReaction={handleToggleReaction}
             />
           ))}
         </div>

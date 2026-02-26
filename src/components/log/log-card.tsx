@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
+import type { ReactionSummary } from "@/lib/reactions";
 import { AuthorBadge } from "./author-badge";
+import { ReactionBar } from "./reaction-bar";
 import { ChildBadge } from "@/components/child/child-badge";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,11 +14,13 @@ type LogCardProps = {
   log: DailyLog;
   childName?: string | null;
   authorDisplayName?: string | null;
+  reactions?: ReactionSummary[];
   onEdit: (log: DailyLog) => void;
   onDelete: (id: string) => void;
+  onToggleReaction?: (logId: string, emoji: string) => void;
 };
 
-export function LogCard({ log, childName, authorDisplayName, onEdit, onDelete }: LogCardProps) {
+export function LogCard({ log, childName, authorDisplayName, reactions, onEdit, onDelete, onToggleReaction }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -117,6 +121,15 @@ export function LogCard({ log, childName, authorDisplayName, onEdit, onDelete }:
                     );
                   })}
                 </div>
+              )}
+
+              {/* リアクション */}
+              {reactions && onToggleReaction && (
+                <ReactionBar
+                  logId={log.id}
+                  reactions={reactions}
+                  onToggle={onToggleReaction}
+                />
               )}
             </div>
           </div>
