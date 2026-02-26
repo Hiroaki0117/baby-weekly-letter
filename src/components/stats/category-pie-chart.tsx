@@ -5,7 +5,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Tooltip,
   Legend,
 } from "recharts";
 import type { CategoryCount } from "@/lib/stats";
@@ -53,16 +52,6 @@ export function CategoryPieChart({ data }: Props) {
                 />
               ))}
             </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: 8,
-                fontSize: 12,
-                color: "hsl(var(--foreground))",
-              }}
-              formatter={(value: number | undefined) => [`${value ?? 0}件`]}
-            />
             <Legend
               formatter={(value: string) => (
                 <span className="text-xs">{value}</span>
