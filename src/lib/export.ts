@@ -38,17 +38,11 @@ export async function exportAsPng(
   element: HTMLElement,
   filename: string
 ): Promise<void> {
-  const html2canvas = (await import("html2canvas")).default;
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: false,
+  const { toBlob } = await import("html-to-image");
+  const blob = await toBlob(element, {
+    pixelRatio: 2,
     backgroundColor: "#ffffff",
   });
-
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/png")
-  );
   if (!blob) return;
 
   const url = URL.createObjectURL(blob);
@@ -66,23 +60,25 @@ export async function exportAsPdf(
   element: HTMLElement,
   filename: string
 ): Promise<void> {
-  const html2canvas = (await import("html2canvas")).default;
+  const { toPng } = await import("html-to-image");
   const { jsPDF } = await import("jspdf");
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: false,
+  const imgData = await toPng(element, {
+    pixelRatio: 2,
     backgroundColor: "#ffffff",
   });
 
-  const imgData = canvas.toDataURL("image/png");
-  const imgWidth = canvas.width;
-  const imgHeight = canvas.height;
+  // 画像サイズを取得するために一時的にImageを作成
+  const img = new Image();
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = imgData;
+  });
 
   // A4 幅に合わせてスケール
   const pdfWidth = 210; // mm
-  const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+  const pdfHeight = (img.height * pdfWidth) / img.width;
 
   const pdf = new jsPDF({
     orientation: pdfHeight > pdfWidth ? "portrait" : "landscape",
