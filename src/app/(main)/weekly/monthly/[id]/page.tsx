@@ -46,11 +46,19 @@ export default function MonthlyDetailPage() {
 
   // ExportLayout が描画され、写真が読み込まれたらキャプチャ
   useEffect(() => {
-    if (!exportData || !exportRef.current || !report) return;
+    if (!exportData || !report) return;
 
     async function doExport() {
+      // ref がアタッチされるまで待つ
+      await new Promise((r) => requestAnimationFrame(r));
       const el = exportRef.current;
-      if (!el) return;
+      if (!el) {
+        console.error("Export element ref is null");
+        toast.error("エクスポートに失敗しました");
+        setExportData(null);
+        setExporting(false);
+        return;
+      }
 
       // 写真の読み込み完了を待つ
       const imgs = el.querySelectorAll("img");
@@ -78,7 +86,8 @@ export default function MonthlyDetailPage() {
           await exportAsPdf(el, filename);
         }
         toast.success("エクスポートしました");
-      } catch {
+      } catch (err) {
+        console.error("Export failed:", err);
         toast.error("エクスポートに失敗しました");
       } finally {
         setExportData(null);
@@ -228,9 +237,9 @@ export default function MonthlyDetailPage() {
         )}
       </button>
 
-      {/* エクスポート用（画面外に描画） */}
+      {/* エクスポート用（視覚的に非表示だが描画可能） */}
       {exportData && (
-        <div style={{ position: "fixed", left: -9999, top: 0 }}>
+        <div style={{ position: "fixed", left: 0, top: 0, zIndex: -9999, pointerEvents: "none" }}>
           <ExportLayout
             ref={exportRef}
             type="monthly"
