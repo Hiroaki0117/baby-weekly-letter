@@ -38,7 +38,7 @@ export function CountChart({ data, scrollable }: Props) {
   const chart = (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} fill="hsl(var(--primary) / 0.05)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
         <XAxis
           dataKey="label"
           tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
@@ -64,10 +64,10 @@ export function CountChart({ data, scrollable }: Props) {
   if (scrollable) {
     return (
       <div className="overflow-x-auto">
-        <div className="h-56 min-w-[480px]">{chart}</div>
+        <div className="h-56 min-w-[480px] rounded-lg bg-primary/5">{chart}</div>
       </div>
     );
   }
 
-  return <div className="h-56">{chart}</div>;
+  return <div className="h-56 rounded-lg bg-primary/5">{chart}</div>;
 }
