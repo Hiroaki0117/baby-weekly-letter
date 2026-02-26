@@ -37,24 +37,31 @@ function CustomTooltip({
   const items = payload.filter((p) => (p.value ?? 0) > 0);
   if (items.length === 0) return null;
 
+  const total = items.reduce((sum, item) => sum + (item.value ?? 0), 0);
+
   return (
-    <div className="rounded-lg border border-border/60 bg-card px-3 py-2 shadow-md">
-      <p className="mb-1 text-xs font-semibold text-foreground">{label}</p>
-      {items.map((item) => {
-        const config = MOOD_CONFIG.find((m) => m.key === item.dataKey);
-        return (
-          <div key={item.dataKey} className="flex items-center gap-1.5 text-xs">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-sm"
-              style={{ backgroundColor: item.fill }}
-            />
-            <span className="text-muted-foreground">
-              {config ? `${config.emoji} ${config.label}` : item.dataKey}
-            </span>
-            <span className="ml-auto font-semibold text-foreground">{item.value}件</span>
-          </div>
-        );
-      })}
+    <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
+      <div className="mb-1.5 flex items-center justify-between gap-4">
+        <p className="text-xs font-semibold text-foreground">{label}</p>
+        <p className="text-sm font-bold text-foreground">{total}件</p>
+      </div>
+      <div className="space-y-0.5">
+        {items.map((item) => {
+          const config = MOOD_CONFIG.find((m) => m.key === item.dataKey);
+          return (
+            <div key={item.dataKey} className="flex items-center gap-1.5 text-xs">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-sm"
+                style={{ backgroundColor: item.fill }}
+              />
+              <span className="text-muted-foreground">
+                {config ? `${config.emoji} ${config.label}` : item.dataKey}
+              </span>
+              <span className="ml-auto font-semibold text-foreground">{item.value}件</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
