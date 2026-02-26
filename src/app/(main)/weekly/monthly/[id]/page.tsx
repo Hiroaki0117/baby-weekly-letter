@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { formatMonthJa } from "@/lib/date";
+import { formatMonthJa, getMonthRange, toDateString } from "@/lib/date";
+import { fetchPhotoUrls, exportAsPng, exportAsPdf, buildExportFilename } from "@/lib/export";
 import { MonthlyPhotoGallery } from "@/components/monthly/monthly-photo-gallery";
+import { ShareMenu } from "@/components/export/share-menu";
+import { ExportLayout } from "@/components/export/export-layout";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import type { MonthlyReport } from "@/types";
@@ -15,6 +18,9 @@ export default function MonthlyDetailPage() {
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exportData, setExportData] = useState<{ photoUrls: string[]; format: "png" | "pdf" } | null>(null);
   const supabase = createClient();
 
   const fetchReport = useCallback(async () => {
@@ -37,6 +43,66 @@ export default function MonthlyDetailPage() {
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  // ExportLayout が描画され、写真が読み込まれたらキャプチャ
+  useEffect(() => {
+    if (!exportData || !exportRef.current || !report) return;
+
+    async function doExport() {
+      const el = exportRef.current;
+      if (!el) return;
+
+      // 写真の読み込み完了を待つ
+      const imgs = el.querySelectorAll("img");
+      await Promise.all(
+        Array.from(imgs).map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      await new Promise((r) => setTimeout(r, 100));
+
+      const d = parseISO(report!.month);
+      const dateLabel = `${d.getFullYear()}年${d.getMonth() + 1}月`;
+      const filename = buildExportFilename("monthly", dateLabel, exportData!.format);
+
+      try {
+        if (exportData!.format === "png") {
+          await exportAsPng(el, filename);
+        } else {
+          await exportAsPdf(el, filename);
+        }
+        toast.success("エクスポートしました");
+      } catch {
+        toast.error("エクスポートに失敗しました");
+      } finally {
+        setExportData(null);
+        setExporting(false);
+      }
+    }
+
+    doExport();
+  }, [exportData, report]);
+
+  async function handleExport(fmt: "png" | "pdf") {
+    if (!report) return;
+    setExporting(true);
+
+    try {
+      const d = parseISO(report.month);
+      const { start, end } = getMonthRange(d.getFullYear(), d.getMonth());
+      const photoUrls = await fetchPhotoUrls(supabase, toDateString(start), toDateString(end));
+      setExportData({ photoUrls, format: fmt });
+    } catch {
+      toast.error("エクスポートの準備に失敗しました");
+      setExporting(false);
+    }
+  }
 
   async function handleRegenerate() {
     if (!report) return;
@@ -143,6 +209,9 @@ export default function MonthlyDetailPage() {
       {/* フォトギャラリー */}
       <MonthlyPhotoGallery year={date.getFullYear()} month={date.getMonth()} />
 
+      {/* 共有メニュー */}
+      <ShareMenu onExport={handleExport} exporting={exporting} />
+
       {/* 再生成ボタン */}
       <button
         onClick={handleRegenerate}
@@ -158,6 +227,19 @@ export default function MonthlyDetailPage() {
           "✨ 再生成する"
         )}
       </button>
+
+      {/* エクスポート用（画面外に描画） */}
+      {exportData && (
+        <div style={{ position: "fixed", left: -9999, top: 0 }}>
+          <ExportLayout
+            ref={exportRef}
+            type="monthly"
+            title={`${monthLabel}のまとめ`}
+            content={report.content}
+            photoUrls={exportData.photoUrls}
+          />
+        </div>
+      )}
     </div>
   );
 }
