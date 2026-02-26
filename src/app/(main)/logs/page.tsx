@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getWeekRange, toDateString, formatMonthJa } from "@/lib/date";
 import { deleteLog } from "@/lib/log-actions";
-import { buildReactionMap, toggleReaction, type ReactionSummary } from "@/lib/reactions";
+import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
@@ -255,7 +255,8 @@ function LogsPageInner() {
       // 楽観的更新
       setReactionMap((prev) => {
         const updated = { ...prev };
-        const entries = (updated[logId] ?? []).map((r) =>
+        const base = updated[logId] ?? emptyReactionSummaries();
+        updated[logId] = base.map((r) =>
           r.emoji === emoji
             ? {
                 ...r,
@@ -267,7 +268,6 @@ function LogsPageInner() {
               }
             : r
         );
-        updated[logId] = entries;
         return updated;
       });
 
