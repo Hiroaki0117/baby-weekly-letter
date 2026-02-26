@@ -100,7 +100,7 @@ export function MoodChart({ data, scrollable }: Props) {
   return (
     <div className="space-y-3">
       {/* 凡例（グラフ上部） */}
-      <div className="grid grid-cols-3 justify-items-center gap-x-3 gap-y-1">
+      <div className="grid grid-cols-3 justify-items-center gap-x-3 gap-y-1 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
         {MOOD_CONFIG.map((mood) => (
           <div key={mood.key} className="flex items-center gap-1">
             <span
