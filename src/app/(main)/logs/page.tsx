@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState, useMemo, useRef } from "react";
+import { Suspense, useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getWeekRange, toDateString, formatMonthJa } from "@/lib/date";
 import { deleteLog } from "@/lib/log-actions";
+import { buildReactionMap, toggleReaction, type ReactionSummary } from "@/lib/reactions";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
@@ -45,6 +46,8 @@ function LogsPageInner() {
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
+  const [currentUserId, setCurrentUserId] = useState("");
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const router = useRouter();
@@ -105,13 +108,26 @@ function LogsPageInner() {
       return;
     }
 
-    setLogs((data as DailyLog[]) ?? []);
+    const fetchedLogs = (data as DailyLog[]) ?? [];
+    setLogs(fetchedLogs);
+
+    // リアクション再取得
+    if (fetchedLogs.length > 0 && currentUserId) {
+      const logIds = fetchedLogs.map((l) => l.id);
+      const { data: reactionsData } = await supabase
+        .from("log_reactions")
+        .select("log_id, user_id, emoji")
+        .in("log_id", logIds);
+      if (reactionsData) {
+        setReactionMap(buildReactionMap(reactionsData, currentUserId));
+      }
+    }
   }
 
   useEffect(() => {
     const client = supabaseRef.current;
     async function load() {
-      const [logsRes, membersRes, childrenRes, weeklyRes, monthlyRes] =
+      const [logsRes, membersRes, childrenRes, weeklyRes, monthlyRes, userRes] =
         await Promise.all([
           client
             .from("daily_logs")
@@ -131,10 +147,17 @@ function LogsPageInner() {
             .from("monthly_reports")
             .select("*")
             .order("month", { ascending: false }),
+          client.auth.getUser(),
         ]);
 
+      const userId = userRes.data.user?.id ?? "";
+      setCurrentUserId(userId);
+
+      const fetchedLogs: DailyLog[] = [];
       if (!logsRes.error) {
-        setLogs((logsRes.data as DailyLog[]) ?? []);
+        const data = (logsRes.data as DailyLog[]) ?? [];
+        fetchedLogs.push(...data);
+        setLogs(data);
       }
       if (!membersRes.error && membersRes.data) {
         const names: Record<string, string> = {};
@@ -159,6 +182,22 @@ function LogsPageInner() {
       if (!monthlyRes.error) {
         setMonthlyReports((monthlyRes.data as MonthlyReport[]) ?? []);
       }
+
+      // リアクション取得
+      if (fetchedLogs.length > 0 && userId) {
+        const logIds = fetchedLogs.map((l) => l.id);
+        const { data: reactionsData } = await client
+          .from("log_reactions")
+          .select("log_id, user_id, emoji")
+          .in("log_id", logIds);
+        if (reactionsData) {
+          setReactionMap(buildReactionMap(reactionsData, userId));
+        }
+      }
+
+      // lastReactionCheckedAt を更新（ログ一覧を開いた＝確認した）
+      localStorage.setItem("lastReactionCheckedAt", new Date().toISOString());
+
       setLoading(false);
     }
     load();
@@ -205,6 +244,30 @@ function LogsPageInner() {
     fetchLogs();
     router.refresh();
   }
+
+  const handleToggleReaction = useCallback(
+    async (logId: string, emoji: string) => {
+      if (!currentUserId) return;
+      const current = reactionMap[logId] ?? [];
+      const summary = current.find((r) => r.emoji === emoji);
+      const wasReacted = summary?.reacted ?? false;
+
+      // 楽観的更新
+      setReactionMap((prev) => {
+        const updated = { ...prev };
+        const entries = (updated[logId] ?? []).map((r) =>
+          r.emoji === emoji
+            ? { ...r, count: r.count + (wasReacted ? -1 : 1), reacted: !wasReacted }
+            : r
+        );
+        updated[logId] = entries;
+        return updated;
+      });
+
+      await toggleReaction(supabase, logId, currentUserId, emoji, wasReacted);
+    },
+    [currentUserId, reactionMap, supabase]
+  );
 
   async function handleGenerateWeekly() {
     setGenerating(true);
@@ -439,8 +502,10 @@ function LogsPageInner() {
                       : undefined
                   }
                   authorDisplayName={authorNames[log.author_id]}
+                  reactions={reactionMap[log.id]}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  onToggleReaction={handleToggleReaction}
                 />
               ))}
             </div>

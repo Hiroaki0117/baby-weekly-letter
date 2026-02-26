@@ -17,6 +17,8 @@ export type FamilyInvitation =
 export type FamilyInvitationInsert =
   Database["public"]["Tables"]["family_invitations"]["Insert"];
 
+export type LogReaction = Database["public"]["Tables"]["log_reactions"]["Row"];
+
 export type DailyLog = Database["public"]["Tables"]["daily_logs"]["Row"];
 export type DailyLogWithAuthor = DailyLog & { authorDisplayName?: string | null };
 export type DailyLogInsert =
