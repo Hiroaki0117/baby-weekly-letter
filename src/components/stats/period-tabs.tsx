@@ -58,7 +58,7 @@ export function PeriodTabs({
             ‹
           </button>
         )}
-        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span className="text-sm font-semibold text-foreground">{label}</span>
         {onNext && (
           <button
             type="button"

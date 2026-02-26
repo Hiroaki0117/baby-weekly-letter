@@ -187,7 +187,7 @@ export default function StatsPage() {
           />
 
           {/* 記録数 */}
-          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-primary/15 bg-primary/5 p-4 shadow-sm">
             <h3 className="mb-3 text-sm font-semibold text-foreground">記録数</h3>
             <CountChart data={countData} scrollable={scrollable} />
           </div>
