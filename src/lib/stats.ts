@@ -1,12 +1,18 @@
+import { addDays, format } from "date-fns";
+import { CATEGORY_OPTIONS } from "@/types";
 import type { DailyLog, Mood } from "@/types";
 
-export type MonthlyCount = {
-  month: string; // "2025/01"
+// --- 共通型 ---
+
+export type PeriodType = "weekly" | "monthly" | "yearly";
+
+export type CountEntry = {
+  label: string;
   count: number;
 };
 
-export type MonthlyMood = {
-  month: string;
+export type MoodEntry = {
+  label: string;
   moved: number;
   happy: number;
   neutral: number;
@@ -21,54 +27,139 @@ export type CategoryCount = {
 
 const MOODS: Mood[] = ["moved", "happy", "neutral", "tired", "sad"];
 
-function toMonthKey(logDate: string): string {
-  // logDate is "YYYY-MM-DD"
-  return logDate.slice(0, 4) + "/" + logDate.slice(5, 7);
+const DAY_LABELS = ["月", "火", "水", "木", "金", "土", "日"];
+
+const MONTH_LABELS = [
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
+];
+
+function emptyMood(label: string): MoodEntry {
+  return { label, moved: 0, happy: 0, neutral: 0, tired: 0, sad: 0 };
 }
 
+// --- 週別 ---
+
 /**
- * 月別の記録件数を昇順で返す
+ * 週別の記録件数（月〜日の7日分）
  */
-export function calcMonthlyCounts(logs: DailyLog[]): MonthlyCount[] {
-  const map = new Map<string, number>();
-  for (const log of logs) {
-    const key = toMonthKey(log.log_date);
-    map.set(key, (map.get(key) ?? 0) + 1);
+export function calcWeeklyCounts(logs: DailyLog[], weekStart: Date): CountEntry[] {
+  const entries: CountEntry[] = DAY_LABELS.map((label) => ({ label, count: 0 }));
+  for (let i = 0; i < 7; i++) {
+    const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+    entries[i].count = logs.filter((l) => l.log_date === dateStr).length;
   }
-  return Array.from(map.entries())
-    .map(([month, count]) => ({ month, count }))
-    .sort((a, b) => a.month.localeCompare(b.month));
+  return entries;
 }
 
 /**
- * 月別の気分内訳を昇順で返す
+ * 週別の気分内訳（月〜日の7日分）
  */
-export function calcMonthlyMoods(logs: DailyLog[]): MonthlyMood[] {
-  const map = new Map<string, MonthlyMood>();
-  for (const log of logs) {
-    const key = toMonthKey(log.log_date);
-    let entry = map.get(key);
-    if (!entry) {
-      entry = { month: key, moved: 0, happy: 0, neutral: 0, tired: 0, sad: 0 };
-      map.set(key, entry);
-    }
-    if (MOODS.includes(log.mood as Mood)) {
-      entry[log.mood as Mood]++;
+export function calcWeeklyMoods(logs: DailyLog[], weekStart: Date): MoodEntry[] {
+  const entries: MoodEntry[] = DAY_LABELS.map((label) => emptyMood(label));
+  for (let i = 0; i < 7; i++) {
+    const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
+    const dayLogs = logs.filter((l) => l.log_date === dateStr);
+    for (const log of dayLogs) {
+      if (MOODS.includes(log.mood as Mood)) {
+        entries[i][log.mood as Mood]++;
+      }
     }
   }
-  return Array.from(map.values()).sort((a, b) =>
-    a.month.localeCompare(b.month)
-  );
+  return entries;
+}
+
+// --- 月別 ---
+
+/**
+ * 月別の記録件数（指定年の1月〜12月）
+ */
+export function calcMonthlyCounts(logs: DailyLog[], year: number): CountEntry[] {
+  const entries: CountEntry[] = MONTH_LABELS.map((label) => ({ label, count: 0 }));
+  for (const log of logs) {
+    const logYear = parseInt(log.log_date.slice(0, 4), 10);
+    const logMonth = parseInt(log.log_date.slice(5, 7), 10);
+    if (logYear === year && logMonth >= 1 && logMonth <= 12) {
+      entries[logMonth - 1].count++;
+    }
+  }
+  return entries;
 }
 
 /**
- * カテゴリ別の記録件数を降順で返す
+ * 月別の気分内訳（指定年の1月〜12月）
+ */
+export function calcMonthlyMoods(logs: DailyLog[], year: number): MoodEntry[] {
+  const entries: MoodEntry[] = MONTH_LABELS.map((label) => emptyMood(label));
+  for (const log of logs) {
+    const logYear = parseInt(log.log_date.slice(0, 4), 10);
+    const logMonth = parseInt(log.log_date.slice(5, 7), 10);
+    if (logYear === year && logMonth >= 1 && logMonth <= 12) {
+      if (MOODS.includes(log.mood as Mood)) {
+        entries[logMonth - 1][log.mood as Mood]++;
+      }
+    }
+  }
+  return entries;
+}
+
+// --- 年別 ---
+
+/**
+ * 年別の記録件数（直近5年分）
+ */
+export function calcYearlyCounts(logs: DailyLog[]): CountEntry[] {
+  const currentYear = new Date().getFullYear();
+  const entries: CountEntry[] = [];
+  for (let y = currentYear - 4; y <= currentYear; y++) {
+    entries.push({ label: String(y), count: 0 });
+  }
+  for (const log of logs) {
+    const logYear = parseInt(log.log_date.slice(0, 4), 10);
+    const idx = logYear - (currentYear - 4);
+    if (idx >= 0 && idx < 5) {
+      entries[idx].count++;
+    }
+  }
+  return entries;
+}
+
+/**
+ * 年別の気分内訳（直近5年分）
+ */
+export function calcYearlyMoods(logs: DailyLog[]): MoodEntry[] {
+  const currentYear = new Date().getFullYear();
+  const entries: MoodEntry[] = [];
+  for (let y = currentYear - 4; y <= currentYear; y++) {
+    entries.push(emptyMood(String(y)));
+  }
+  for (const log of logs) {
+    const logYear = parseInt(log.log_date.slice(0, 4), 10);
+    const idx = logYear - (currentYear - 4);
+    if (idx >= 0 && idx < 5) {
+      if (MOODS.includes(log.mood as Mood)) {
+        entries[idx][log.mood as Mood]++;
+      }
+    }
+  }
+  return entries;
+}
+
+// --- カテゴリ ---
+
+const categoryLabelMap = new Map(
+  CATEGORY_OPTIONS.map((c) => [c.value, c.label])
+);
+
+/**
+ * カテゴリ別の記録件数を降順で返す（日本語ラベル）
  */
 export function calcCategoryCounts(logs: DailyLog[]): CategoryCount[] {
   const map = new Map<string, number>();
   for (const log of logs) {
     for (const cat of log.categories) {
-      map.set(cat, (map.get(cat) ?? 0) + 1);
+      const label = categoryLabelMap.get(cat) ?? cat;
+      map.set(label, (map.get(label) ?? 0) + 1);
     }
   }
   return Array.from(map.entries())
