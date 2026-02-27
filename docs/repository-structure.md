@@ -5,10 +5,7 @@
 ```
 baby-weekly-letter/
 ├── .env.local                    # ローカル環境変数（git管理外）
-├── .eslintrc.json                # ESLint設定
-├── .prettierrc                   # Prettier設定
 ├── next.config.ts                # Next.js設定
-├── tailwind.config.ts            # Tailwind CSS設定
 ├── tsconfig.json                 # TypeScript設定
 ├── package.json
 ├── pnpm-lock.yaml
@@ -35,35 +32,66 @@ baby-weekly-letter/
 ├── src/
 │   ├── app/                      # Next.js App Router
 │   │   ├── layout.tsx            # ルートレイアウト
-│   │   ├── page.tsx              # ルート（リダイレクト）
+│   │   ├── globals.css           # グローバルCSS
 │   │   │
 │   │   ├── (auth)/               # 認証グループ（レイアウト共有）
 │   │   │   ├── layout.tsx        # 認証用レイアウト
 │   │   │   ├── login/
 │   │   │   │   └── page.tsx      # ログイン画面
-│   │   │   └── signup/
-│   │   │       └── page.tsx      # アカウント登録画面
+│   │   │   ├── signup/
+│   │   │   │   └── page.tsx      # アカウント登録画面
+│   │   │   └── onboarding/
+│   │   │       └── page.tsx      # オンボーディング画面
 │   │   │
 │   │   ├── (main)/               # メイングループ（認証必須）
 │   │   │   ├── layout.tsx        # メインレイアウト（ヘッダー・ナビ）
 │   │   │   ├── page.tsx          # ホーム（今日のログ入力）
+│   │   │   ├── calendar/
+│   │   │   │   └── page.tsx      # カレンダー画面
 │   │   │   ├── logs/
-│   │   │   │   └── page.tsx      # ログ一覧画面
+│   │   │   │   └── page.tsx      # 記録一覧画面（ログ・週次・月次タブ）
+│   │   │   ├── gallery/
+│   │   │   │   └── page.tsx      # 写真ギャラリー画面
+│   │   │   ├── stats/
+│   │   │   │   └── page.tsx      # 統計ダッシュボード画面
+│   │   │   ├── family/
+│   │   │   │   └── page.tsx      # 家族管理画面
+│   │   │   ├── settings/
+│   │   │   │   └── page.tsx      # 設定画面
 │   │   │   └── weekly/
-│   │   │       ├── page.tsx      # 週次通信一覧画面
-│   │   │       └── [id]/
-│   │   │           └── page.tsx  # 週次通信詳細画面
+│   │   │       ├── page.tsx      # 週次通信一覧（リダイレクト）
+│   │   │       ├── [id]/
+│   │   │       │   └── page.tsx  # 週次通信詳細画面
+│   │   │       └── monthly/
+│   │   │           └── [id]/
+│   │   │               └── page.tsx  # 月次まとめ詳細画面
+│   │   │
+│   │   ├── invite/
+│   │   │   └── [token]/
+│   │   │       └── page.tsx      # 家族招待受け入れ画面
 │   │   │
 │   │   ├── api/                  # Route Handlers
-│   │   │   └── weekly-report/
-│   │   │       └── generate/
-│   │   │           └── route.ts  # 週次通信生成API
+│   │   │   ├── weekly-report/
+│   │   │   │   └── generate/
+│   │   │   │       └── route.ts  # 週次通信生成API
+│   │   │   ├── monthly-report/
+│   │   │   │   └── generate/
+│   │   │   │       └── route.ts  # 月次まとめ生成API
+│   │   │   └── family/
+│   │   │       ├── create/
+│   │   │       │   └── route.ts  # 家族作成API
+│   │   │       ├── invite/
+│   │   │       │   └── route.ts  # 招待リンク生成API
+│   │   │       ├── join/
+│   │   │       │   └── route.ts  # 家族参加API
+│   │   │       └── members/
+│   │   │           ├── route.ts  # メンバー一覧API
+│   │   │           └── [userId]/
+│   │   │               └── route.ts  # メンバー操作API
 │   │   │
-│   │   ├── auth/
-│   │   │   └── callback/
-│   │   │       └── route.ts      # OAuth コールバック
-│   │   │
-│   │   └── globals.css           # グローバルCSS
+│   │   └── auth/
+│   │       └── callback/
+│   │           └── route.ts      # OAuth コールバック
 │   │
 │   ├── components/               # コンポーネント
 │   │   ├── ui/                   # shadcn/ui コンポーネント
@@ -72,7 +100,8 @@ baby-weekly-letter/
 │   │   │   ├── input.tsx
 │   │   │   ├── textarea.tsx
 │   │   │   ├── badge.tsx
-│   │   │   ├── toast.tsx
+│   │   │   ├── alert.tsx
+│   │   │   ├── sonner.tsx
 │   │   │   └── ...
 │   │   │
 │   │   ├── child/                # 子供関連コンポーネント
@@ -81,34 +110,62 @@ baby-weekly-letter/
 │   │   │
 │   │   ├── log/                  # ログ関連コンポーネント
 │   │   │   ├── log-form.tsx      # ログ入力・編集フォーム
-│   │   │   ├── log-card.tsx      # ログ一覧のカード
+│   │   │   ├── log-card.tsx      # ログ一覧のカード（リアクション付き）
 │   │   │   ├── log-filter.tsx    # ログ絞り込み（気分・カテゴリ・テキスト・子供）
+│   │   │   ├── logs-tabs.tsx     # タブ切り替え（ログ・週次・月次）
 │   │   │   ├── mood-selector.tsx # 気分スタンプ選択
 │   │   │   ├── category-picker.tsx # カテゴリ選択
-│   │   │   └── photo-uploader.tsx  # 写真アップロード
+│   │   │   ├── photo-uploader.tsx  # 写真アップロード
+│   │   │   ├── reaction-bar.tsx    # スタンプリアクション表示・操作
+│   │   │   └── author-badge.tsx    # 記録者バッジ
 │   │   │
 │   │   ├── weekly/               # 週次通信関連コンポーネント
 │   │   │   ├── weekly-report-card.tsx  # 通信一覧カード
-│   │   │   ├── weekly-report-detail.tsx # 通信詳細表示
 │   │   │   └── photo-gallery.tsx       # 写真一覧表示
 │   │   │
 │   │   ├── monthly/              # 月次まとめ関連コンポーネント
+│   │   │   ├── monthly-report-card.tsx   # 月次まとめカード
 │   │   │   └── monthly-photo-gallery.tsx # 月次写真一覧表示
 │   │   │
 │   │   ├── calendar/             # カレンダー関連コンポーネント
 │   │   │   ├── calendar-grid.tsx  # カレンダーグリッド
 │   │   │   └── month-picker.tsx   # 月選択ピッカー
 │   │   │
+│   │   ├── gallery/              # 写真ギャラリー関連コンポーネント
+│   │   │   ├── photo-grid.tsx     # 写真グリッド表示
+│   │   │   └── photo-modal.tsx    # 写真拡大モーダル
+│   │   │
+│   │   ├── stats/                # 統計関連コンポーネント
+│   │   │   ├── mood-chart.tsx     # 記録数・気分の積み上げ棒グラフ
+│   │   │   ├── category-pie-chart.tsx # カテゴリ別円グラフ
+│   │   │   └── period-tabs.tsx    # 期間切り替えタブ
+│   │   │
+│   │   ├── memory/               # 思い出振り返り関連コンポーネント
+│   │   │   ├── memories-section.tsx # ○年前の今日セクション
+│   │   │   └── memory-card.tsx     # 過去の記録カード
+│   │   │
+│   │   ├── home/                 # ホーム画面固有コンポーネント
+│   │   │   └── reaction-notice.tsx # リアクション新着通知
+│   │   │
+│   │   ├── family/               # 家族管理関連コンポーネント
+│   │   │   ├── invite-link.tsx    # 招待リンク生成・共有
+│   │   │   └── member-list.tsx    # 家族メンバー一覧
+│   │   │
+│   │   ├── export/               # エクスポート関連コンポーネント
+│   │   │   ├── export-layout.tsx  # エクスポート専用レイアウト
+│   │   │   └── share-menu.tsx     # 共有メニュー（PNG/PDF選択）
+│   │   │
 │   │   └── layout/               # レイアウト関連コンポーネント
-│   │       ├── header.tsx        # ヘッダー
-│   │       ├── nav.tsx           # ナビゲーション
+│   │       ├── header.tsx        # デスクトップヘッダー
+│   │       ├── nav.tsx           # デスクトップナビゲーション
 │   │       └── bottom-nav.tsx    # モバイル用ボトムナビ
 │   │
 │   ├── lib/                      # ユーティリティ・ライブラリ
 │   │   ├── supabase/
 │   │   │   ├── client.ts         # ブラウザ用 Supabase Client
 │   │   │   ├── server.ts         # サーバー用 Supabase Client
-│   │   │   └── middleware.ts     # 認証ミドルウェア
+│   │   │   ├── middleware.ts     # 認証ミドルウェア
+│   │   │   └── family.ts         # 家族関連DB操作
 │   │   │
 │   │   ├── gemini/
 │   │   │   └── client.ts         # Gemini API クライアント
@@ -117,12 +174,20 @@ baby-weekly-letter/
 │   │   │   ├── generate.ts       # 週次通信生成ロジック
 │   │   │   └── prompt.ts         # プロンプトテンプレート
 │   │   │
+│   │   ├── monthly-report/
+│   │   │   ├── generate.ts       # 月次まとめ生成ロジック
+│   │   │   └── prompt.ts         # 月次プロンプトテンプレート
+│   │   │
 │   │   ├── date.ts               # 日付ユーティリティ（date-fns ラッパー）
-│   │   └── utils.ts              # 汎用ユーティリティ（cn関数など）
-│   │
-│   ├── hooks/                    # カスタムフック
-│   │   ├── use-auth.ts           # 認証状態管理
-│   │   └── use-toast.ts          # トースト通知
+│   │   ├── utils.ts              # 汎用ユーティリティ（cn関数など）
+│   │   ├── auth-error.ts         # 認証エラーハンドリング
+│   │   ├── streak.ts             # 記録ストリーク計算
+│   │   ├── gallery.ts            # ギャラリーデータ取得
+│   │   ├── export.ts             # エクスポート処理（PNG/PDF）
+│   │   ├── stats.ts              # 統計データ集計
+│   │   ├── log-actions.ts        # ログCRUD操作
+│   │   ├── reactions.ts          # リアクション操作・集計
+│   │   └── memories.ts           # 過去の振り返りデータ取得
 │   │
 │   ├── types/                    # 型定義
 │   │   ├── database.ts           # Supabase DB型（自動生成）
@@ -130,24 +195,38 @@ baby-weekly-letter/
 │   │
 │   ├── schemas/                  # Zodスキーマ
 │   │   ├── log.ts                # ログ入力バリデーション
-│   │   └── weekly-report.ts      # 週次通信リクエストバリデーション
+│   │   ├── weekly-report.ts      # 週次通信リクエストバリデーション
+│   │   ├── monthly-report.ts     # 月次まとめリクエストバリデーション
+│   │   ├── family.ts             # 家族関連バリデーション
+│   │   └── profile.ts            # プロフィールバリデーション
 │   │
 │   └── middleware.ts             # Next.js ミドルウェア（認証ガード）
 │
 ├── supabase/                     # Supabase ローカル設定
 │   ├── config.toml               # Supabase CLI設定
 │   └── migrations/               # DBマイグレーション
-│       └── YYYYMMDDHHMMSS_initial.sql
+│       ├── 20260219000000_initial.sql
+│       ├── 20260220000000_add_profiles.sql
+│       ├── 20260221000000_add_monthly_reports.sql
+│       ├── 20260223000000_add_family_group.sql
+│       ├── 20260224000000_expand_mood_options.sql
+│       ├── 20260225000000_add_child_id.sql
+│       ├── 20260226000000_fix_delete_policy.sql
+│       └── 20260226100000_add_log_reactions.sql
 │
 └── __tests__/                    # テスト
-    ├── components/
-    │   ├── log/
-    │   └── weekly/
-    ├── lib/
-    │   ├── date.test.ts
-    │   └── weekly-report/
-    └── api/
-        └── weekly-report/
+    ├── schemas/
+    │   ├── log.test.ts
+    │   ├── family.test.ts
+    │   └── profile.test.ts
+    └── lib/
+        ├── date.test.ts
+        ├── auth-error.test.ts
+        ├── memories.test.ts
+        ├── reactions.test.ts
+        ├── stats.test.ts
+        └── supabase/
+            └── family.test.ts
 ```
 
 ---
@@ -157,18 +236,24 @@ baby-weekly-letter/
 | ディレクトリ | 役割 |
 |-------------|------|
 | `src/app/` | Next.js App Router のページ・レイアウト・API |
-| `src/app/(auth)/` | 認証系画面（ログイン・登録）。未認証ユーザー向けレイアウト |
+| `src/app/(auth)/` | 認証系画面（ログイン・登録・オンボーディング）。未認証ユーザー向けレイアウト |
 | `src/app/(main)/` | メイン機能画面。認証済みユーザー向けレイアウト |
-| `src/app/api/` | Route Handlers。サーバーサイドAPI |
+| `src/app/api/` | Route Handlers。サーバーサイドAPI（通信生成・家族操作） |
+| `src/app/invite/` | 家族招待受け入れ画面 |
 | `src/components/ui/` | shadcn/ui のコンポーネント。直接編集しない |
 | `src/components/child/` | 子供関連コンポーネント（セレクタ・バッジ） |
-| `src/components/log/` | ログ機能に関連するコンポーネント |
+| `src/components/log/` | ログ機能に関連するコンポーネント（リアクション含む） |
 | `src/components/weekly/` | 週次通信機能に関連するコンポーネント |
 | `src/components/monthly/` | 月次まとめ機能に関連するコンポーネント |
 | `src/components/calendar/` | カレンダー機能に関連するコンポーネント |
+| `src/components/gallery/` | 写真ギャラリー関連コンポーネント |
+| `src/components/stats/` | 統計ダッシュボード関連コンポーネント |
+| `src/components/memory/` | 過去の振り返り関連コンポーネント |
+| `src/components/home/` | ホーム画面固有コンポーネント（リアクション通知） |
+| `src/components/family/` | 家族管理関連コンポーネント（招待・メンバー一覧） |
+| `src/components/export/` | エクスポート関連コンポーネント（専用レイアウト・共有メニュー） |
 | `src/components/layout/` | ヘッダー・ナビなどレイアウト部品 |
 | `src/lib/` | ビジネスロジック・外部サービスクライアント・ユーティリティ |
-| `src/hooks/` | React カスタムフック |
 | `src/types/` | TypeScript 型定義 |
 | `src/schemas/` | Zod バリデーションスキーマ |
 | `supabase/` | Supabase CLI 設定・マイグレーション |
