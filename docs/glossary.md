@@ -26,6 +26,12 @@
 | オンボーディング | Onboarding | `onboarding` | 初回ログイン後の家族・子供の初期設定画面 |
 | 招待リンク | Invite Link | `invite` | 家族グループに新メンバーを招待するためのURL |
 | 記録ストリーク | Streak | `streak` | 連続記録日数 |
+| 成長記録 | Growth Record | `GrowthRecord` / `growth_records` | 子供の身長・体重の定量データ記録（v3） |
+| 成長曲線 | Growth Curve | - | 身長・体重の推移を母子手帳の標準曲線と重ねて表示するグラフ（v3） |
+| マイルストーン | Milestone | `Milestone` / `milestones` | 子供の「初めて○○した」等の成長の節目イベント（v3） |
+| 成長タイムライン | Growth Timeline | - | マイルストーンを時系列で表示する画面（v3） |
+| 家族コメント | Family Comment | `LogComment` / `log_comments` | 日次ログに対して家族メンバーが残す短文コメント（v3） |
+| リマインダー | Reminder | - | その日に記録がない場合に21時に送るプッシュ通知（v3） |
 
 ---
 
