@@ -60,6 +60,7 @@ export interface Database {
           family_id: string;
           name: string | null;
           birth_date: string | null;
+          gender: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -68,6 +69,7 @@ export interface Database {
           family_id: string;
           name?: string | null;
           birth_date?: string | null;
+          gender?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -76,6 +78,37 @@ export interface Database {
           family_id?: string;
           name?: string | null;
           birth_date?: string | null;
+          gender?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      growth_records: {
+        Row: {
+          id: string;
+          child_id: string;
+          measured_date: string;
+          height_cm: number | null;
+          weight_kg: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          child_id: string;
+          measured_date: string;
+          height_cm?: number | null;
+          weight_kg?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          child_id?: string;
+          measured_date?: string;
+          height_cm?: number | null;
+          weight_kg?: number | null;
           created_at?: string;
           updated_at?: string;
         };
