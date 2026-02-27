@@ -45,15 +45,42 @@ type ChartDataPoint = {
   monthAge: number;
   height: number | null;
   weight: number | null;
-  // 身長標準曲線
   hP3?: number;
-  hP50?: number;
   hP97?: number;
-  // 体重標準曲線
+  hP50?: number;
   wP3?: number;
-  wP50?: number;
   wP97?: number;
+  wP50?: number;
 };
+
+/**
+ * 標準曲線データを線形補間して任意の月齢の値を返す
+ */
+function interpolateStandard(
+  data: GrowthStandard[],
+  monthAge: number
+): { p3: number; p50: number; p97: number } | null {
+  if (data.length === 0) return null;
+  if (monthAge < data[0].monthAge || monthAge > data[data.length - 1].monthAge) return null;
+
+  // ぴったり一致
+  const exact = data.find((d) => d.monthAge === monthAge);
+  if (exact) return { p3: exact.p3, p50: exact.p50, p97: exact.p97 };
+
+  // 補間
+  for (let i = 0; i < data.length - 1; i++) {
+    if (data[i].monthAge <= monthAge && monthAge <= data[i + 1].monthAge) {
+      const ratio =
+        (monthAge - data[i].monthAge) / (data[i + 1].monthAge - data[i].monthAge);
+      return {
+        p3: Math.round((data[i].p3 + (data[i + 1].p3 - data[i].p3) * ratio) * 10) / 10,
+        p50: Math.round((data[i].p50 + (data[i + 1].p50 - data[i].p50) * ratio) * 10) / 10,
+        p97: Math.round((data[i].p97 + (data[i + 1].p97 - data[i].p97) * ratio) * 10) / 10,
+      };
+    }
+  }
+  return null;
+}
 
 function getDefaultTab(birthDate: string): number {
   const months = differenceInMonths(new Date(), parseISO(birthDate));
@@ -63,6 +90,17 @@ function getDefaultTab(birthDate: string): number {
   return AGE_TABS.length - 1;
 }
 
+/**
+ * X軸の刻み間隔を返す
+ */
+function getTickInterval(maxMonth: number): number {
+  if (maxMonth <= 12) return 1;
+  if (maxMonth <= 24) return 2;
+  if (maxMonth <= 48) return 4;
+  if (maxMonth <= 96) return 6;
+  return 12;
+}
+
 function buildChartData(
   records: GrowthRecord[],
   birthDate: string,
@@ -70,7 +108,6 @@ function buildChartData(
   showStandard: boolean,
   gender: Gender | null
 ): ChartDataPoint[] {
-  // 標準曲線
   const heightStd: GrowthStandard[] =
     showStandard && gender
       ? gender === "male" ? maleHeight : femaleHeight
@@ -79,9 +116,6 @@ function buildChartData(
     showStandard && gender
       ? gender === "male" ? maleWeight : femaleWeight
       : [];
-
-  const hMap = new Map(heightStd.map((s) => [s.monthAge, s]));
-  const wMap = new Map(weightStd.map((s) => [s.monthAge, s]));
 
   // 自分のデータ
   const myHeightMap = new Map<number, number>();
@@ -93,28 +127,44 @@ function buildChartData(
     if (r.weight_kg != null) myWeightMap.set(ma, r.weight_kg);
   }
 
-  // 全月齢を集める
+  // 標準曲線用: 範囲内の全ポイントを生成（刻み間隔で）
   const allMonths = new Set<number>();
-  heightStd.filter((s) => s.monthAge <= maxMonth).forEach((s) => allMonths.add(s.monthAge));
-  weightStd.filter((s) => s.monthAge <= maxMonth).forEach((s) => allMonths.add(s.monthAge));
+
+  // 標準曲線のデータポイントを追加（72ヶ月以内かつmaxMonth以内）
+  const stdMaxMonth = Math.min(maxMonth, 72);
+  if (showStandard && gender) {
+    const interval = getTickInterval(maxMonth);
+    for (let m = 0; m <= stdMaxMonth; m += interval) {
+      allMonths.add(m);
+    }
+    // 標準曲線の元データポイントも追加
+    heightStd
+      .filter((s) => s.monthAge <= maxMonth)
+      .forEach((s) => allMonths.add(s.monthAge));
+  }
+
+  // 自分のデータポイントを追加
   myHeightMap.forEach((_, ma) => allMonths.add(ma));
   myWeightMap.forEach((_, ma) => allMonths.add(ma));
+
+  // データが少ない場合のフォールバック
+  if (allMonths.size === 0) return [];
 
   return Array.from(allMonths)
     .sort((a, b) => a - b)
     .map((monthAge) => {
-      const h = hMap.get(monthAge);
-      const w = wMap.get(monthAge);
+      const hStd = showStandard ? interpolateStandard(heightStd, monthAge) : null;
+      const wStd = showStandard ? interpolateStandard(weightStd, monthAge) : null;
       return {
         monthAge,
         height: myHeightMap.get(monthAge) ?? null,
         weight: myWeightMap.get(monthAge) ?? null,
-        hP3: h?.p3,
-        hP50: h?.p50,
-        hP97: h?.p97,
-        wP3: w?.p3,
-        wP50: w?.p50,
-        wP97: w?.p97,
+        hP3: hStd?.p3,
+        hP50: hStd?.p50,
+        hP97: hStd?.p97,
+        wP3: wStd?.p3,
+        wP50: wStd?.p50,
+        wP97: wStd?.p97,
       };
     });
 }
@@ -161,6 +211,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
   const [showStandard, setShowStandard] = useState(defaultShowStandard);
 
   const maxMonth = AGE_TABS[tabIndex].maxMonth;
+  const tickInterval = getTickInterval(maxMonth);
 
   const data = useMemo(
     () => buildChartData(records, birthDate, maxMonth, showStandard, gender),
@@ -178,7 +229,13 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
     );
   }
 
-  const chartHeight = compact ? 200 : 300;
+  const chartHeight = compact ? 220 : 420;
+
+  // X軸ティック生成
+  const xTicks: number[] = [];
+  for (let m = 0; m <= maxMonth; m += tickInterval) {
+    xTicks.push(m);
+  }
 
   return (
     <div className="space-y-3">
@@ -237,7 +294,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
       {/* グラフ */}
       <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 4, right: 4, left: -4, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
@@ -245,11 +302,13 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
             />
             <XAxis
               dataKey="monthAge"
+              type="number"
+              domain={[0, maxMonth]}
+              ticks={xTicks}
               tick={{ fontSize: compact ? 9 : 11, fill: "hsl(var(--muted-foreground))" }}
               tickLine={false}
               axisLine={false}
-              domain={[0, maxMonth]}
-              type="number"
+              tickFormatter={(v: number) => `${v}`}
               label={
                 compact
                   ? undefined
@@ -264,7 +323,8 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               tickLine={false}
               axisLine={false}
               unit="cm"
-              domain={["auto", "auto"]}
+              domain={["dataMin - 5", "dataMax + 5"]}
+              tickCount={compact ? 6 : 10}
             />
             {/* 右Y軸: 体重 */}
             <YAxis
@@ -274,20 +334,22 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               tickLine={false}
               axisLine={false}
               unit="kg"
-              domain={["auto", "auto"]}
+              domain={["dataMin - 1", "dataMax + 2"]}
+              tickCount={compact ? 6 : 10}
             />
             <Tooltip content={<GrowthTooltip />} />
 
-            {/* 身長の標準曲線帯 */}
-            {showStandard && (
+            {/* 身長の標準曲線帯（p3〜p97） */}
+            {showStandard && heightStdVisible(data) && (
               <>
                 <Area
                   yAxisId="height"
                   dataKey="hP97"
                   stroke="none"
-                  fill={`rgba(${HEIGHT_COLOR}, 0.06)`}
+                  fill={`rgba(${HEIGHT_COLOR}, 0.12)`}
                   fillOpacity={1}
                   isAnimationActive={false}
+                  connectNulls={false}
                 />
                 <Area
                   yAxisId="height"
@@ -296,29 +358,32 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
                   fill="#ffffff"
                   fillOpacity={1}
                   isAnimationActive={false}
+                  connectNulls={false}
                 />
                 <Line
                   yAxisId="height"
                   dataKey="hP50"
-                  stroke={`rgba(${HEIGHT_COLOR}, 0.25)`}
-                  strokeWidth={1}
-                  strokeDasharray="4 4"
+                  stroke={`rgba(${HEIGHT_COLOR}, 0.4)`}
+                  strokeWidth={1.5}
+                  strokeDasharray="6 3"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={false}
                 />
               </>
             )}
 
-            {/* 体重の標準曲線帯 */}
-            {showStandard && (
+            {/* 体重の標準曲線帯（p3〜p97） */}
+            {showStandard && weightStdVisible(data) && (
               <>
                 <Area
                   yAxisId="weight"
                   dataKey="wP97"
                   stroke="none"
-                  fill={`rgba(${WEIGHT_COLOR}, 0.06)`}
+                  fill={`rgba(${WEIGHT_COLOR}, 0.12)`}
                   fillOpacity={1}
                   isAnimationActive={false}
+                  connectNulls={false}
                 />
                 <Area
                   yAxisId="weight"
@@ -327,15 +392,17 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
                   fill="#ffffff"
                   fillOpacity={1}
                   isAnimationActive={false}
+                  connectNulls={false}
                 />
                 <Line
                   yAxisId="weight"
                   dataKey="wP50"
-                  stroke={`rgba(${WEIGHT_COLOR}, 0.25)`}
-                  strokeWidth={1}
-                  strokeDasharray="4 4"
+                  stroke={`rgba(${WEIGHT_COLOR}, 0.4)`}
+                  strokeWidth={1.5}
+                  strokeDasharray="6 3"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={false}
                 />
               </>
             )}
@@ -347,7 +414,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
                 dataKey="height"
                 stroke={`rgb(${HEIGHT_COLOR})`}
                 strokeWidth={2}
-                dot={{ r: compact ? 2.5 : 3.5, fill: `rgb(${HEIGHT_COLOR})` }}
+                dot={{ r: compact ? 3 : 4, fill: `rgb(${HEIGHT_COLOR})` }}
                 connectNulls
                 isAnimationActive={false}
               />
@@ -360,7 +427,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
                 dataKey="weight"
                 stroke={`rgb(${WEIGHT_COLOR})`}
                 strokeWidth={2}
-                dot={{ r: compact ? 2.5 : 3.5, fill: `rgb(${WEIGHT_COLOR})` }}
+                dot={{ r: compact ? 3 : 4, fill: `rgb(${WEIGHT_COLOR})` }}
                 connectNulls
                 isAnimationActive={false}
               />
@@ -370,4 +437,14 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
       </div>
     </div>
   );
+}
+
+/** 身長標準曲線のデータが存在するか */
+function heightStdVisible(data: ChartDataPoint[]): boolean {
+  return data.some((d) => d.hP3 != null);
+}
+
+/** 体重標準曲線のデータが存在するか */
+function weightStdVisible(data: ChartDataPoint[]): boolean {
+  return data.some((d) => d.wP3 != null);
 }
