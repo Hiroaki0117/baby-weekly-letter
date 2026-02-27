@@ -17,7 +17,7 @@ graph TB
         Storage[Storage<br/>写真保存]
     end
 
-    Gemini[Google Gemini<br/>2.0 Flash]
+    Gemini[Google Gemini<br/>2.5 Flash]
 
     User -->|アクセス| NextJS
     NextJS -->|認証| Auth
@@ -42,6 +42,7 @@ erDiagram
     children ||--o{ daily_logs : "has many"
     children ||--o{ weekly_reports : "has many"
     children ||--o{ monthly_reports : "has many"
+    daily_logs ||--o{ log_reactions : "has many"
     daily_logs }o--o| weekly_reports : "source_log_ids"
 
     families {
@@ -102,6 +103,14 @@ erDiagram
         text content
         timestamptz generated_at
         uuid[] source_weekly_report_ids
+        timestamptz created_at
+    }
+
+    log_reactions {
+        uuid id PK
+        uuid log_id FK
+        uuid user_id FK
+        text emoji
         timestamptz created_at
     }
 ```
@@ -175,26 +184,63 @@ erDiagram
 - ユニーク制約: (family_id, child_id, month)
 - RLS: family_id がユーザーの所属する家族と一致
 
+#### log_reactions
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| log_id | uuid | NOT NULL | | FK → daily_logs（ON DELETE CASCADE） |
+| user_id | uuid | NOT NULL | | FK → auth.users |
+| emoji | text | NOT NULL | | リアクション絵文字 |
+| created_at | timestamptz | NOT NULL | now() | |
+
+- ユニーク制約: (log_id, user_id, emoji)
+- RLS: 家族スコープ（daily_logs 経由で family_id を参照）
+
 ---
 
 ## 3. RLS（Row Level Security）ポリシー
+
+全テーブルで `my_family_id()` 関数を使用した家族単位のアクセス制御を実施。
+
+```sql
+CREATE FUNCTION my_family_id() RETURNS uuid AS $$
+  SELECT family_id FROM family_members WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+```
 
 ### daily_logs
 
 | 操作 | ポリシー名 | 条件 |
 |------|-----------|------|
-| SELECT | select_own_logs | user_id = auth.uid() |
-| INSERT | insert_own_logs | user_id = auth.uid() |
-| UPDATE | update_own_logs | user_id = auth.uid() |
-| DELETE | delete_own_logs | user_id = auth.uid() |
+| SELECT | select_family_logs | family_id = my_family_id() |
+| INSERT | insert_family_logs | family_id = my_family_id() AND author_id = auth.uid() |
+| UPDATE | update_own_logs | author_id = auth.uid() |
+| DELETE | delete_own_logs | author_id = auth.uid() |
 
 ### weekly_reports
 
 | 操作 | ポリシー名 | 条件 |
 |------|-----------|------|
-| SELECT | select_own_reports | user_id = auth.uid() |
-| INSERT | insert_own_reports | user_id = auth.uid() |
-| UPDATE | update_own_reports | user_id = auth.uid() |
+| SELECT | select_family_reports | family_id = my_family_id() |
+| INSERT | insert_family_reports | family_id = my_family_id() |
+| UPDATE | update_family_reports | family_id = my_family_id() |
+
+### monthly_reports
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_reports | family_id = my_family_id() |
+| INSERT | insert_family_reports | family_id = my_family_id() |
+| UPDATE | update_family_reports | family_id = my_family_id() |
+
+### log_reactions
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_reactions | daily_logs JOIN で family_id = my_family_id() |
+| INSERT | insert_own_reactions | user_id = auth.uid() AND daily_logs JOIN で family_id = my_family_id() |
+| DELETE | delete_own_reactions | user_id = auth.uid() |
 
 ### Storage (log-photos バケット)
 
@@ -281,22 +327,64 @@ erDiagram
 | 一覧取得 | supabase.from('weekly_reports').select().order('week_start', { ascending: false }) |
 | 個別取得 | supabase.from('weekly_reports').select().eq('id', id).single() |
 
+### 4.4 月次まとめ API（Route Handlers）
+
+#### POST /api/monthly-report/generate
+
+月次まとめを生成する。対象月の週次通信をもとにAIで月単位の振り返りを生成。
+
+**リクエスト:**
+
+```json
+{
+  "childId": "uuid",
+  "month": "2026-02"
+}
+```
+
+### 4.5 家族 API（Route Handlers）
+
+| エンドポイント | メソッド | 用途 |
+|---------------|---------|------|
+| /api/family/create | POST | 家族グループ作成 |
+| /api/family/invite | POST | 招待リンク生成 |
+| /api/family/join | POST | 招待受け入れ |
+| /api/family/members | GET | メンバー一覧取得 |
+| /api/family/members/[userId] | PATCH/DELETE | メンバー操作 |
+
+### 4.6 リアクション API（Supabase Client 直接操作）
+
+| 操作 | メソッド |
+|------|---------|
+| リアクション追加 | supabase.from('log_reactions').insert({ log_id, user_id, emoji }) |
+| リアクション削除 | supabase.from('log_reactions').delete().match({ log_id, user_id, emoji }) |
+| 一覧取得 | supabase.from('log_reactions').select().in('log_id', logIds) |
+
 ---
 
 ## 5. 画面遷移図
 
 ```mermaid
 graph TD
-    Login[ログイン画面] -->|認証成功| Home
+    Login[ログイン画面] -->|認証成功| Onboarding[オンボーディング]
+    Onboarding -->|初期設定完了| Home
 
-    Home[ホーム<br/>今日のログ入力] -->|ログ一覧を見る| LogList[ログ一覧画面]
-    Home -->|週次通信を見る| WeeklyList[週次通信一覧画面]
+    Home[ホーム<br/>今日のログ入力] -->|ボトムナビ| Calendar[カレンダー画面]
+    Home -->|ボトムナビ| LogList[記録一覧画面]
+    Home -->|ボトムナビ| Gallery[写真ギャラリー]
+    Home -->|ボトムナビ/その他| Stats[統計ダッシュボード]
+    Home -->|その他| Family[家族管理画面]
+    Home -->|その他| Settings[設定画面]
 
-    LogList -->|日付タップ| LogDetail[ログ詳細・編集画面]
-    LogDetail -->|保存| LogList
+    Calendar -->|日付タップ| LogDetail[ログ詳細・編集画面]
+
+    LogList -->|週次/月次タブ| WeeklyList[通信一覧画面]
+    LogList -->|ログタップ| LogDetail
 
     WeeklyList -->|週タップ| WeeklyDetail[週次通信詳細画面]
-    WeeklyDetail -->|再生成| WeeklyDetail
+    WeeklyList -->|月タップ| MonthlyDetail[月次まとめ詳細画面]
+    WeeklyDetail -->|エクスポート| Export[PNG/PDF出力]
+    MonthlyDetail -->|エクスポート| Export
 
     Home -->|通信を作る| WeeklyDetail
 ```
@@ -474,34 +562,74 @@ graph TD
 app/
 ├── (auth)/
 │   ├── login/page.tsx          # ログイン画面
-│   └── signup/page.tsx         # アカウント登録画面
+│   ├── signup/page.tsx         # アカウント登録画面
+│   └── onboarding/page.tsx     # オンボーディング（家族・子供初期設定）
 ├── (main)/
 │   ├── layout.tsx              # メインレイアウト（ヘッダー・ナビ）
 │   ├── page.tsx                # ホーム（今日のログ入力）
-│   ├── logs/
-│   │   └── page.tsx            # ログ一覧画面
+│   ├── calendar/page.tsx       # カレンダー画面
+│   ├── logs/page.tsx           # 記録一覧画面（ログ・週次・月次タブ）
+│   ├── gallery/page.tsx        # 写真ギャラリー画面
+│   ├── stats/page.tsx          # 統計ダッシュボード画面
+│   ├── family/page.tsx         # 家族管理画面
+│   ├── settings/page.tsx       # 設定画面
 │   └── weekly/
-│       ├── page.tsx            # 週次通信一覧画面
-│       └── [id]/page.tsx       # 週次通信詳細画面
+│       ├── page.tsx            # 週次通信一覧画面（リダイレクト）
+│       ├── [id]/page.tsx       # 週次通信詳細画面
+│       └── monthly/
+│           └── [id]/page.tsx   # 月次まとめ詳細画面
+├── invite/
+│   └── [token]/page.tsx        # 家族招待受け入れ画面
 └── api/
-    └── weekly-report/
-        └── generate/route.ts   # 週次通信生成 API
+    ├── weekly-report/
+    │   └── generate/route.ts   # 週次通信生成 API
+    ├── monthly-report/
+    │   └── generate/route.ts   # 月次まとめ生成 API
+    └── family/
+        ├── create/route.ts     # 家族作成 API
+        ├── invite/route.ts     # 招待リンク生成 API
+        ├── join/route.ts       # 家族参加 API
+        └── members/
+            ├── route.ts        # メンバー一覧 API
+            └── [userId]/route.ts # メンバー操作 API
 ```
 
 ### 7.2 共通コンポーネント
 
-| コンポーネント | 用途 |
-|---------------|------|
-| MoodSelector | 気分スタンプ選択（🥰🙂😐😴😭） |
-| CategoryPicker | カテゴリ複数選択 |
-| PhotoUploader | 写真アップロード（プレビュー付き） |
-| ChildSelector | 子供選択（複数子供時にフォーム上部に表示） |
-| ChildBadge | 子供名バッジ（記録カードに表示） |
-| LogCard | ログ一覧のカード表示 |
-| WeeklyReportCard | 週次通信一覧のカード表示 |
-| LogForm | ログ入力・編集フォーム |
-| LogFilter | ログ絞り込み（気分・カテゴリ・テキスト・子供） |
-| PhotoGallery | 写真一覧表示（週次通信詳細用） |
+| コンポーネント | 配置 | 用途 |
+|---------------|------|------|
+| MoodSelector | `log/` | 気分スタンプ選択（🥰🙂😐😴😭） |
+| CategoryPicker | `log/` | カテゴリ複数選択 |
+| PhotoUploader | `log/` | 写真アップロード（プレビュー付き） |
+| LogCard | `log/` | ログ一覧のカード表示（リアクションバー付き） |
+| LogForm | `log/` | ログ入力・編集フォーム |
+| LogFilter | `log/` | ログ絞り込み（気分・カテゴリ・テキスト・子供） |
+| LogsTabs | `log/` | 記録一覧のタブ切り替え（ログ・週次・月次） |
+| ReactionBar | `log/` | スタンプリアクション表示・トグル操作 |
+| AuthorBadge | `log/` | 記録者の表示名バッジ |
+| ChildSelector | `child/` | 子供選択（複数子供時にフォーム上部に表示） |
+| ChildBadge | `child/` | 子供名バッジ（記録カードに表示） |
+| WeeklyReportCard | `weekly/` | 週次通信一覧のカード表示 |
+| PhotoGallery | `weekly/` | 写真一覧表示（週次通信詳細用） |
+| MonthlyReportCard | `monthly/` | 月次まとめ一覧のカード表示 |
+| MonthlyPhotoGallery | `monthly/` | 月次写真一覧表示 |
+| CalendarGrid | `calendar/` | カレンダーグリッド表示 |
+| MonthPicker | `calendar/` | 月選択ピッカー |
+| PhotoGrid | `gallery/` | 写真ギャラリーのグリッド表示 |
+| PhotoModal | `gallery/` | 写真拡大モーダル |
+| MoodChart | `stats/` | 記録数・気分分布の積み上げ棒グラフ |
+| CategoryPieChart | `stats/` | カテゴリ別割合の円グラフ |
+| PeriodTabs | `stats/` | 統計の期間切り替えタブ |
+| MemoriesSection | `memory/` | ○年前の今日セクション |
+| MemoryCard | `memory/` | 過去の記録カード |
+| ReactionNotice | `home/` | リアクション新着通知 |
+| InviteLink | `family/` | 招待リンク生成・共有 |
+| MemberList | `family/` | 家族メンバー一覧 |
+| ExportLayout | `export/` | エクスポート用専用レイアウト |
+| ShareMenu | `export/` | 共有メニュー（PNG/PDF選択） |
+| Header | `layout/` | デスクトップヘッダー |
+| Nav | `layout/` | デスクトップナビゲーション |
+| BottomNav | `layout/` | モバイルボトムナビゲーション |
 
 ---
 
@@ -535,63 +663,82 @@ sequenceDiagram
 
 ---
 
-## 9. v2 機能設計（概要）
+## 9. v2 機能設計（実装済み）
 
-v2 で追加予定の機能の概要設計。各機能の詳細設計は実装時にステアリングドキュメントで定義する。
-
-### 9.1 写真ギャラリー（優先度1）
+### 9.1 写真ギャラリー
 
 記録に添付された写真を一覧で振り返れる専用ページ。
 
-- **画面**: `/gallery` に新規ページを追加
-- **表示形式**: 月別のグリッドレイアウト（3〜4列）
+- **画面**: `/gallery`
+- **表示形式**: 月別のグリッドレイアウト（3列）
 - **データソース**: `daily_logs` の `photo_storage_path` が存在するレコードを対象
-- **操作**: 写真タップで拡大表示、該当ログへの導線
-- **フィルター**: 月切り替え、子供切り替え（複数子供時）
+- **操作**: 写真タップで拡大モーダル表示
+- **フィルター**: 月切り替え（前後ナビゲーション）、子供切り替え
+- **コンポーネント**: `PhotoGrid`, `PhotoModal`
+- **ロジック**: `lib/gallery.ts`
 
-### 9.2 過去の振り返り — ○年前の今日（優先度2）
+### 9.2 過去の振り返り — ○年前の今日
 
 ホーム画面に「○年前の今日」の記録を表示し、成長の実感と感動を提供する。
 
-- **表示場所**: ホーム画面の日付カード下部、またはログ一覧の上部
+- **表示場所**: ホーム画面の今日のログ一覧の下部
 - **データソース**: `daily_logs` から過去の同月同日のレコードを取得
 - **表示条件**: 1年以上前の同日にログが存在する場合のみ表示
 - **表示内容**: テキスト・気分・写真（あれば）をカード形式で表示
 - **複数年**: 1年前、2年前…と複数年分がある場合はすべて表示
+- **コンポーネント**: `MemoriesSection`, `MemoryCard`
+- **ロジック**: `lib/memories.ts`
 
-### 9.3 成長グラフ / 統計ダッシュボード（優先度3）
+### 9.3 統計ダッシュボード
 
 記録データを可視化し、育児の傾向と成長を実感できるダッシュボード。
 
-- **画面**: `/stats` に新規ページを追加
+- **画面**: `/stats`
 - **グラフ種類**:
-  - 月別の記録数（棒グラフ）
-  - 気分の推移（折れ線グラフ or 積み上げ棒グラフ）
-  - カテゴリ別の記録割合（円グラフ or 横棒グラフ）
-- **期間**: 月単位で切り替え、子供切り替え（複数子供時）
-- **ライブラリ**: Recharts 等の軽量チャートライブラリを想定
+  - 記録数・気分分布の積み上げ棒グラフ（「記録の様子」）— 1つのグラフで記録数と気分の内訳を同時表示
+  - カテゴリ別の記録割合（円グラフ）
+- **期間**: 月/週単位で切り替え、前後ナビゲーション
+- **フィルター**: 子供切り替え（複数子供時）
+- **ライブラリ**: Recharts
+- **コンポーネント**: `MoodChart`, `CategoryPieChart`, `PeriodTabs`
+- **ロジック**: `lib/stats.ts`
 
-### 9.4 家族間のリアクション（優先度4）
+### 9.4 家族間のリアクション
 
-記録に対して家族メンバーがリアクション（スタンプ / コメント）を残せる機能。
+記録に対して家族メンバーがスタンプリアクションを残せる機能。
 
-- **リアクション種類**: スタンプ（いいね・ハート・笑い等、5〜6種）＋ 短文コメント
-- **データモデル**: `log_reactions` テーブルを新規追加（log_id, user_id, type, comment）
-- **表示**: LogCard の下部にリアクション一覧を表示
-- **通知**: 将来的にリアクションがついたことをホーム画面で通知
+- **リアクション種類**: 固定5種のスタンプ
+  - ❤️ いいね / 👏 すごい！ / 😊 ほっこり / 💪 おつかれさま / ✨ キラキラ
+- **操作**: スタンプタップでトグル（追加/削除）。楽観的UIで即時反映
+- **データモデル**: `log_reactions` テーブル（log_id, user_id, emoji, UNIQUE制約）
+- **表示**: LogCard の下部にリアクションバーを常時表示。リアクション済みのスタンプはハイライト、リアクターの表示名を表示
+- **通知**: ホーム画面にリアクション新着通知バナー（localStorage で最終確認時刻を管理）
+- **コンポーネント**: `ReactionBar`, `ReactionNotice`
+- **ロジック**: `lib/reactions.ts`
 
-### 9.5 通信のPDF / 画像エクスポート（優先度5）
+### 9.5 通信のPDF / 画像エクスポート
 
 週次・月次通信をPDFや画像としてエクスポートし、共有・印刷できる機能。
 
-- **エクスポート形式**: PDF（A4縦）、画像（PNG）
-- **生成方式**: サーバーサイドで html-to-pdf / html-to-image ライブラリを利用
-- **UI**: 通信詳細画面に「エクスポート」ボタンを追加
-- **レイアウト**: 通信本文 + その週の写真を含むプリント用レイアウト
+- **エクスポート形式**: PNG（高解像度 2x）、PDF（A4縦）
+- **生成方式**: クライアントサイドで `html-to-image` + `jsPDF` を使用（動的インポートでコード分割）
+- **UI**: 通信詳細画面に共有ボタン → ドロップダウンメニューでPNG/PDF選択
+- **レイアウト**: 専用の `ExportLayout` コンポーネント（800px固定幅、インラインスタイル）。通信本文 + 写真グリッド（3列）+ ヘッダー/フッター
+- **コンポーネント**: `ExportLayout`, `ShareMenu`
+- **ロジック**: `lib/export.ts`
 
-### 9.6 テンプレート / クイック記録（将来検討）
+### 9.6 モバイルナビゲーション改善（実装予定）
 
-よく使う記録パターンをワンタップで呼び出せる機能。v2 機能の実装後に検討する。
+モバイルのボトムバーに「その他」メニューを追加し、統計・家族・設定・ログアウトへの導線を確保する。
+
+- **ボトムバー構成**: 今日 / カレンダー / 記録 / 写真 / その他（5項目）
+- **「その他」メニュー**: タップでボトムシートまたはドロワーを展開
+  - 統計 / 家族 / 設定 / ログアウト
+- **デスクトップ**: 既存のヘッダー構成を維持（変更なし）
+
+### 9.7 テンプレート / クイック記録（将来検討）
+
+よく使う記録パターンをワンタップで呼び出せる機能。
 
 - **データモデル**: `log_templates` テーブル（family_id, label, icon, default_text, default_mood, default_categories, sort_order）
 - **UI**: ホーム画面のフォーム上部にテンプレートボタン一覧を表示
