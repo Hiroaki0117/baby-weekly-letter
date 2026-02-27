@@ -19,6 +19,12 @@ export type FamilyInvitationInsert =
 
 export type LogReaction = Database["public"]["Tables"]["log_reactions"]["Row"];
 
+export type GrowthRecord = Database["public"]["Tables"]["growth_records"]["Row"];
+export type GrowthRecordInsert =
+  Database["public"]["Tables"]["growth_records"]["Insert"];
+
+export type Gender = "male" | "female";
+
 export type DailyLog = Database["public"]["Tables"]["daily_logs"]["Row"];
 export type DailyLogWithAuthor = DailyLog & { authorDisplayName?: string | null };
 export type DailyLogInsert =
