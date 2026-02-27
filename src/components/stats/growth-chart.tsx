@@ -10,8 +10,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Scatter,
 } from "recharts";
+import { differenceInMonths, parseISO } from "date-fns";
 import { calcMonthAge } from "@/lib/growth";
 import {
   maleHeight,
@@ -19,6 +19,7 @@ import {
   femaleHeight,
   femaleWeight,
 } from "@/lib/growth-standards";
+import type { GrowthStandard } from "@/lib/growth-standards";
 import type { GrowthRecord, Gender } from "@/types";
 
 type Props = {
@@ -28,119 +29,126 @@ type Props = {
   compact?: boolean;
 };
 
-type TabType = "height" | "weight";
+const AGE_TABS = [
+  { label: "1歳", maxMonth: 12 },
+  { label: "2歳", maxMonth: 24 },
+  { label: "4歳", maxMonth: 48 },
+  { label: "8歳", maxMonth: 96 },
+  { label: "12歳", maxMonth: 144 },
+] as const;
+
+// 色定義
+const HEIGHT_COLOR = "59, 130, 246"; // blue-500
+const WEIGHT_COLOR = "34, 197, 94"; // green-500
 
 type ChartDataPoint = {
   monthAge: number;
-  value: number | null;
-  p3?: number;
-  p10?: number;
-  p25?: number;
-  p50?: number;
-  p75?: number;
-  p90?: number;
-  p97?: number;
-  band3_10?: [number, number];
-  band10_25?: [number, number];
-  band25_75?: [number, number];
-  band75_90?: [number, number];
-  band90_97?: [number, number];
+  height: number | null;
+  weight: number | null;
+  // 身長標準曲線
+  hP3?: number;
+  hP50?: number;
+  hP97?: number;
+  // 体重標準曲線
+  wP3?: number;
+  wP50?: number;
+  wP97?: number;
 };
+
+function getDefaultTab(birthDate: string): number {
+  const months = differenceInMonths(new Date(), parseISO(birthDate));
+  for (let i = 0; i < AGE_TABS.length; i++) {
+    if (months <= AGE_TABS[i].maxMonth) return i;
+  }
+  return AGE_TABS.length - 1;
+}
 
 function buildChartData(
   records: GrowthRecord[],
   birthDate: string,
-  tab: TabType,
+  maxMonth: number,
   showStandard: boolean,
   gender: Gender | null
 ): ChartDataPoint[] {
-  // 標準曲線データ
-  const standards =
+  // 標準曲線
+  const heightStd: GrowthStandard[] =
     showStandard && gender
-      ? tab === "height"
-        ? gender === "male"
-          ? maleHeight
-          : femaleHeight
-        : gender === "male"
-          ? maleWeight
-          : femaleWeight
+      ? gender === "male" ? maleHeight : femaleHeight
+      : [];
+  const weightStd: GrowthStandard[] =
+    showStandard && gender
+      ? gender === "male" ? maleWeight : femaleWeight
       : [];
 
-  // 標準曲線のMap
-  const stdMap = new Map(standards.map((s) => [s.monthAge, s]));
+  const hMap = new Map(heightStd.map((s) => [s.monthAge, s]));
+  const wMap = new Map(weightStd.map((s) => [s.monthAge, s]));
 
   // 自分のデータ
-  const myData = records
-    .map((r) => ({
-      monthAge: calcMonthAge(birthDate, r.measured_date),
-      value: tab === "height" ? r.height_cm : r.weight_kg,
-    }))
-    .filter((d) => d.value !== null);
+  const myHeightMap = new Map<number, number>();
+  const myWeightMap = new Map<number, number>();
+  for (const r of records) {
+    const ma = calcMonthAge(birthDate, r.measured_date);
+    if (ma > maxMonth) continue;
+    if (r.height_cm != null) myHeightMap.set(ma, r.height_cm);
+    if (r.weight_kg != null) myWeightMap.set(ma, r.weight_kg);
+  }
 
-  // 標準曲線の月齢をすべて含める
-  const allMonthAges = new Set<number>();
-  standards.forEach((s) => allMonthAges.add(s.monthAge));
-  myData.forEach((d) => allMonthAges.add(d.monthAge));
+  // 全月齢を集める
+  const allMonths = new Set<number>();
+  heightStd.filter((s) => s.monthAge <= maxMonth).forEach((s) => allMonths.add(s.monthAge));
+  weightStd.filter((s) => s.monthAge <= maxMonth).forEach((s) => allMonths.add(s.monthAge));
+  myHeightMap.forEach((_, ma) => allMonths.add(ma));
+  myWeightMap.forEach((_, ma) => allMonths.add(ma));
 
-  const sorted = Array.from(allMonthAges).sort((a, b) => a - b);
-
-  // myDataのMapを作成
-  const myMap = new Map<number, number>();
-  myData.forEach((d) => {
-    if (d.value !== null) myMap.set(d.monthAge, d.value);
-  });
-
-  return sorted.map((monthAge) => {
-    const std = stdMap.get(monthAge);
-    const value = myMap.get(monthAge) ?? null;
-    return {
-      monthAge,
-      value,
-      p3: std?.p3,
-      p10: std?.p10,
-      p25: std?.p25,
-      p50: std?.p50,
-      p75: std?.p75,
-      p90: std?.p90,
-      p97: std?.p97,
-      band3_10: std ? [std.p3, std.p10] as [number, number] : undefined,
-      band10_25: std ? [std.p10, std.p25] as [number, number] : undefined,
-      band25_75: std ? [std.p25, std.p75] as [number, number] : undefined,
-      band75_90: std ? [std.p75, std.p90] as [number, number] : undefined,
-      band90_97: std ? [std.p90, std.p97] as [number, number] : undefined,
-    };
-  });
+  return Array.from(allMonths)
+    .sort((a, b) => a - b)
+    .map((monthAge) => {
+      const h = hMap.get(monthAge);
+      const w = wMap.get(monthAge);
+      return {
+        monthAge,
+        height: myHeightMap.get(monthAge) ?? null,
+        weight: myWeightMap.get(monthAge) ?? null,
+        hP3: h?.p3,
+        hP50: h?.p50,
+        hP97: h?.p97,
+        wP3: w?.p3,
+        wP50: w?.p50,
+        wP97: w?.p97,
+      };
+    });
 }
 
 function GrowthTooltip({
   active,
   payload,
-  tab,
 }: {
   active?: boolean;
-  payload?: Array<{ dataKey?: string; value?: number | [number, number]; payload?: ChartDataPoint }>;
-  tab: TabType;
+  payload?: Array<{ dataKey?: string; value?: number; payload?: ChartDataPoint }>;
 }) {
   if (!active || !payload?.length) return null;
   const point = payload[0]?.payload;
   if (!point) return null;
 
-  const unit = tab === "height" ? "cm" : "kg";
-  const label = tab === "height" ? "身長" : "体重";
-
   return (
     <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
-      <p className="text-xs font-semibold text-foreground">
+      <p className="mb-1 text-xs font-semibold text-foreground">
         {point.monthAge}ヶ月
       </p>
-      {point.value !== null && (
-        <p className="text-xs text-foreground">
-          {label}: <span className="font-semibold">{point.value}{unit}</span>
+      {point.height !== null && (
+        <p className="text-xs" style={{ color: `rgb(${HEIGHT_COLOR})` }}>
+          身長: <span className="font-semibold">{point.height}cm</span>
+          {point.hP50 != null && (
+            <span className="ml-1 text-muted-foreground">(標準 {point.hP50}cm)</span>
+          )}
         </p>
       )}
-      {point.p50 != null && (
-        <p className="text-xs text-muted-foreground">
-          標準(50%): {point.p50}{unit}
+      {point.weight !== null && (
+        <p className="text-xs" style={{ color: `rgb(${WEIGHT_COLOR})` }}>
+          体重: <span className="font-semibold">{point.weight}kg</span>
+          {point.wP50 != null && (
+            <span className="ml-1 text-muted-foreground">(標準 {point.wP50}kg)</span>
+          )}
         </p>
       )}
     </div>
@@ -148,13 +156,15 @@ function GrowthTooltip({
 }
 
 export function GrowthChart({ records, birthDate, gender, compact }: Props) {
-  const [tab, setTab] = useState<TabType>("height");
+  const [tabIndex, setTabIndex] = useState(() => getDefaultTab(birthDate));
   const defaultShowStandard = gender !== null;
   const [showStandard, setShowStandard] = useState(defaultShowStandard);
 
+  const maxMonth = AGE_TABS[tabIndex].maxMonth;
+
   const data = useMemo(
-    () => buildChartData(records, birthDate, tab, showStandard, gender),
-    [records, birthDate, tab, showStandard, gender]
+    () => buildChartData(records, birthDate, maxMonth, showStandard, gender),
+    [records, birthDate, maxMonth, showStandard, gender]
   );
 
   const hasHeight = records.some((r) => r.height_cm != null);
@@ -168,42 +178,29 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
     );
   }
 
-  const unit = tab === "height" ? "cm" : "kg";
-  const chartHeight = compact ? 200 : 280;
-  const bandColor = gender === "female" ? "255, 182, 193" : "135, 206, 250";
+  const chartHeight = compact ? 200 : 300;
 
   return (
     <div className="space-y-3">
-      {/* タブ + 標準曲線トグル */}
-      <div className="flex items-center justify-between">
+      {/* 年齢範囲タブ + 標準曲線トグル */}
+      <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1">
-          {hasHeight && (
+          {AGE_TABS.map((t, i) => (
             <button
-              onClick={() => setTab("height")}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                tab === "height"
+              key={t.maxMonth}
+              onClick={() => setTabIndex(i)}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                tabIndex === i
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
               }`}
             >
-              身長
+              {t.label}
             </button>
-          )}
-          {hasWeight && (
-            <button
-              onClick={() => setTab("weight")}
-              className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                tab === "weight"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              体重
-            </button>
-          )}
+          ))}
         </div>
         {gender && (
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
             <input
               type="checkbox"
               checked={showStandard}
@@ -215,10 +212,32 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
         )}
       </div>
 
+      {/* 凡例 */}
+      <div className="flex items-center justify-center gap-4">
+        {hasHeight && (
+          <div className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-sm"
+              style={{ backgroundColor: `rgb(${HEIGHT_COLOR})` }}
+            />
+            <span className="text-xs text-muted-foreground">身長 (cm)</span>
+          </div>
+        )}
+        {hasWeight && (
+          <div className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-sm"
+              style={{ backgroundColor: `rgb(${WEIGHT_COLOR})` }}
+            />
+            <span className="text-xs text-muted-foreground">体重 (kg)</span>
+          </div>
+        )}
+      </div>
+
       {/* グラフ */}
       <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 4, right: 4, left: -4, bottom: 0 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
@@ -229,78 +248,123 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               tick={{ fontSize: compact ? 9 : 11, fill: "hsl(var(--muted-foreground))" }}
               tickLine={false}
               axisLine={false}
+              domain={[0, maxMonth]}
+              type="number"
               label={
                 compact
                   ? undefined
                   : { value: "月齢", position: "insideBottomRight", offset: -4, fontSize: 10, fill: "hsl(var(--muted-foreground))" }
               }
             />
+            {/* 左Y軸: 身長 */}
             <YAxis
-              tick={{ fontSize: compact ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
+              yAxisId="height"
+              orientation="left"
+              tick={{ fontSize: compact ? 9 : 10, fill: `rgba(${HEIGHT_COLOR}, 0.7)` }}
               tickLine={false}
               axisLine={false}
-              unit={unit}
+              unit="cm"
               domain={["auto", "auto"]}
             />
-            <Tooltip content={<GrowthTooltip tab={tab} />} />
+            {/* 右Y軸: 体重 */}
+            <YAxis
+              yAxisId="weight"
+              orientation="right"
+              tick={{ fontSize: compact ? 9 : 10, fill: `rgba(${WEIGHT_COLOR}, 0.7)` }}
+              tickLine={false}
+              axisLine={false}
+              unit="kg"
+              domain={["auto", "auto"]}
+            />
+            <Tooltip content={<GrowthTooltip />} />
 
-            {/* 標準曲線帯 */}
+            {/* 身長の標準曲線帯 */}
             {showStandard && (
               <>
                 <Area
-                  dataKey="p97"
+                  yAxisId="height"
+                  dataKey="hP97"
                   stroke="none"
-                  fill={`rgba(${bandColor}, 0.1)`}
+                  fill={`rgba(${HEIGHT_COLOR}, 0.06)`}
                   fillOpacity={1}
                   isAnimationActive={false}
                 />
                 <Area
-                  dataKey="p3"
+                  yAxisId="height"
+                  dataKey="hP3"
                   stroke="none"
                   fill="#ffffff"
                   fillOpacity={1}
                   isAnimationActive={false}
                 />
                 <Line
-                  dataKey="p50"
-                  stroke={`rgba(${bandColor}, 0.5)`}
+                  yAxisId="height"
+                  dataKey="hP50"
+                  stroke={`rgba(${HEIGHT_COLOR}, 0.25)`}
                   strokeWidth={1}
                   strokeDasharray="4 4"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  dataKey="p3"
-                  stroke={`rgba(${bandColor}, 0.3)`}
-                  strokeWidth={1}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  dataKey="p97"
-                  stroke={`rgba(${bandColor}, 0.3)`}
-                  strokeWidth={1}
                   dot={false}
                   isAnimationActive={false}
                 />
               </>
             )}
 
-            {/* 自分のデータ */}
-            <Line
-              dataKey="value"
-              stroke="hsl(var(--primary))"
-              strokeWidth={2}
-              dot={{ r: 3, fill: "hsl(var(--primary))" }}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Scatter
-              dataKey="value"
-              fill="hsl(var(--primary))"
-              r={compact ? 3 : 4}
-              isAnimationActive={false}
-            />
+            {/* 体重の標準曲線帯 */}
+            {showStandard && (
+              <>
+                <Area
+                  yAxisId="weight"
+                  dataKey="wP97"
+                  stroke="none"
+                  fill={`rgba(${WEIGHT_COLOR}, 0.06)`}
+                  fillOpacity={1}
+                  isAnimationActive={false}
+                />
+                <Area
+                  yAxisId="weight"
+                  dataKey="wP3"
+                  stroke="none"
+                  fill="#ffffff"
+                  fillOpacity={1}
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="weight"
+                  dataKey="wP50"
+                  stroke={`rgba(${WEIGHT_COLOR}, 0.25)`}
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </>
+            )}
+
+            {/* 身長の折れ線 */}
+            {hasHeight && (
+              <Line
+                yAxisId="height"
+                dataKey="height"
+                stroke={`rgb(${HEIGHT_COLOR})`}
+                strokeWidth={2}
+                dot={{ r: compact ? 2.5 : 3.5, fill: `rgb(${HEIGHT_COLOR})` }}
+                connectNulls
+                isAnimationActive={false}
+              />
+            )}
+
+            {/* 体重の折れ線 */}
+            {hasWeight && (
+              <Line
+                yAxisId="weight"
+                dataKey="weight"
+                stroke={`rgb(${WEIGHT_COLOR})`}
+                strokeWidth={2}
+                dot={{ r: compact ? 2.5 : 3.5, fill: `rgb(${WEIGHT_COLOR})` }}
+                connectNulls
+                isAnimationActive={false}
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
