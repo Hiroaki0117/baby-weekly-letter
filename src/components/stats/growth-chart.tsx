@@ -219,6 +219,42 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
   const hasHeight = records.some((r) => r.height_cm != null);
   const hasWeight = records.some((r) => r.weight_kg != null);
 
+  // Y軸のdomain計算: 身長を下寄り、体重を上寄りに配置
+  const { heightDomain, weightDomain } = useMemo(() => {
+    const heightValues: number[] = [];
+    const weightValues: number[] = [];
+    for (const d of data) {
+      if (d.height != null) heightValues.push(d.height);
+      if (d.hP3 != null) heightValues.push(d.hP3);
+      if (d.hP97 != null) heightValues.push(d.hP97);
+      if (d.weight != null) weightValues.push(d.weight);
+      if (d.wP3 != null) weightValues.push(d.wP3);
+      if (d.wP97 != null) weightValues.push(d.wP97);
+    }
+
+    const hMin = heightValues.length > 0 ? Math.min(...heightValues) : 40;
+    const hMax = heightValues.length > 0 ? Math.max(...heightValues) : 100;
+    const wMin = weightValues.length > 0 ? Math.min(...weightValues) : 0;
+    const wMax = weightValues.length > 0 ? Math.max(...weightValues) : 20;
+
+    const hRange = hMax - hMin || 10;
+    const wRange = wMax - wMin || 5;
+
+    // 身長: 下に少し余白、上に大きく余白 → 線がグラフ下寄り
+    const hDomain: [number, number] = [
+      Math.floor(hMin - hRange * 0.1),
+      Math.ceil(hMax + hRange * 0.8),
+    ];
+
+    // 体重: 下に大きく余白、上に少し余白 → 線がグラフ上寄り
+    const wDomain: [number, number] = [
+      Math.max(0, Math.floor((wMin - wRange * 0.8) * 10) / 10),
+      Math.ceil((wMax + wRange * 0.1) * 10) / 10,
+    ];
+
+    return { heightDomain: hDomain, weightDomain: wDomain };
+  }, [data]);
+
   if (records.length === 0) {
     return (
       <p className="py-4 text-center text-xs text-muted-foreground">
@@ -300,7 +336,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
                   : { value: "月齢", position: "insideBottomRight", offset: -4, fontSize: 10, fill: "hsl(var(--muted-foreground))" }
               }
             />
-            {/* 左Y軸: 身長 */}
+            {/* 左Y軸: 身長（下寄り） */}
             <YAxis
               yAxisId="height"
               orientation="left"
@@ -308,10 +344,11 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               tickLine={false}
               axisLine={false}
               unit="cm"
-              domain={["dataMin - 5", "dataMax + 5"]}
+              domain={heightDomain}
               tickCount={compact ? 6 : 10}
+              allowDataOverflow
             />
-            {/* 右Y軸: 体重 */}
+            {/* 右Y軸: 体重（上寄り） */}
             <YAxis
               yAxisId="weight"
               orientation="right"
@@ -319,8 +356,9 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               tickLine={false}
               axisLine={false}
               unit="kg"
-              domain={["dataMin - 1", "dataMax + 2"]}
+              domain={weightDomain}
               tickCount={compact ? 6 : 10}
+              allowDataOverflow
             />
             <Tooltip content={<GrowthTooltip />} />
 
