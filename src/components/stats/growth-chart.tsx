@@ -45,11 +45,9 @@ type ChartDataPoint = {
   monthAge: number;
   height: number | null;
   weight: number | null;
-  hP3?: number;
-  hP97?: number;
+  hBand?: [number, number]; // [p3, p97] for height
   hP50?: number;
-  wP3?: number;
-  wP97?: number;
+  wBand?: [number, number]; // [p3, p97] for weight
   wP50?: number;
 };
 
@@ -158,12 +156,10 @@ function buildChartData(
         monthAge,
         height: myHeightMap.get(monthAge) ?? null,
         weight: myWeightMap.get(monthAge) ?? null,
-        hP3: hStd?.p3,
+        hBand: hStd ? [hStd.p3, hStd.p97] as [number, number] : undefined,
         hP50: hStd?.p50,
-        hP97: hStd?.p97,
-        wP3: wStd?.p3,
+        wBand: wStd ? [wStd.p3, wStd.p97] as [number, number] : undefined,
         wP50: wStd?.p50,
-        wP97: wStd?.p97,
       };
     });
 }
@@ -225,11 +221,9 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
     const weightValues: number[] = [];
     for (const d of data) {
       if (d.height != null) heightValues.push(d.height);
-      if (d.hP3 != null) heightValues.push(d.hP3);
-      if (d.hP97 != null) heightValues.push(d.hP97);
+      if (d.hBand) { heightValues.push(d.hBand[0], d.hBand[1]); }
       if (d.weight != null) weightValues.push(d.weight);
-      if (d.wP3 != null) weightValues.push(d.wP3);
-      if (d.wP97 != null) weightValues.push(d.wP97);
+      if (d.wBand) { weightValues.push(d.wBand[0], d.wBand[1]); }
     }
 
     const hMin = heightValues.length > 0 ? Math.min(...heightValues) : 40;
@@ -367,18 +361,9 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               <>
                 <Area
                   yAxisId="height"
-                  dataKey="hP97"
+                  dataKey="hBand"
                   stroke="none"
                   fill={`rgba(${HEIGHT_COLOR}, 0.12)`}
-                  fillOpacity={1}
-                  isAnimationActive={false}
-                  connectNulls={false}
-                />
-                <Area
-                  yAxisId="height"
-                  dataKey="hP3"
-                  stroke="none"
-                  fill="#ffffff"
                   fillOpacity={1}
                   isAnimationActive={false}
                   connectNulls={false}
@@ -401,18 +386,9 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               <>
                 <Area
                   yAxisId="weight"
-                  dataKey="wP97"
+                  dataKey="wBand"
                   stroke="none"
                   fill={`rgba(${WEIGHT_COLOR}, 0.12)`}
-                  fillOpacity={1}
-                  isAnimationActive={false}
-                  connectNulls={false}
-                />
-                <Area
-                  yAxisId="weight"
-                  dataKey="wP3"
-                  stroke="none"
-                  fill="#ffffff"
                   fillOpacity={1}
                   isAnimationActive={false}
                   connectNulls={false}
@@ -464,10 +440,10 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
 
 /** 身長標準曲線のデータが存在するか */
 function heightStdVisible(data: ChartDataPoint[]): boolean {
-  return data.some((d) => d.hP3 != null);
+  return data.some((d) => d.hBand != null);
 }
 
 /** 体重標準曲線のデータが存在するか */
 function weightStdVisible(data: ChartDataPoint[]): boolean {
-  return data.some((d) => d.wP3 != null);
+  return data.some((d) => d.wBand != null);
 }
