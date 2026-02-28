@@ -105,15 +105,14 @@ function buildChartData(
   records: GrowthRecord[],
   birthDate: string,
   maxMonth: number,
-  showStandard: boolean,
   gender: Gender | null
 ): ChartDataPoint[] {
   const heightStd: GrowthStandard[] =
-    showStandard && gender
+    gender
       ? gender === "male" ? maleHeight : femaleHeight
       : [];
   const weightStd: GrowthStandard[] =
-    showStandard && gender
+    gender
       ? gender === "male" ? maleWeight : femaleWeight
       : [];
 
@@ -132,7 +131,7 @@ function buildChartData(
 
   // 標準曲線のデータポイントを追加（72ヶ月以内かつmaxMonth以内）
   const stdMaxMonth = Math.min(maxMonth, 72);
-  if (showStandard && gender) {
+  if (gender) {
     const interval = getTickInterval(maxMonth);
     for (let m = 0; m <= stdMaxMonth; m += interval) {
       allMonths.add(m);
@@ -153,8 +152,8 @@ function buildChartData(
   return Array.from(allMonths)
     .sort((a, b) => a - b)
     .map((monthAge) => {
-      const hStd = showStandard ? interpolateStandard(heightStd, monthAge) : null;
-      const wStd = showStandard ? interpolateStandard(weightStd, monthAge) : null;
+      const hStd = interpolateStandard(heightStd, monthAge);
+      const wStd = interpolateStandard(weightStd, monthAge);
       return {
         monthAge,
         height: myHeightMap.get(monthAge) ?? null,
@@ -207,15 +206,14 @@ function GrowthTooltip({
 
 export function GrowthChart({ records, birthDate, gender, compact }: Props) {
   const [tabIndex, setTabIndex] = useState(() => getDefaultTab(birthDate));
-  const defaultShowStandard = gender !== null;
-  const [showStandard, setShowStandard] = useState(defaultShowStandard);
 
   const maxMonth = AGE_TABS[tabIndex].maxMonth;
   const tickInterval = getTickInterval(maxMonth);
+  const showStandard = gender !== null;
 
   const data = useMemo(
-    () => buildChartData(records, birthDate, maxMonth, showStandard, gender),
-    [records, birthDate, maxMonth, showStandard, gender]
+    () => buildChartData(records, birthDate, maxMonth, gender),
+    [records, birthDate, maxMonth, gender]
   );
 
   const hasHeight = records.some((r) => r.height_cm != null);
@@ -239,34 +237,21 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* 年齢範囲タブ + 標準曲線トグル */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1">
-          {AGE_TABS.map((t, i) => (
-            <button
-              key={t.maxMonth}
-              onClick={() => setTabIndex(i)}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                tabIndex === i
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        {gender && (
-          <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={showStandard}
-              onChange={(e) => setShowStandard(e.target.checked)}
-              className="rounded"
-            />
-            標準曲線
-          </label>
-        )}
+      {/* 年齢範囲タブ */}
+      <div className="flex gap-1">
+        {AGE_TABS.map((t, i) => (
+          <button
+            key={t.maxMonth}
+            onClick={() => setTabIndex(i)}
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              tabIndex === i
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* 凡例 */}
