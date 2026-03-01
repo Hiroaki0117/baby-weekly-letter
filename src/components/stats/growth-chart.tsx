@@ -395,7 +395,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               label={
                 compact
                   ? undefined
-                  : { value: "身長(cm)", angle: -90, position: "insideTopLeft", offset: 10, fontSize: 10, fill: `rgba(${HEIGHT_COLOR}, 0.7)` }
+                  : { value: "身長(cm)", position: "insideTopLeft", offset: -5, fontSize: 10, fill: `rgba(${HEIGHT_COLOR}, 0.7)`, dy: -15 }
               }
             />
             {/* 右Y軸: 体重（上寄り） */}
@@ -412,7 +412,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               label={
                 compact
                   ? undefined
-                  : { value: "体重(kg)", angle: 90, position: "insideTopRight", offset: 10, fontSize: 10, fill: `rgba(${WEIGHT_COLOR}, 0.7)` }
+                  : { value: "体重(kg)", position: "insideTopRight", offset: -5, fontSize: 10, fill: `rgba(${WEIGHT_COLOR}, 0.7)`, dy: -15 }
               }
             />
             <Tooltip content={<GrowthTooltip birthDate={birthDate} />} />
