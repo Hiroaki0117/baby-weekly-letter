@@ -11,7 +11,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { differenceInMonths, parseISO } from "date-fns";
+import { differenceInMonths, differenceInDays, parseISO, format } from "date-fns";
 import { calcMonthAge } from "@/lib/growth";
 import {
   maleHeight,
@@ -43,6 +43,7 @@ const WEIGHT_COLOR = "34, 197, 94"; // green-500
 
 type ChartDataPoint = {
   monthAge: number;
+  measuredDate?: string; // ユーザー記録の計測日（YYYY-MM-DD）
   height: number | null;
   weight: number | null;
   hBand?: [number, number]; // [p3, p97] for height
@@ -117,11 +118,13 @@ function buildChartData(
   // 自分のデータ
   const myHeightMap = new Map<number, number>();
   const myWeightMap = new Map<number, number>();
+  const myDateMap = new Map<number, string>();
   for (const r of records) {
     const ma = calcMonthAge(birthDate, r.measured_date);
     if (ma > maxMonth) continue;
     if (r.height_cm != null) myHeightMap.set(ma, r.height_cm);
     if (r.weight_kg != null) myWeightMap.set(ma, r.weight_kg);
+    myDateMap.set(ma, r.measured_date);
   }
 
   // 標準曲線用: 範囲内の全ポイントを生成（刻み間隔で）
@@ -154,6 +157,7 @@ function buildChartData(
       const wStd = interpolateStandard(weightStd, monthAge);
       return {
         monthAge,
+        measuredDate: myDateMap.get(monthAge),
         height: myHeightMap.get(monthAge) ?? null,
         weight: myWeightMap.get(monthAge) ?? null,
         hBand: hStd ? [hStd.p3, hStd.p97] as [number, number] : undefined,
@@ -164,12 +168,37 @@ function buildChartData(
     });
 }
 
+/**
+ * 生年月日と計測日から「○歳○ヶ月○日」形式の文字列を返す
+ */
+function formatAge(birthDate: string, measuredDate: string): string {
+  const birth = parseISO(birthDate);
+  const measured = parseISO(measuredDate);
+  const totalMonths = differenceInMonths(measured, birth);
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  const afterMonthDate = new Date(
+    birth.getFullYear() + years,
+    birth.getMonth() + months,
+    birth.getDate()
+  );
+  const days = differenceInDays(measured, afterMonthDate);
+
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years}歳`);
+  if (months > 0) parts.push(`${months}ヶ月`);
+  if (days > 0) parts.push(`${days}日`);
+  return parts.length > 0 ? parts.join("") : "0日";
+}
+
 function GrowthTooltip({
   active,
   payload,
+  birthDate,
 }: {
   active?: boolean;
   payload?: Array<{ dataKey?: string; value?: number; payload?: ChartDataPoint }>;
+  birthDate: string;
 }) {
   if (!active || !payload?.length) return null;
   const point = payload[0]?.payload;
@@ -180,8 +209,13 @@ function GrowthTooltip({
 
   return (
     <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
+      {point.measuredDate && (
+        <p className="text-xs text-muted-foreground">
+          {format(parseISO(point.measuredDate), "yyyy/M/d")}
+        </p>
+      )}
       <p className="mb-1 text-xs font-semibold text-foreground">
-        {point.monthAge}ヶ月
+        {point.measuredDate ? formatAge(birthDate, point.measuredDate) : `${point.monthAge}ヶ月`}
       </p>
       {point.height !== null && (
         <p className="text-xs" style={{ color: `rgb(${HEIGHT_COLOR})` }}>
@@ -357,7 +391,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               tickCount={compact ? 6 : 10}
               allowDataOverflow
             />
-            <Tooltip content={<GrowthTooltip />} />
+            <Tooltip content={<GrowthTooltip birthDate={birthDate} />} />
 
             {/* 身長の標準曲線帯（p3〜p97） */}
             {showStandard && heightStdVisible(data) && (
