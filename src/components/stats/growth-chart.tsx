@@ -392,6 +392,11 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               domain={heightDomain}
               tickCount={compact ? 6 : 10}
               allowDataOverflow
+              label={
+                compact
+                  ? undefined
+                  : { value: "身長(cm)", angle: -90, position: "insideTopLeft", offset: 10, fontSize: 10, fill: `rgba(${HEIGHT_COLOR}, 0.7)` }
+              }
             />
             {/* 右Y軸: 体重（上寄り） */}
             <YAxis
@@ -404,6 +409,11 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
               domain={weightDomain}
               tickCount={compact ? 6 : 10}
               allowDataOverflow
+              label={
+                compact
+                  ? undefined
+                  : { value: "体重(kg)", angle: 90, position: "insideTopRight", offset: 10, fontSize: 10, fill: `rgba(${WEIGHT_COLOR}, 0.7)` }
+              }
             />
             <Tooltip content={<GrowthTooltip birthDate={birthDate} />} />
 
