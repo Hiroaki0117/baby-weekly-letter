@@ -312,7 +312,7 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
       {/* グラフ */}
       <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: compact ? 0 : 20 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
