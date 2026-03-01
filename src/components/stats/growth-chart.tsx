@@ -240,12 +240,12 @@ export function GrowthChart({ records, birthDate, gender, compact }: Props) {
     // 身長: 下に少し余白、上に大きく余白 → 線がグラフ下寄り
     const hDomain: [number, number] = [
       Math.floor(hMin - hRange * 0.1),
-      Math.ceil(hMax + hRange * 0.8),
+      Math.ceil(hMax + hRange * 1.5),
     ];
 
     // 体重: 下に大きく余白、上に少し余白 → 線がグラフ上寄り
     const wDomain: [number, number] = [
-      Math.max(0, Math.floor((wMin - wRange * 0.8) * 10) / 10),
+      Math.max(0, Math.floor((wMin - wRange * 1.5) * 10) / 10),
       Math.ceil((wMax + wRange * 0.1) * 10) / 10,
     ];
 
