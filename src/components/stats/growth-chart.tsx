@@ -218,20 +218,34 @@ function GrowthTooltip({
         {point.measuredDate ? formatAge(birthDate, point.measuredDate) : `${point.monthAge}ヶ月`}
       </p>
       {point.height !== null && (
-        <p className="text-xs" style={{ color: `rgb(${HEIGHT_COLOR})` }}>
-          身長: <span className="font-semibold">{point.height}cm</span>
-          {point.hP50 != null && (
-            <span className="ml-1 text-muted-foreground">(標準 {point.hP50}cm)</span>
+        <div>
+          <p className="text-xs" style={{ color: `rgb(${HEIGHT_COLOR})` }}>
+            身長: <span className="font-semibold">{point.height}cm</span>
+            {point.hP50 != null && (
+              <span className="ml-1 text-muted-foreground">(標準 {point.hP50}cm)</span>
+            )}
+          </p>
+          {point.hBand && (
+            <p className="ml-2 text-[10px] text-muted-foreground">
+              標準範囲: {point.hBand[0]}cm〜{point.hBand[1]}cm
+            </p>
           )}
-        </p>
+        </div>
       )}
       {point.weight !== null && (
-        <p className="text-xs" style={{ color: `rgb(${WEIGHT_COLOR})` }}>
-          体重: <span className="font-semibold">{point.weight}kg</span>
-          {point.wP50 != null && (
-            <span className="ml-1 text-muted-foreground">(標準 {point.wP50}kg)</span>
+        <div>
+          <p className="text-xs" style={{ color: `rgb(${WEIGHT_COLOR})` }}>
+            体重: <span className="font-semibold">{point.weight}kg</span>
+            {point.wP50 != null && (
+              <span className="ml-1 text-muted-foreground">(標準 {point.wP50}kg)</span>
+            )}
+          </p>
+          {point.wBand && (
+            <p className="ml-2 text-[10px] text-muted-foreground">
+              標準範囲: {point.wBand[0]}kg〜{point.wBand[1]}kg
+            </p>
           )}
-        </p>
+        </div>
       )}
     </div>
   );
