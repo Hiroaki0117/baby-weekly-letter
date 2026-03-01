@@ -175,6 +175,9 @@ function GrowthTooltip({
   const point = payload[0]?.payload;
   if (!point) return null;
 
+  // ユーザーの記録がないポイントではツールチップを表示しない
+  if (point.height === null && point.weight === null) return null;
+
   return (
     <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
       <p className="mb-1 text-xs font-semibold text-foreground">
