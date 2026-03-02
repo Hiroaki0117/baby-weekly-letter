@@ -77,4 +77,59 @@ describe("logFormSchema", () => {
       expect(result.success).toBe(true);
     }
   });
+
+  describe("milestone フィールド", () => {
+    const validWithChild = {
+      ...validBase,
+      child_id: "550e8400-e29b-41d4-a716-446655440000",
+    };
+
+    it("milestoneなしでも有効", () => {
+      const result = logFormSchema.safeParse(validWithChild);
+      expect(result.success).toBe(true);
+    });
+
+    it("有効なmilestoneを受け入れる", () => {
+      const result = logFormSchema.safeParse({
+        ...validWithChild,
+        milestone: { title: "初めて寝返りした", category: "motor" },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("全てのmilestoneカテゴリを受け入れる", () => {
+      const categories = ["motor", "language", "eating", "lifestyle", "other"] as const;
+      for (const category of categories) {
+        const result = logFormSchema.safeParse({
+          ...validWithChild,
+          milestone: { title: "テスト", category },
+        });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("milestoneのタイトルが空の場合はエラー", () => {
+      const result = logFormSchema.safeParse({
+        ...validWithChild,
+        milestone: { title: "", category: "other" },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("milestoneのタイトルが100文字を超えるとエラー", () => {
+      const result = logFormSchema.safeParse({
+        ...validWithChild,
+        milestone: { title: "あ".repeat(101), category: "other" },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("milestoneのカテゴリが不正な値の場合はエラー", () => {
+      const result = logFormSchema.safeParse({
+        ...validWithChild,
+        milestone: { title: "テスト", category: "invalid" },
+      });
+      expect(result.success).toBe(false);
+    });
+  });
 });
