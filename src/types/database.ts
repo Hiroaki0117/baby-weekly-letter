@@ -282,6 +282,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      report_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          tone: string;
+          sections: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tone?: string;
+          sections?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tone?: string;
+          sections?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
