@@ -64,8 +64,8 @@ export function CalendarDayCell({
 
       {/* マイルストーンマーク */}
       {hasMilestone && (
-        <span className="absolute left-0.5 top-0.5 text-[10px] leading-none">
-          ✨
+        <span className="absolute inset-x-0 bottom-1 flex justify-center">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
         </span>
       )}
 
