@@ -23,6 +23,26 @@ export type GrowthRecord = Database["public"]["Tables"]["growth_records"]["Row"]
 export type GrowthRecordInsert =
   Database["public"]["Tables"]["growth_records"]["Insert"];
 
+export type Milestone = Database["public"]["Tables"]["milestones"]["Row"];
+export type MilestoneInsert = Database["public"]["Tables"]["milestones"]["Insert"];
+export type MilestoneUpdate = Database["public"]["Tables"]["milestones"]["Update"];
+
+export type MilestoneCategory = "motor" | "language" | "eating" | "lifestyle" | "other";
+export type MilestoneSource = "ai" | "manual";
+
+export const MILESTONE_CATEGORY_OPTIONS: {
+  value: MilestoneCategory;
+  label: string;
+  emoji: string;
+  color: string;
+}[] = [
+  { value: "motor", label: "運動", emoji: "🏃", color: "blue" },
+  { value: "language", label: "ことば", emoji: "💬", color: "purple" },
+  { value: "eating", label: "食事", emoji: "🍽️", color: "orange" },
+  { value: "lifestyle", label: "生活習慣", emoji: "🌟", color: "green" },
+  { value: "other", label: "その他", emoji: "📌", color: "gray" },
+];
+
 export type Gender = "male" | "female";
 
 export type ReportTone = "warm" | "humor" | "neutral" | "poetic";
