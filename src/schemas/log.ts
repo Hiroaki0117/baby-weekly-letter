@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const milestoneFieldSchema = z.object({
+  title: z
+    .string()
+    .min(1, "タイトルを入力してください")
+    .max(100, "タイトルは100文字以内で入力してください"),
+  category: z.enum(["motor", "language", "eating", "lifestyle", "other"]),
+});
+
 export const logFormSchema = z.object({
   child_id: z.string().min(1, "お子さまを選択してください"),
   text: z
@@ -11,6 +19,7 @@ export const logFormSchema = z.object({
   }),
   categories: z.array(z.string()),
   log_date: z.string(),
+  milestone: milestoneFieldSchema.optional(),
 });
 
 export type LogFormValues = z.infer<typeof logFormSchema>;

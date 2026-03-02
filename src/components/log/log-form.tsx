@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString } from "@/lib/date";
 import { getMyFamilyId } from "@/lib/supabase/family";
+import { createMilestone } from "@/lib/milestones";
 import { logFormSchema, type LogFormValues } from "@/schemas/log";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { CategoryPicker } from "./category-picker";
 import { PhotoUploader } from "./photo-uploader";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
+import { MILESTONE_CATEGORY_OPTIONS } from "@/types";
 import type { Child, DailyLog, Mood } from "@/types";
 
 function safeFileName(file: File): string {
@@ -39,6 +41,7 @@ export function LogForm({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoResetKey, setPhotoResetKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [milestoneEnabled, setMilestoneEnabled] = useState(false);
   const supabase = createClient();
 
   const {
@@ -147,10 +150,21 @@ export function LogForm({
             .eq("id", newLog.id);
         }
 
+        if (milestoneEnabled && values.milestone) {
+          await createMilestone(supabase, {
+            child_id: values.child_id,
+            title: values.milestone.title,
+            milestone_date: values.log_date,
+            category: values.milestone.category,
+            source: "manual",
+          });
+        }
+
         toast.success("ログを保存しました");
         reset();
         setPhotoFile(null);
         setPhotoResetKey((k) => k + 1);
+        setMilestoneEnabled(false);
       }
 
       onSaved();
@@ -238,6 +252,78 @@ export function LogForm({
             onChange={(c) => setValue("categories", c)}
           />
         </div>
+
+        {/* マイルストーン（新規作成時のみ） */}
+        {!editingLog && (
+          <div className="space-y-2.5">
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <div
+                role="switch"
+                aria-checked={milestoneEnabled}
+                tabIndex={0}
+                onClick={() => {
+                  const next = !milestoneEnabled;
+                  setMilestoneEnabled(next);
+                  if (!next) {
+                    setValue("milestone", undefined);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    const next = !milestoneEnabled;
+                    setMilestoneEnabled(next);
+                    if (!next) {
+                      setValue("milestone", undefined);
+                    }
+                  }
+                }}
+                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                  milestoneEnabled ? "bg-primary" : "bg-muted"
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                    milestoneEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                  }`}
+                />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">
+                ✨ はじめてできたこと
+              </span>
+            </label>
+
+            {milestoneEnabled && (
+              <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div>
+                  <input
+                    {...register("milestone.title")}
+                    placeholder="初めて寝返りした"
+                    className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                  />
+                  {errors.milestone?.title && (
+                    <p className="mt-1 text-xs text-destructive">
+                      {errors.milestone.title.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <select
+                    {...register("milestone.category")}
+                    defaultValue="other"
+                    className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                  >
+                    {MILESTONE_CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.emoji} {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 写真 */}
         <div className="space-y-2.5">
