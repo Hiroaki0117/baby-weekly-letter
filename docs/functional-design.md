@@ -42,7 +42,10 @@ erDiagram
     children ||--o{ daily_logs : "has many"
     children ||--o{ weekly_reports : "has many"
     children ||--o{ monthly_reports : "has many"
+    children ||--o{ growth_records : "has many"
+    children ||--o{ milestones : "has many"
     daily_logs ||--o{ log_reactions : "has many"
+    daily_logs ||--o{ milestones : "has many"
     daily_logs }o--o| weekly_reports : "source_log_ids"
 
     families {
@@ -112,6 +115,30 @@ erDiagram
         uuid user_id FK
         text emoji
         timestamptz created_at
+    }
+
+    growth_records {
+        uuid id PK
+        uuid child_id FK
+        date measured_date
+        numeric height_cm
+        numeric weight_kg
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    milestones {
+        uuid id PK
+        uuid child_id FK
+        uuid daily_log_id FK
+        text title
+        date milestone_date
+        text category
+        text memo
+        text source
+        uuid weekly_report_id FK
+        timestamptz created_at
+        timestamptz updated_at
     }
 ```
 
@@ -197,6 +224,40 @@ erDiagram
 - ユニーク制約: (log_id, user_id, emoji)
 - RLS: 家族スコープ（daily_logs 経由で family_id を参照）
 
+#### growth_records
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| child_id | uuid | NOT NULL | | FK → children |
+| measured_date | date | NOT NULL | | 計測日 |
+| height_cm | numeric | NULL | | 身長（cm） |
+| weight_kg | numeric | NULL | | 体重（kg） |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- インデックス: (child_id, measured_date)
+- RLS: children 経由で family_id = my_family_id()
+
+#### milestones
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| child_id | uuid | NOT NULL | | FK → children |
+| daily_log_id | uuid | NULL | | FK → daily_logs（ログから登録時に紐付け） |
+| title | text | NOT NULL | | マイルストーンタイトル |
+| milestone_date | date | NOT NULL | | 達成日 |
+| category | text | NOT NULL | 'other' | motor / language / eating / lifestyle / other |
+| memo | text | NULL | | 補足メモ |
+| source | text | NOT NULL | 'manual' | manual / ai |
+| weekly_report_id | uuid | NULL | | FK → weekly_reports（AI抽出元） |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- インデックス: (child_id, milestone_date)
+- RLS: children 経由で family_id = my_family_id()
+
 ---
 
 ## 3. RLS（Row Level Security）ポリシー
@@ -241,6 +302,24 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 | SELECT | select_family_reactions | daily_logs JOIN で family_id = my_family_id() |
 | INSERT | insert_own_reactions | user_id = auth.uid() AND daily_logs JOIN で family_id = my_family_id() |
 | DELETE | delete_own_reactions | user_id = auth.uid() |
+
+### growth_records
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_growth | children JOIN で family_id = my_family_id() |
+| INSERT | insert_family_growth | children JOIN で family_id = my_family_id() |
+| UPDATE | update_family_growth | children JOIN で family_id = my_family_id() |
+| DELETE | delete_family_growth | children JOIN で family_id = my_family_id() |
+
+### milestones
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_milestones | children JOIN で family_id = my_family_id() |
+| INSERT | insert_family_milestones | children JOIN で family_id = my_family_id() |
+| UPDATE | update_family_milestones | children JOIN で family_id = my_family_id() |
+| DELETE | delete_family_milestones | children JOIN で family_id = my_family_id() |
 
 ### Storage (log-photos バケット)
 
@@ -620,6 +699,8 @@ app/
 | MoodChart | `stats/` | 記録数・気分分布の積み上げ棒グラフ |
 | CategoryPieChart | `stats/` | カテゴリ別割合の円グラフ |
 | PeriodTabs | `stats/` | 統計の期間切り替えタブ |
+| GrowthChart | `stats/` | 身長・体重成長曲線グラフ |
+| MilestoneTimeline | `stats/` | マイルストーン時系列タイムライン |
 | MemoriesSection | `memory/` | ○年前の今日セクション |
 | MemoryCard | `memory/` | 過去の記録カード |
 | ReactionNotice | `home/` | リアクション新着通知 |
@@ -762,15 +843,20 @@ AI生成の週次通信をユーザーの好みに合わせてカスタマイズ
 - **設定保存**: 家族単位で設定を保存（全通信に適用）
 - **API料金影響**: Gemini 2.5 Flash は1回あたり約0.1円以下のため、カスタマイズによる追加コストは無視できるレベル
 
-### 10.3 成長タイムライン（優先度3）
+### 10.3 成長タイムライン（優先度3・実装済み）
 
 子供ごとの「初めて○○した」マイルストーンを時系列で表示する。
 
-- **検出方式**: AI自動抽出（週次通信生成時にマイルストーンを検出）＋ 手動追加/編集のハイブリッド
-- **データモデル**: `milestones` テーブル（child_id, date, title, description, source, auto_detected）
-- **表示**: 子供プロフィールまたは専用画面に時系列タイムライン
+- **入力方式**:
+  - 日次ログ入力時に「はじめてできたこと」トグルで同時登録（`daily_log_id` で紐付け）
+  - AI自動抽出（週次通信生成時にマイルストーンを検出、`weekly_report_id` で紐付け）
+- **データモデル**: `milestones` テーブル（child_id, daily_log_id, title, milestone_date, category, memo, source, weekly_report_id）
+- **カテゴリ**: motor（運動）/ language（ことば）/ eating（食事）/ lifestyle（生活習慣）/ other（その他）
+- **表示**:
+  - ログカード: マイルストーンが紐づくログにバッジ表示
+  - 統計ページ: 成長タブ内の小項目タブ「初めての出来事」にタイムライン表示
 - **AI抽出ロジック**: 週次通信生成プロンプトに「初めて」系イベントの検出を追加。検出結果を自動保存
-- **手動操作**: ユーザーがマイルストーンの追加・編集・削除可能。AI誤検出の修正も可能
+- **手動操作**: ユーザーがマイルストーンの編集・削除可能
 
 ### 10.4 家族コメント（優先度4）
 
