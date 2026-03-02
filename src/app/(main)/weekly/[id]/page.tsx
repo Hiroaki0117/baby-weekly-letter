@@ -121,6 +121,7 @@ export default function WeeklyDetailPage() {
         body: JSON.stringify({
           weekStart: toDateString(new Date(report.week_start)),
           weekEnd: toDateString(new Date(report.week_end)),
+          childId: report.child_id,
         }),
       });
 
