@@ -286,6 +286,7 @@ export interface Database {
         Row: {
           id: string;
           child_id: string;
+          daily_log_id: string | null;
           title: string;
           milestone_date: string;
           category: string;
@@ -298,6 +299,7 @@ export interface Database {
         Insert: {
           id?: string;
           child_id: string;
+          daily_log_id?: string | null;
           title: string;
           milestone_date: string;
           category?: string;
@@ -310,6 +312,7 @@ export interface Database {
         Update: {
           id?: string;
           child_id?: string;
+          daily_log_id?: string | null;
           title?: string;
           milestone_date?: string;
           category?: string;

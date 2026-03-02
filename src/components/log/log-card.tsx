@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
 import type { ReactionSummary } from "@/lib/reactions";
+import type { Milestone } from "@/types";
 import { AuthorBadge } from "./author-badge";
 import { ReactionBar } from "./reaction-bar";
 import { ChildBadge } from "@/components/child/child-badge";
@@ -14,6 +15,7 @@ type LogCardProps = {
   log: DailyLog;
   childName?: string | null;
   authorDisplayName?: string | null;
+  milestone?: Milestone | null;
   reactions?: ReactionSummary[];
   nameMap?: Record<string, string>;
   onEdit: (log: DailyLog) => void;
@@ -21,7 +23,7 @@ type LogCardProps = {
   onToggleReaction?: (logId: string, emoji: string) => void;
 };
 
-export function LogCard({ log, childName, authorDisplayName, reactions, nameMap, onEdit, onDelete, onToggleReaction }: LogCardProps) {
+export function LogCard({ log, childName, authorDisplayName, milestone, reactions, nameMap, onEdit, onDelete, onToggleReaction }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -104,6 +106,15 @@ export function LogCard({ log, childName, authorDisplayName, reactions, nameMap,
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
                 {log.text}
               </p>
+
+              {/* マイルストーンバッジ */}
+              {milestone && (
+                <div>
+                  <Badge className="border border-amber-300/50 bg-amber-50 text-[10px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-400">
+                    ✨ {milestone.title}
+                  </Badge>
+                </div>
+              )}
 
               {/* カテゴリ */}
               {log.categories.length > 0 && (

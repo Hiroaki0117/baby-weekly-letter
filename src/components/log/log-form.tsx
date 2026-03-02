@@ -150,9 +150,10 @@ export function LogForm({
             .eq("id", newLog.id);
         }
 
-        if (milestoneEnabled && values.milestone) {
+        if (milestoneEnabled && values.milestone && newLog) {
           await createMilestone(supabase, {
             child_id: values.child_id,
+            daily_log_id: newLog.id,
             title: values.milestone.title,
             milestone_date: values.log_date,
             category: values.milestone.category,

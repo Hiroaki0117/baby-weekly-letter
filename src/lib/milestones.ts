@@ -22,12 +22,38 @@ export async function fetchMilestones(
 }
 
 /**
+ * ログIDリストに紐づくマイルストーンをマップで取得
+ */
+export async function fetchMilestonesByLogIds(
+  supabase: Client,
+  logIds: string[]
+): Promise<Record<string, Milestone>> {
+  if (logIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from("milestones")
+    .select("*")
+    .in("daily_log_id", logIds);
+
+  if (error) throw error;
+
+  const map: Record<string, Milestone> = {};
+  for (const row of (data ?? []) as Milestone[]) {
+    if (row.daily_log_id) {
+      map[row.daily_log_id] = row;
+    }
+  }
+  return map;
+}
+
+/**
  * マイルストーンを追加
  */
 export async function createMilestone(
   supabase: Client,
   data: {
     child_id: string;
+    daily_log_id?: string;
     title: string;
     milestone_date: string;
     category: string;
