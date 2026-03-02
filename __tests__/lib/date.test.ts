@@ -68,7 +68,7 @@ describe("formatDateSlash", () => {
 describe("formatWeekRange", () => {
   it("週の範囲をフォーマットする", () => {
     const result = formatWeekRange("2026-02-16", "2026-02-22");
-    expect(result).toBe("2026/02/16〜2026/02/22");
+    expect(result).toBe("2026/2/16〜2026/2/22");
   });
 });
 
