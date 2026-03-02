@@ -124,7 +124,7 @@ export default function MonthlyDetailPage() {
       const res = await fetch("/api/monthly-report/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month }),
+        body: JSON.stringify({ month, childId: report.child_id }),
       });
 
       const data = await res.json();
