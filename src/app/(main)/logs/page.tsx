@@ -11,11 +11,13 @@ import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
 import { LogsTabs, type LogsTab } from "@/components/log/logs-tabs";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
+import { UngeneratedWeekCard } from "@/components/weekly/ungenerated-week-card";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
 import { ChildSelector } from "@/components/child/child-selector";
 import { ReportPreferencesForm } from "@/components/settings/report-preferences-form";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { startOfWeek, endOfWeek } from "date-fns";
 import type { Child, DailyLog, Mood, WeeklyReport, MonthlyReport } from "@/types";
 
 export default function LogsPage() {
@@ -277,17 +279,19 @@ function LogsPageInner() {
     [currentUserId, reactionMap, supabase]
   );
 
-  async function handleGenerateWeekly() {
+  const [generatingWeek, setGeneratingWeek] = useState<string | null>(null);
+
+  async function handleGenerateWeekly(weekStartOverride?: string, weekEndOverride?: string) {
+    const ws = weekStartOverride ?? toDateString(getWeekRange(new Date()).start);
+    const we = weekEndOverride ?? toDateString(getWeekRange(new Date()).end);
     setGenerating(true);
-    const { start, end } = getWeekRange(new Date());
-    const weekStart = toDateString(start);
-    const weekEnd = toDateString(end);
+    setGeneratingWeek(ws);
 
     try {
       const res = await fetch("/api/weekly-report/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekStart, weekEnd, childId: selectedChildId }),
+        body: JSON.stringify({ weekStart: ws, weekEnd: we, childId: selectedChildId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -300,6 +304,7 @@ function LogsPageInner() {
       toast.error("生成に失敗しました。再度お試しください");
     } finally {
       setGenerating(false);
+      setGeneratingWeek(null);
     }
   }
 
@@ -336,6 +341,36 @@ function LogsPageInner() {
     ? monthlyReports.filter((r) => r.child_id === selectedChildId)
     : monthlyReports;
 
+  // 未生成週の算出: ログがある週のうち、通信が未生成の週を抽出
+  const ungeneratedWeeks = useMemo(() => {
+    const targetLogs = selectedChildId
+      ? logs.filter((l) => l.child_id === selectedChildId)
+      : logs;
+    if (targetLogs.length === 0) return [];
+
+    // ログがある週を収集（week_start → week_end のマップ）
+    const weekMap = new Map<string, string>();
+    for (const log of targetLogs) {
+      const logDate = new Date(log.log_date + "T00:00:00");
+      const ws = toDateString(startOfWeek(logDate, { weekStartsOn: 1 }));
+      const we = toDateString(endOfWeek(logDate, { weekStartsOn: 1 }));
+      weekMap.set(ws, we);
+    }
+
+    // 生成済み週を除外
+    const generatedStarts = new Set(filteredReports.map((r) => r.week_start));
+    const result: { weekStart: string; weekEnd: string }[] = [];
+    for (const [ws, we] of weekMap) {
+      if (!generatedStarts.has(ws)) {
+        result.push({ weekStart: ws, weekEnd: we });
+      }
+    }
+
+    // 降順ソート
+    result.sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+    return result;
+  }, [logs, selectedChildId, filteredReports]);
+
   const now = new Date();
   const currentMonthLabel = formatMonthJa(now.getFullYear(), now.getMonth());
 
@@ -371,7 +406,7 @@ function LogsPageInner() {
         {/* 通信タブ: 生成ボタン */}
         {activeTab === "weekly" && (
           <button
-            onClick={handleGenerateWeekly}
+            onClick={() => handleGenerateWeekly()}
             disabled={generating}
             className="flex items-center gap-2 rounded-lg border border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -526,7 +561,7 @@ function LogsPageInner() {
       {/* ===== 週次通信タブ ===== */}
       {activeTab === "weekly" && (
         <>
-          {filteredReports.length === 0 ? (
+          {filteredReports.length === 0 && ungeneratedWeeks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
                 <div className="airmail-stripe absolute inset-x-0 top-0 h-2.5" />
@@ -543,9 +578,44 @@ function LogsPageInner() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredReports.map((report) => (
-                <WeeklyReportCard key={report.id} report={report} />
-              ))}
+              {/* 生成済みと未生成を week_start 降順でマージ表示 */}
+              {(() => {
+                type WeekItem =
+                  | { type: "generated"; report: WeeklyReport }
+                  | { type: "ungenerated"; weekStart: string; weekEnd: string };
+
+                const items: WeekItem[] = [
+                  ...filteredReports.map((r) => ({
+                    type: "generated" as const,
+                    report: r,
+                  })),
+                  ...ungeneratedWeeks.map((w) => ({
+                    type: "ungenerated" as const,
+                    weekStart: w.weekStart,
+                    weekEnd: w.weekEnd,
+                  })),
+                ];
+
+                items.sort((a, b) => {
+                  const aStart = a.type === "generated" ? a.report.week_start : a.weekStart;
+                  const bStart = b.type === "generated" ? b.report.week_start : b.weekStart;
+                  return bStart.localeCompare(aStart);
+                });
+
+                return items.map((item) =>
+                  item.type === "generated" ? (
+                    <WeeklyReportCard key={item.report.id} report={item.report} />
+                  ) : (
+                    <UngeneratedWeekCard
+                      key={`ungenerated-${item.weekStart}`}
+                      weekStart={item.weekStart}
+                      weekEnd={item.weekEnd}
+                      generating={generating && generatingWeek === item.weekStart}
+                      onGenerate={handleGenerateWeekly}
+                    />
+                  )
+                );
+              })()}
             </div>
           )}
         </>
