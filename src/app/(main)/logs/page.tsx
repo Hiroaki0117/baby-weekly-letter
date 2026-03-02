@@ -299,6 +299,12 @@ function LogsPageInner() {
         return;
       }
       toast.success("週次通信を生成しました");
+      if (data.extractedMilestones?.length > 0) {
+        toast.success(
+          `🌟 ${data.extractedMilestones.length}件の成長マイルストーンを検出しました`,
+          { duration: 5000 }
+        );
+      }
       router.push(`/weekly/${data.id}`);
     } catch {
       toast.error("生成に失敗しました。再度お試しください");

@@ -282,6 +282,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      milestones: {
+        Row: {
+          id: string;
+          child_id: string;
+          title: string;
+          milestone_date: string;
+          category: string;
+          memo: string | null;
+          source: string;
+          weekly_report_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          child_id: string;
+          title: string;
+          milestone_date: string;
+          category?: string;
+          memo?: string | null;
+          source?: string;
+          weekly_report_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          child_id?: string;
+          title?: string;
+          milestone_date?: string;
+          category?: string;
+          memo?: string | null;
+          source?: string;
+          weekly_report_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       report_preferences: {
         Row: {
           id: string;
