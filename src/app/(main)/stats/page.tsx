@@ -288,9 +288,7 @@ export default function StatsPage() {
 
           {/* 初めての出来事 */}
           {growthSubTab === "milestones" && selectedChildId && (
-            <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-              <MilestoneTimeline childId={selectedChildId} />
-            </div>
+            <MilestoneTimeline childId={selectedChildId} />
           )}
         </div>
       )}
