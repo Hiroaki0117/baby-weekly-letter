@@ -1,35 +1,83 @@
 "use client";
 
-export type LogsTab = "logs" | "weekly" | "monthly";
+export type LogsTab = "logs" | "weekly" | "monthly" | "report-settings";
+
+type TopCategory = "records" | "reports";
 
 type LogsTabsProps = {
   activeTab: LogsTab;
   onTabChange: (tab: LogsTab) => void;
 };
 
-const tabs: { key: LogsTab; label: string; icon: string }[] = [
-  { key: "logs", label: "記録", icon: "📝" },
+const reportTabs: { key: LogsTab; label: string; icon: string }[] = [
   { key: "weekly", label: "週次通信", icon: "✉" },
   { key: "monthly", label: "月次まとめ", icon: "📖" },
+  { key: "report-settings", label: "設定", icon: "⚙" },
 ];
 
+function getTopCategory(tab: LogsTab): TopCategory {
+  return tab === "logs" ? "records" : "reports";
+}
+
 export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
+  const topCategory = getTopCategory(activeTab);
+
+  function handleTopChange(category: TopCategory) {
+    if (category === "records") {
+      onTabChange("logs");
+    } else {
+      // 通信カテゴリに切り替え時、前回の通信タブが記録以外ならそれを維持
+      if (activeTab === "logs") {
+        onTabChange("weekly");
+      }
+    }
+  }
+
   return (
-    <div className="flex rounded-lg border border-border/60 bg-muted/30 p-0.5">
-      {tabs.map((tab) => (
+    <div className="space-y-2">
+      {/* 大項目タブ */}
+      <div className="flex rounded-lg border border-border/60 bg-muted/30 p-0.5">
         <button
-          key={tab.key}
-          onClick={() => onTabChange(tab.key)}
-          className={`flex-1 whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium transition-all ${
-            activeTab === tab.key
+          onClick={() => handleTopChange("records")}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+            topCategory === "records"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <span className="mr-1">{tab.icon}</span>
-          {tab.label}
+          📝 記録
         </button>
-      ))}
+        <button
+          onClick={() => handleTopChange("reports")}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+            topCategory === "reports"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          ✉ 通信
+        </button>
+      </div>
+
+      {/* 小項目タブ（通信カテゴリのみ） */}
+      {topCategory === "reports" && (
+        <div className="flex gap-1">
+          {reportTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => onTabChange(tab.key)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <span className="mr-1">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
