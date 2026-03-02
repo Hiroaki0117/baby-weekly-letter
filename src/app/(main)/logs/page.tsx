@@ -13,6 +13,7 @@ import { LogsTabs, type LogsTab } from "@/components/log/logs-tabs";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
 import { ChildSelector } from "@/components/child/child-selector";
+import { ReportPreferencesForm } from "@/components/settings/report-preferences-form";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { Child, DailyLog, Mood, WeeklyReport, MonthlyReport } from "@/types";
@@ -35,7 +36,7 @@ export default function LogsPage() {
 function LogsPageInner() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as LogsTab) ?? "logs";
-  const validTab = ["logs", "weekly", "monthly"].includes(initialTab)
+  const validTab = ["logs", "weekly", "monthly", "report-settings"].includes(initialTab)
     ? initialTab
     : "logs";
 
@@ -343,6 +344,7 @@ function LogsPageInner() {
     logs: { en: "All Records", ja: "記録一覧" },
     weekly: { en: "Weekly Letters", ja: "週次通信" },
     monthly: { en: "Monthly Essays", ja: "月次まとめ" },
+    "report-settings": { en: "Report Settings", ja: "通信設定" },
   };
 
   if (loading) {
@@ -416,7 +418,7 @@ function LogsPageInner() {
       {/* タブ切替 */}
       <LogsTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* 通信タブ: 子供セレクター */}
+      {/* 通信タブ（週次・月次）: 子供セレクター */}
       {(activeTab === "weekly" || activeTab === "monthly") &&
         childrenList.length >= 2 && (
           <ChildSelector
@@ -576,6 +578,9 @@ function LogsPageInner() {
           )}
         </>
       )}
+
+      {/* ===== 通信設定タブ ===== */}
+      {activeTab === "report-settings" && <ReportPreferencesForm />}
     </div>
   );
 }
