@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getWeekRange, toDateString, formatMonthJa } from "@/lib/date";
+import { getWeekRange, toDateString, formatMonthJa, formatWeekRange } from "@/lib/date";
 import { deleteLog } from "@/lib/log-actions";
 import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
 import { LogCard } from "@/components/log/log-card";
@@ -418,7 +418,10 @@ function LogsPageInner() {
             ) : (
               <>
                 <span className="text-base leading-none">✉</span>
-                今週の通信を作る
+                今週（{formatWeekRange(
+                  getWeekRange(new Date()).start,
+                  getWeekRange(new Date()).end
+                )}）の通信を作る
               </>
             )}
           </button>
