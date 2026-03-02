@@ -13,6 +13,7 @@ import {
   type Milestone,
   type MilestoneCategory,
 } from "@/types";
+import { FilterShell } from "@/components/ui/filter-shell";
 import { toast } from "sonner";
 
 type MilestoneTimelineProps = {
@@ -39,6 +40,7 @@ export function MilestoneTimeline({ childId }: MilestoneTimelineProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState<MilestoneCategory | null>(null);
+  const [searchText, setSearchText] = useState("");
   const [editTarget, setEditTarget] = useState<Milestone | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Milestone | null>(null);
   const supabase = createClient();
@@ -58,9 +60,14 @@ export function MilestoneTimeline({ childId }: MilestoneTimelineProps) {
     load();
   }, [load]);
 
-  const filtered = filterCategory
-    ? milestones.filter((m) => m.category === filterCategory)
-    : milestones;
+  const filtered = milestones.filter((m) => {
+    if (filterCategory && m.category !== filterCategory) return false;
+    if (searchText.trim()) {
+      const needle = searchText.trim().toLowerCase();
+      if (!m.title.toLowerCase().includes(needle)) return false;
+    }
+    return true;
+  });
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -82,38 +89,51 @@ export function MilestoneTimeline({ childId }: MilestoneTimelineProps) {
     );
   }
 
+  const activeFilterCount = filterCategory ? 1 : 0;
+
+  function handleClear() {
+    setFilterCategory(null);
+    setSearchText("");
+  }
+
   return (
     <div className="space-y-4">
-      {/* カテゴリフィルタ */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => setFilterCategory(null)}
-          className={`rounded-full border px-3 py-1 text-[11px] font-medium transition-colors ${
-            filterCategory === null
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border/60 text-muted-foreground hover:bg-muted/50"
-          }`}
-        >
-          すべて
-        </button>
-        {MILESTONE_CATEGORY_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() =>
-              setFilterCategory(
-                filterCategory === opt.value ? null : (opt.value as MilestoneCategory)
-              )
-            }
-            className={`rounded-full border px-3 py-1 text-[11px] font-medium transition-colors ${
-              filterCategory === opt.value
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border/60 text-muted-foreground hover:bg-muted/50"
-            }`}
-          >
-            {opt.emoji} {opt.label}
-          </button>
-        ))}
-      </div>
+      <FilterShell
+        searchText={searchText}
+        onSearchTextChange={setSearchText}
+        searchPlaceholder="マイルストーンを検索..."
+        activeFilterCount={activeFilterCount}
+        totalCount={milestones.length}
+        filteredCount={filtered.length}
+        onClear={handleClear}
+      >
+        {/* カテゴリフィルタ */}
+        <div className="space-y-2">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            カテゴリ
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {MILESTONE_CATEGORY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  setFilterCategory(
+                    filterCategory === opt.value ? null : (opt.value as MilestoneCategory)
+                  )
+                }
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition-colors ${
+                  filterCategory === opt.value
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                {opt.emoji} {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </FilterShell>
 
       {/* タイムライン */}
       {filtered.length === 0 ? (
