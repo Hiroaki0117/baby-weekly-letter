@@ -58,13 +58,15 @@ export function formatDateSlash(date: Date | string): string {
 }
 
 /**
- * 週の範囲を "YYYY/MM/DD〜YYYY/MM/DD" 形式で返す
+ * 週の範囲を "YYYY/M/D〜YYYY/M/D" 形式で返す
  */
 export function formatWeekRange(
   weekStart: Date | string,
   weekEnd: Date | string
 ): string {
-  return `${formatDateSlash(weekStart)}〜${formatDateSlash(weekEnd)}`;
+  const s = typeof weekStart === "string" ? parseISO(weekStart) : weekStart;
+  const e = typeof weekEnd === "string" ? parseISO(weekEnd) : weekEnd;
+  return `${format(s, "yyyy/M/d")}〜${format(e, "yyyy/M/d")}`;
 }
 
 /**
