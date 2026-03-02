@@ -64,9 +64,7 @@ export function CalendarDayCell({
 
       {/* マイルストーンマーク */}
       {hasMilestone && (
-        <span className="absolute inset-x-0 bottom-1 flex justify-center">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-        </span>
+        <span className="absolute left-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
       )}
 
       {/* ログ件数バッジ */}
