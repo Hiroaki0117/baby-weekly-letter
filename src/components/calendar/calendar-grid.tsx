@@ -4,7 +4,7 @@ import { useState } from "react";
 import { getCalendarDays, formatMonthJa, toDateString } from "@/lib/date";
 import { CalendarDayCell } from "./calendar-day-cell";
 import { MonthPicker } from "./month-picker";
-import type { DailyLog } from "@/types";
+import type { DailyLog, Milestone } from "@/types";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -12,6 +12,7 @@ type CalendarGridProps = {
   year: number;
   month: number;
   logsByDate: Record<string, DailyLog[]>;
+  milestoneMap: Record<string, Milestone>;
   selectedDate: string | null;
   onSelectDate: (dateStr: string) => void;
   onPrevMonth: () => void;
@@ -25,6 +26,7 @@ export function CalendarGrid({
   year,
   month,
   logsByDate,
+  milestoneMap,
   selectedDate,
   onSelectDate,
   onPrevMonth,
@@ -124,6 +126,7 @@ export function CalendarGrid({
         {days.map((date) => {
           const dateStr = toDateString(date);
           const logs = logsByDate[dateStr] ?? [];
+          const hasMilestone = logs.some((log) => !!milestoneMap[log.id]);
           return (
             <CalendarDayCell
               key={dateStr}
@@ -132,6 +135,7 @@ export function CalendarGrid({
               logs={logs}
               isSelected={selectedDate === dateStr}
               onSelect={(d) => onSelectDate(toDateString(d))}
+              hasMilestone={hasMilestone}
             />
           );
         })}

@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { generateWeeklyReport } from "@/lib/weekly-report/generate";
 import { fetchReportPreferences } from "@/lib/report-preferences";
-import { extractMilestones } from "@/lib/milestones/extract";
-import { saveMilestones } from "@/lib/milestones";
 import { generateReportSchema } from "@/schemas/weekly-report";
 import type { DailyLog, Child } from "@/types";
 
@@ -136,28 +134,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // マイルストーン自動抽出（エラーが起きても通信生成自体は成功させる）
-    let extractedMilestones: { title: string; category: string }[] = [];
-    try {
-      const milestones = await extractMilestones(typedLogs);
-      if (milestones.length > 0 && report) {
-        const { saved } = await saveMilestones(
-          supabase,
-          childId,
-          milestones,
-          (report as { id: string }).id
-        );
-        if (saved > 0) {
-          extractedMilestones = milestones
-            .slice(0, saved)
-            .map((m) => ({ title: m.title, category: m.category }));
-        }
-      }
-    } catch (milestoneError) {
-      console.error("Milestone extraction/save error:", milestoneError);
-    }
-
-    return NextResponse.json({ ...report, extractedMilestones });
+    return NextResponse.json(report);
   } catch (error) {
     console.error("Weekly report generation error:", error);
     return NextResponse.json(

@@ -16,12 +16,11 @@ import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { GrowthChart } from "@/components/stats/growth-chart";
-import { MilestoneTimeline } from "@/components/stats/milestone-timeline";
 import { ChildSelector } from "@/components/child/child-selector";
-import type { Child, DailyLog, GrowthRecord, Gender } from "@/types";
+import { fetchMilestonesByLogIds } from "@/lib/milestones";
+import type { Child, DailyLog, GrowthRecord, Gender, Milestone } from "@/types";
 
 type StatsTab = "logs" | "growth";
-type GrowthSubTab = "physical" | "milestones";
 
 function getMonday(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
@@ -38,8 +37,8 @@ export default function StatsPage() {
   const [selectedChildId, setSelectedChildId] = useState("");
   const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
   const [growthRecords, setGrowthRecords] = useState<Record<string, GrowthRecord[]>>({});
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [statsTab, setStatsTab] = useState<StatsTab>("logs");
-  const [growthSubTab, setGrowthSubTab] = useState<GrowthSubTab>("physical");
   const [period, setPeriod] = useState<PeriodType>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
@@ -76,6 +75,13 @@ export default function StatsPage() {
 
       if (children.length > 0) {
         setSelectedChildId(children[0].id);
+      }
+
+      // マイルストーン取得
+      if (logs.length > 0) {
+        const logIds = logs.map((l) => l.id);
+        const msMap = await fetchMilestonesByLogIds(client, logIds);
+        setMilestoneMap(msMap);
       }
 
       // 成長記録を並行取得
@@ -116,6 +122,11 @@ export default function StatsPage() {
   }, [filtered, period, weekStart, selectedYear]);
 
   const categoryCounts = useMemo(() => calcCategoryCounts(filtered), [filtered]);
+
+  const milestoneCount = useMemo(
+    () => filtered.filter((log) => milestoneMap[log.id]).length,
+    [filtered, milestoneMap]
+  );
 
   // ナビゲーション
   const currentMonday = getMonday(new Date());
@@ -239,6 +250,26 @@ export default function StatsPage() {
                   <CategoryPieChart data={categoryCounts} />
                 </div>
               )}
+
+              {/* 初めての出来事サマリー */}
+              <div className="overflow-hidden rounded-xl border border-amber-200/60 bg-amber-50/50 p-4 shadow-sm dark:border-amber-500/20 dark:bg-amber-950/20">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">✨</span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      初めての出来事
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {milestoneCount > 0
+                        ? `${milestoneCount}件の「初めて」を記録しました`
+                        : "まだ記録がありません"}
+                    </p>
+                  </div>
+                  <span className="ml-auto text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    {milestoneCount}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </>
@@ -246,49 +277,17 @@ export default function StatsPage() {
 
       {/* 成長タブ */}
       {statsTab === "growth" && (
-        <div className="space-y-4">
-          {/* 小項目タブ */}
-          <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
-            {(
-              [
-                { key: "physical", label: "身長・体重" },
-                { key: "milestones", label: "初めての出来事" },
-              ] as const
-            ).map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setGrowthSubTab(t.key)}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  growthSubTab === t.key
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* 身長・体重 */}
-          {growthSubTab === "physical" && (
-            <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-              {hasGrowthData ? (
-                <GrowthChart
-                  records={selectedGrowthRecords}
-                  birthDate={selectedChild!.birth_date!}
-                  gender={(selectedChild!.gender as Gender) ?? null}
-                />
-              ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
-                  家族画面からお子さまの成長記録を追加すると、成長曲線が表示されます。
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* 初めての出来事 */}
-          {growthSubTab === "milestones" && selectedChildId && (
-            <MilestoneTimeline childId={selectedChildId} />
+        <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+          {hasGrowthData ? (
+            <GrowthChart
+              records={selectedGrowthRecords}
+              birthDate={selectedChild!.birth_date!}
+              gender={(selectedChild!.gender as Gender) ?? null}
+            />
+          ) : (
+            <p className="py-12 text-center text-sm text-muted-foreground">
+              家族画面からお子さまの成長記録を追加すると、成長曲線が表示されます。
+            </p>
           )}
         </div>
       )}

@@ -14,6 +14,8 @@ type LogFilterProps = {
   onMoodsChange: (moods: Mood[]) => void;
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
+  milestoneOnly: boolean;
+  onMilestoneOnlyChange: (v: boolean) => void;
   searchText: string;
   onSearchTextChange: (text: string) => void;
   totalCount: number;
@@ -29,6 +31,8 @@ export function LogFilter({
   onMoodsChange,
   selectedCategories,
   onCategoriesChange,
+  milestoneOnly,
+  onMilestoneOnlyChange,
   searchText,
   onSearchTextChange,
   totalCount,
@@ -36,7 +40,7 @@ export function LogFilter({
   onClear,
 }: LogFilterProps) {
   const activeFilterCount =
-    selectedChildIds.length + selectedMoods.length + selectedCategories.length;
+    selectedChildIds.length + selectedMoods.length + selectedCategories.length + (milestoneOnly ? 1 : 0);
 
   function toggleChild(childId: string) {
     if (selectedChildIds.includes(childId)) {
@@ -158,6 +162,28 @@ export function LogFilter({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* 初めての出来事フィルター */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          初めての出来事
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => onMilestoneOnlyChange(!milestoneOnly)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150",
+              "hover:scale-105 active:scale-95",
+              milestoneOnly
+                ? "border-amber-400 bg-amber-200 text-amber-800"
+                : "border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100"
+            )}
+          >
+            ✨ 初めての出来事あり
+          </button>
         </div>
       </div>
     </FilterShell>

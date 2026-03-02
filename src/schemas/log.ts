@@ -3,9 +3,7 @@ import { z } from "zod";
 export const milestoneFieldSchema = z.object({
   title: z
     .string()
-    .min(1, "タイトルを入力してください")
     .max(100, "タイトルは100文字以内で入力してください"),
-  category: z.enum(["motor", "language", "eating", "lifestyle", "other"]),
 });
 
 export const logFormSchema = z.object({

@@ -47,7 +47,7 @@ export function LogCard({ log, childName, authorDisplayName, milestone, reaction
 
   return (
     <>
-      <AccentCard accent="primary">
+      <AccentCard accent={milestone ? "amber" : "primary"}>
         {/* 写真サムネイル */}
         {photoUrl && (
           <button

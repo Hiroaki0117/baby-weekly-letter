@@ -15,7 +15,6 @@ import { CategoryPicker } from "./category-picker";
 import { PhotoUploader } from "./photo-uploader";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
-import { MILESTONE_CATEGORY_OPTIONS } from "@/types";
 import type { Child, DailyLog, Mood } from "@/types";
 
 function safeFileName(file: File): string {
@@ -150,14 +149,14 @@ export function LogForm({
             .eq("id", newLog.id);
         }
 
-        if (milestoneEnabled && values.milestone && newLog) {
+        if (milestoneEnabled && newLog) {
+          const milestoneTitle =
+            values.milestone?.title?.trim() || values.text.slice(0, 30);
           await createMilestone(supabase, {
             child_id: values.child_id,
             daily_log_id: newLog.id,
-            title: values.milestone.title,
+            title: milestoneTitle,
             milestone_date: values.log_date,
-            category: values.milestone.category,
-            source: "manual",
           });
         }
 
@@ -295,32 +294,17 @@ export function LogForm({
             </label>
 
             {milestoneEnabled && (
-              <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <div>
-                  <input
-                    {...register("milestone.title")}
-                    placeholder="初めて寝返りした"
-                    className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-                  />
-                  {errors.milestone?.title && (
-                    <p className="mt-1 text-xs text-destructive">
-                      {errors.milestone.title.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <select
-                    {...register("milestone.category")}
-                    defaultValue="other"
-                    className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-                  >
-                    {MILESTONE_CATEGORY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.emoji} {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <input
+                  {...register("milestone.title")}
+                  placeholder="初めて寝返りした（空欄なら本文から自動生成）"
+                  className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                />
+                {errors.milestone?.title && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.milestone.title.message}
+                  </p>
+                )}
               </div>
             )}
           </div>
