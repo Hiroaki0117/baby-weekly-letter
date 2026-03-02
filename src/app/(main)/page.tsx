@@ -7,12 +7,13 @@ import { getMyFamilyId } from "@/lib/supabase/family";
 import { getStreak } from "@/lib/streak";
 import { deleteLog } from "@/lib/log-actions";
 import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
+import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { MemoriesSection } from "@/components/memory/memories-section";
 import { ReactionNotice } from "@/components/home/reaction-notice";
 import { toast } from "sonner";
-import type { Child, DailyLog } from "@/types";
+import type { Child, DailyLog, Milestone } from "@/types";
 
 export default function HomePage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -23,6 +24,7 @@ export default function HomePage() {
   const [streak, setStreak] = useState(0);
   const [cardLoaded, setCardLoaded] = useState(false);
   const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [newReactionCount, setNewReactionCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState("");
   const supabaseRef = useRef(createClient());
@@ -48,16 +50,23 @@ export default function HomePage() {
     setLogs(fetchedLogs);
     setStreak(streakCount);
 
-    // リアクション取得
-    if (fetchedLogs.length > 0 && currentUserId) {
+    if (fetchedLogs.length > 0) {
       const logIds = fetchedLogs.map((l) => l.id);
-      const { data: reactionsData } = await supabase
-        .from("log_reactions")
-        .select("log_id, user_id, emoji")
-        .in("log_id", logIds);
-      if (reactionsData) {
-        setReactionMap(buildReactionMap(reactionsData, currentUserId));
+
+      // リアクション取得
+      if (currentUserId) {
+        const { data: reactionsData } = await supabase
+          .from("log_reactions")
+          .select("log_id, user_id, emoji")
+          .in("log_id", logIds);
+        if (reactionsData) {
+          setReactionMap(buildReactionMap(reactionsData, currentUserId));
+        }
       }
+
+      // マイルストーン取得
+      const msMap = await fetchMilestonesByLogIds(supabase, logIds);
+      setMilestoneMap(msMap);
     }
   }
 
@@ -109,16 +118,22 @@ export default function HomePage() {
         }
       }
 
-      // リアクション取得
-      if (fetchedLogs.length > 0 && userId) {
+      // リアクション・マイルストーン取得
+      if (fetchedLogs.length > 0) {
         const logIds = fetchedLogs.map((l) => l.id);
-        const { data: reactionsData } = await client
-          .from("log_reactions")
-          .select("log_id, user_id, emoji")
-          .in("log_id", logIds);
-        if (reactionsData) {
-          setReactionMap(buildReactionMap(reactionsData, userId));
+
+        if (userId) {
+          const { data: reactionsData } = await client
+            .from("log_reactions")
+            .select("log_id, user_id, emoji")
+            .in("log_id", logIds);
+          if (reactionsData) {
+            setReactionMap(buildReactionMap(reactionsData, userId));
+          }
         }
+
+        const msMap = await fetchMilestonesByLogIds(client, logIds);
+        setMilestoneMap(msMap);
       }
 
       // 新着リアクション件数（自分が書いたログへの他人のリアクション）
@@ -302,6 +317,7 @@ export default function HomePage() {
               log={log}
               childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
               authorDisplayName={authorNames[log.author_id]}
+              milestone={milestoneMap[log.id]}
               reactions={reactionMap[log.id]}
               nameMap={authorNames}
               onEdit={handleEdit}

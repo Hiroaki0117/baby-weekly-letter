@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getWeekRange, toDateString, formatMonthJa } from "@/lib/date";
 import { deleteLog } from "@/lib/log-actions";
 import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
+import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
@@ -18,7 +19,7 @@ import { ReportPreferencesForm } from "@/components/settings/report-preferences-
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { startOfWeek, endOfWeek } from "date-fns";
-import type { Child, DailyLog, Mood, WeeklyReport, MonthlyReport } from "@/types";
+import type { Child, DailyLog, Milestone, Mood, WeeklyReport, MonthlyReport } from "@/types";
 
 export default function LogsPage() {
   return (
@@ -50,6 +51,7 @@ function LogsPageInner() {
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [currentUserId, setCurrentUserId] = useState("");
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
@@ -114,16 +116,23 @@ function LogsPageInner() {
     const fetchedLogs = (data as DailyLog[]) ?? [];
     setLogs(fetchedLogs);
 
-    // リアクション再取得
-    if (fetchedLogs.length > 0 && currentUserId) {
+    if (fetchedLogs.length > 0) {
       const logIds = fetchedLogs.map((l) => l.id);
-      const { data: reactionsData } = await supabase
-        .from("log_reactions")
-        .select("log_id, user_id, emoji")
-        .in("log_id", logIds);
-      if (reactionsData) {
-        setReactionMap(buildReactionMap(reactionsData, currentUserId));
+
+      // リアクション再取得
+      if (currentUserId) {
+        const { data: reactionsData } = await supabase
+          .from("log_reactions")
+          .select("log_id, user_id, emoji")
+          .in("log_id", logIds);
+        if (reactionsData) {
+          setReactionMap(buildReactionMap(reactionsData, currentUserId));
+        }
       }
+
+      // マイルストーン取得
+      const msMap = await fetchMilestonesByLogIds(supabase, logIds);
+      setMilestoneMap(msMap);
     }
   }
 
@@ -186,16 +195,22 @@ function LogsPageInner() {
         setMonthlyReports((monthlyRes.data as MonthlyReport[]) ?? []);
       }
 
-      // リアクション取得
-      if (fetchedLogs.length > 0 && userId) {
+      // リアクション・マイルストーン取得
+      if (fetchedLogs.length > 0) {
         const logIds = fetchedLogs.map((l) => l.id);
-        const { data: reactionsData } = await client
-          .from("log_reactions")
-          .select("log_id, user_id, emoji")
-          .in("log_id", logIds);
-        if (reactionsData) {
-          setReactionMap(buildReactionMap(reactionsData, userId));
+
+        if (userId) {
+          const { data: reactionsData } = await client
+            .from("log_reactions")
+            .select("log_id, user_id, emoji")
+            .in("log_id", logIds);
+          if (reactionsData) {
+            setReactionMap(buildReactionMap(reactionsData, userId));
+          }
         }
+
+        const msMap = await fetchMilestonesByLogIds(client, logIds);
+        setMilestoneMap(msMap);
       }
 
       // lastReactionCheckedAt を更新（ログ一覧を開いた＝確認した）
@@ -552,6 +567,7 @@ function LogsPageInner() {
                       : undefined
                   }
                   authorDisplayName={authorNames[log.author_id]}
+                  milestone={milestoneMap[log.id]}
                   reactions={reactionMap[log.id]}
                   nameMap={authorNames}
                   onEdit={handleEdit}

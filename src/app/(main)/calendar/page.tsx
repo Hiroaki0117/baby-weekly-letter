@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString, getCalendarRange, formatDateJa } from "@/lib/date";
 import { deleteLog } from "@/lib/log-actions";
+import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { toast } from "sonner";
-import type { Child, DailyLog } from "@/types";
+import type { Child, DailyLog, Milestone } from "@/types";
 
 export default function CalendarPage() {
   const now = new Date();
@@ -21,6 +22,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
+  const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
   const membersFetchedRef = useRef(false);
@@ -54,6 +56,13 @@ export default function CalendarPage() {
         grouped[log.log_date].push(log);
       }
       setLogsByDate(grouped);
+
+      // マイルストーン取得
+      if (logs.length > 0) {
+        const logIds = logs.map((l) => l.id);
+        const msMap = await fetchMilestonesByLogIds(client, logIds);
+        setMilestoneMap(msMap);
+      }
 
       if (!membersFetchedRef.current) {
         membersFetchedRef.current = true;
@@ -135,6 +144,12 @@ export default function CalendarPage() {
       grouped[log.log_date].push(log);
     }
     setLogsByDate(grouped);
+
+    if (logs.length > 0) {
+      const logIds = logs.map((l) => l.id);
+      const msMap = await fetchMilestonesByLogIds(supabase, logIds);
+      setMilestoneMap(msMap);
+    }
   }
 
   async function handleEdit(log: DailyLog) {
@@ -247,6 +262,7 @@ export default function CalendarPage() {
                 log={log}
                 childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
                 authorDisplayName={authorNames[log.author_id]}
+                milestone={milestoneMap[log.id]}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />

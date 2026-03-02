@@ -16,10 +16,12 @@ import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { GrowthChart } from "@/components/stats/growth-chart";
+import { MilestoneTimeline } from "@/components/stats/milestone-timeline";
 import { ChildSelector } from "@/components/child/child-selector";
 import type { Child, DailyLog, GrowthRecord, Gender } from "@/types";
 
 type StatsTab = "logs" | "growth";
+type GrowthSubTab = "physical" | "milestones";
 
 function getMonday(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
@@ -37,6 +39,7 @@ export default function StatsPage() {
   const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
   const [growthRecords, setGrowthRecords] = useState<Record<string, GrowthRecord[]>>({});
   const [statsTab, setStatsTab] = useState<StatsTab>("logs");
+  const [growthSubTab, setGrowthSubTab] = useState<GrowthSubTab>("physical");
   const [period, setPeriod] = useState<PeriodType>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
@@ -244,20 +247,51 @@ export default function StatsPage() {
       {/* 成長タブ */}
       {statsTab === "growth" && (
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            {hasGrowthData ? (
-              <GrowthChart
-                records={selectedGrowthRecords}
-                birthDate={selectedChild!.birth_date!}
-                gender={(selectedChild!.gender as Gender) ?? null}
-              />
-            ) : (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                家族画面からお子さまの成長記録を追加すると、成長曲線が表示されます。
-              </p>
-            )}
+          {/* 小項目タブ */}
+          <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
+            {(
+              [
+                { key: "physical", label: "身長・体重" },
+                { key: "milestones", label: "初めての出来事" },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setGrowthSubTab(t.key)}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  growthSubTab === t.key
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
+          {/* 身長・体重 */}
+          {growthSubTab === "physical" && (
+            <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+              {hasGrowthData ? (
+                <GrowthChart
+                  records={selectedGrowthRecords}
+                  birthDate={selectedChild!.birth_date!}
+                  gender={(selectedChild!.gender as Gender) ?? null}
+                />
+              ) : (
+                <p className="py-12 text-center text-sm text-muted-foreground">
+                  家族画面からお子さまの成長記録を追加すると、成長曲線が表示されます。
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 初めての出来事 */}
+          {growthSubTab === "milestones" && selectedChildId && (
+            <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+              <MilestoneTimeline childId={selectedChildId} />
+            </div>
+          )}
         </div>
       )}
     </div>
