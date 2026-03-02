@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { AccentCard } from "@/components/ui/accent-card";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
 import type { ReactionSummary } from "@/lib/reactions";
@@ -46,108 +47,101 @@ export function LogCard({ log, childName, authorDisplayName, milestone, reaction
 
   return (
     <>
-      <div className="group overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-primary/5 transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-1">
-        <div className="flex">
-          {/* 左アクセントストリップ（付箋テープ風） */}
-          <div className="w-1 flex-shrink-0 bg-gradient-to-b from-primary via-primary/70 to-primary/30" />
+      <AccentCard accent="primary">
+        {/* 写真サムネイル */}
+        {photoUrl && (
+          <button
+            type="button"
+            onClick={() => setShowLightbox(true)}
+            className="relative h-44 w-full overflow-hidden cursor-zoom-in"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoUrl}
+              alt="ログ写真"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </button>
+        )}
 
-          <div className="flex-1 min-w-0">
-            {/* 写真サムネイル */}
-            {photoUrl && (
-              <button
-                type="button"
-                onClick={() => setShowLightbox(true)}
-                className="relative h-44 w-full overflow-hidden cursor-zoom-in"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photoUrl}
-                  alt="ログ写真"
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </button>
-            )}
-
-            <div className="space-y-2.5 p-4">
-              {/* ヘッダー */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-2xl">{moodOption?.emoji}</span>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-foreground">
-                        {formatDateJa(log.log_date)}
-                      </p>
-                      {childName && <ChildBadge name={childName} />}
-                      <AuthorBadge displayName={authorDisplayName ?? null} />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {moodOption?.label}
-                    </p>
-                  </div>
+        <div className="space-y-2.5 p-4">
+          {/* ヘッダー */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl">{moodOption?.emoji}</span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-foreground">
+                    {formatDateJa(log.log_date)}
+                  </p>
+                  {childName && <ChildBadge name={childName} />}
+                  <AuthorBadge displayName={authorDisplayName ?? null} />
                 </div>
-                <div className="flex items-center gap-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                  <button
-                    onClick={() => onEdit(log)}
-                    className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    編集
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="rounded px-2 py-1 text-xs text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    削除
-                  </button>
-                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {moodOption?.label}
+                </p>
               </div>
-
-              {/* 本文 */}
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
-                {log.text}
-              </p>
-
-              {/* マイルストーンバッジ */}
-              {milestone && (
-                <div>
-                  <Badge className="border border-amber-300/50 bg-amber-50 text-[10px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-400">
-                    ✨ {milestone.title}
-                  </Badge>
-                </div>
-              )}
-
-              {/* カテゴリ */}
-              {log.categories.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {log.categories.map((cat) => {
-                    const label =
-                      CATEGORY_OPTIONS.find((c) => c.value === cat)?.label ?? cat;
-                    return (
-                      <Badge
-                        key={cat}
-                        variant="secondary"
-                        className="border border-primary/20 bg-primary/8 text-[10px] text-primary/80"
-                      >
-                        {label}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* リアクション */}
-              {onToggleReaction && (
-                <ReactionBar
-                  logId={log.id}
-                  reactions={reactions ?? []}
-                  nameMap={nameMap ?? {}}
-                  onToggle={onToggleReaction}
-                />
-              )}
+            </div>
+            <div className="flex items-center gap-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+              <button
+                onClick={() => onEdit(log)}
+                className="rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                編集
+              </button>
+              <button
+                onClick={() => setShowDeleteDialog(true)}
+                className="rounded px-2 py-1 text-xs text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                削除
+              </button>
             </div>
           </div>
+
+          {/* 本文 */}
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">
+            {log.text}
+          </p>
+
+          {/* マイルストーンバッジ */}
+          {milestone && (
+            <div>
+              <Badge className="border border-amber-300/50 bg-amber-50 text-[10px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/50 dark:text-amber-400">
+                ✨ {milestone.title}
+              </Badge>
+            </div>
+          )}
+
+          {/* カテゴリ */}
+          {log.categories.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {log.categories.map((cat) => {
+                const label =
+                  CATEGORY_OPTIONS.find((c) => c.value === cat)?.label ?? cat;
+                return (
+                  <Badge
+                    key={cat}
+                    variant="secondary"
+                    className="border border-primary/20 bg-primary/8 text-[10px] text-primary/80"
+                  >
+                    {label}
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
+
+          {/* リアクション */}
+          {onToggleReaction && (
+            <ReactionBar
+              logId={log.id}
+              reactions={reactions ?? []}
+              nameMap={nameMap ?? {}}
+              onToggle={onToggleReaction}
+            />
+          )}
         </div>
-      </div>
+      </AccentCard>
 
       {/* 写真ライトボックス */}
       {showLightbox && photoUrl && (
