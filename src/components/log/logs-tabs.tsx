@@ -61,15 +61,15 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
 
       {/* 小項目タブ（通信カテゴリのみ） */}
       {topCategory === "reports" && (
-        <div className="flex gap-1">
+        <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
           {reportTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => onTabChange(tab.key)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${
                 activeTab === tab.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className="mr-1">{tab.icon}</span>
