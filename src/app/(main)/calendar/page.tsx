@@ -211,6 +211,7 @@ export default function CalendarPage() {
         year={year}
         month={month}
         logsByDate={logsByDate}
+        milestoneMap={milestoneMap}
         selectedDate={selectedDate}
         onSelectDate={handleSelectDate}
         onPrevMonth={handlePrevMonth}

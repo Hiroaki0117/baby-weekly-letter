@@ -61,6 +61,7 @@ function LogsPageInner() {
   const [selectedMoods, setSelectedMoods] = useState<Mood[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
+  const [milestoneOnly, setMilestoneOnly] = useState(false);
   const [searchText, setSearchText] = useState("");
 
   // 通信タブ状態
@@ -86,18 +87,20 @@ function LogsPageInner() {
         !selectedCategories.some((c) => log.categories.includes(c))
       )
         return false;
+      if (milestoneOnly && !milestoneMap[log.id]) return false;
       if (searchText.trim()) {
         const needle = searchText.trim().toLowerCase();
         if (!log.text.toLowerCase().includes(needle)) return false;
       }
       return true;
     });
-  }, [logs, selectedChildIds, selectedMoods, selectedCategories, searchText]);
+  }, [logs, selectedChildIds, selectedMoods, selectedCategories, milestoneOnly, milestoneMap, searchText]);
 
   function clearFilters() {
     setSelectedChildIds([]);
     setSelectedMoods([]);
     setSelectedCategories([]);
+    setMilestoneOnly(false);
     setSearchText("");
   }
 
@@ -314,12 +317,6 @@ function LogsPageInner() {
         return;
       }
       toast.success("週次通信を生成しました");
-      if (data.extractedMilestones?.length > 0) {
-        toast.success(
-          `🌟 ${data.extractedMilestones.length}件の成長マイルストーンを検出しました`,
-          { duration: 5000 }
-        );
-      }
       router.push(`/weekly/${data.id}`);
     } catch {
       toast.error("生成に失敗しました。再度お試しください");
@@ -499,6 +496,8 @@ function LogsPageInner() {
               onMoodsChange={setSelectedMoods}
               selectedCategories={selectedCategories}
               onCategoriesChange={setSelectedCategories}
+              milestoneOnly={milestoneOnly}
+              onMilestoneOnlyChange={setMilestoneOnly}
               searchText={searchText}
               onSearchTextChange={setSearchText}
               totalCount={logs.length}

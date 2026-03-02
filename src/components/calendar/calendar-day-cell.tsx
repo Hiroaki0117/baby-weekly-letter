@@ -11,6 +11,7 @@ type CalendarDayCellProps = {
   logs: DailyLog[];
   isSelected: boolean;
   onSelect: (date: Date) => void;
+  hasMilestone?: boolean;
 };
 
 export function CalendarDayCell({
@@ -19,6 +20,7 @@ export function CalendarDayCell({
   logs,
   isSelected,
   onSelect,
+  hasMilestone,
 }: CalendarDayCellProps) {
   const inMonth = isSameMonth(date, currentMonth);
   const today = isToday(date);
@@ -58,6 +60,13 @@ export function CalendarDayCell({
         <span className="text-base leading-none">{firstMood?.emoji}</span>
       ) : (
         <span className="h-5" /> /* プレースホルダー */
+      )}
+
+      {/* マイルストーンマーク */}
+      {hasMilestone && (
+        <span className="absolute left-0.5 top-0.5 text-[10px] leading-none">
+          ✨
+        </span>
       )}
 
       {/* ログ件数バッジ */}
