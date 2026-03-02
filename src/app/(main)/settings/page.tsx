@@ -11,6 +11,7 @@ import {
 } from "@/schemas/profile";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReportPreferencesForm } from "@/components/settings/report-preferences-form";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -153,6 +154,9 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* 通信設定 */}
+      <ReportPreferencesForm />
 
       {/* ログアウト（モバイルのみ） */}
       <div className="md:hidden">

@@ -25,6 +25,29 @@ export type GrowthRecordInsert =
 
 export type Gender = "male" | "female";
 
+export type ReportTone = "warm" | "humor" | "neutral" | "poetic";
+export type ReportSection = "highlight" | "digest" | "growth" | "encouragement" | "quote";
+
+export type ReportPreferences = {
+  tone: ReportTone;
+  sections: ReportSection[];
+};
+
+export const TONE_OPTIONS: { value: ReportTone; label: string; description: string }[] = [
+  { value: "warm", label: "ほっこり系", description: "温かみのある手紙調" },
+  { value: "humor", label: "ユーモア系", description: "明るくユーモアを交えた文体" },
+  { value: "neutral", label: "淡々記録系", description: "落ち着いた客観的なトーン" },
+  { value: "poetic", label: "ポエム系", description: "詩的で情緒豊かな文体" },
+];
+
+export const SECTION_OPTIONS: { value: ReportSection; label: string; description: string; defaultOn: boolean }[] = [
+  { value: "highlight", label: "今週のハイライト", description: "印象的なエピソードを1つ深掘り", defaultOn: true },
+  { value: "digest", label: "日々のダイジェスト", description: "各日の出来事を短くまとめ", defaultOn: true },
+  { value: "growth", label: "成長メモ", description: "前回と比較した変化", defaultOn: true },
+  { value: "encouragement", label: "親へのひとこと", description: "書き手（親）への労いの言葉", defaultOn: false },
+  { value: "quote", label: "今週の名言", description: "ログから印象的な一言を引用", defaultOn: false },
+];
+
 export type DailyLog = Database["public"]["Tables"]["daily_logs"]["Row"];
 export type DailyLogWithAuthor = DailyLog & { authorDisplayName?: string | null };
 export type DailyLogInsert =

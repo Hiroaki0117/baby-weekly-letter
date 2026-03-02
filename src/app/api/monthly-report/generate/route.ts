@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { generateMonthlyReport } from "@/lib/monthly-report/generate";
+import { fetchReportPreferences } from "@/lib/report-preferences";
 import { generateMonthlyReportSchema } from "@/schemas/monthly-report";
 import { getMonthRange, toDateString } from "@/lib/date";
 import type { WeeklyReport, Child } from "@/types";
@@ -104,6 +105,9 @@ export async function POST(request: Request) {
       ? extractEnding((prevMonthlyData as { content: string }).content)
       : null;
 
+    // ユーザーの通信設定を取得
+    const preferences = await fetchReportPreferences();
+
     // 月次まとめを生成
     const content = await generateMonthlyReport(
       typedReports,
@@ -113,7 +117,8 @@ export async function POST(request: Request) {
         childName: child?.name,
         childBirthDate: child?.birth_date,
         previousMonthlyEnding,
-      }
+      },
+      preferences
     );
 
     // upsert

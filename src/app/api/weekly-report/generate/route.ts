@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { generateWeeklyReport } from "@/lib/weekly-report/generate";
+import { fetchReportPreferences } from "@/lib/report-preferences";
 import { generateReportSchema } from "@/schemas/weekly-report";
 import type { DailyLog, Child } from "@/types";
 
@@ -96,13 +97,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // ユーザーの通信設定を取得
+    const preferences = await fetchReportPreferences();
+
     // 週次通信を生成
     const typedLogs = logs as DailyLog[];
     const content = await generateWeeklyReport(typedLogs, weekStart, weekEnd, {
       childName: child?.name,
       childBirthDate: child?.birth_date,
       previousReportEnding,
-    });
+    }, preferences);
 
     // upsert
     const sourceLogIds = typedLogs.map((l) => l.id);
