@@ -16,7 +16,6 @@ import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { GrowthChart } from "@/components/stats/growth-chart";
-import { MilestoneTimeline } from "@/components/milestone/milestone-timeline";
 import { ChildSelector } from "@/components/child/child-selector";
 import type { Child, DailyLog, GrowthRecord, Gender } from "@/types";
 
@@ -259,12 +258,6 @@ export default function StatsPage() {
             )}
           </div>
 
-          {/* マイルストーンタイムライン */}
-          {selectedChildId && (
-            <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-              <MilestoneTimeline childId={selectedChildId} />
-            </div>
-          )}
         </div>
       )}
     </div>
