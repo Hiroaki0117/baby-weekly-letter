@@ -26,7 +26,6 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
     if (category === "records") {
       onTabChange("logs");
     } else {
-      // 通信カテゴリに切り替え時、前回の通信タブが記録以外ならそれを維持
       if (activeTab === "logs") {
         onTabChange("weekly");
       }
@@ -34,14 +33,14 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* 大項目タブ */}
-      <div className="flex rounded-lg border border-border/60 bg-muted/30 p-0.5">
+      <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
         <button
           onClick={() => handleTopChange("records")}
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
             topCategory === "records"
-              ? "bg-card text-foreground shadow-sm"
+              ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -49,9 +48,9 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
         </button>
         <button
           onClick={() => handleTopChange("reports")}
-          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all ${
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
             topCategory === "reports"
-              ? "bg-card text-foreground shadow-sm"
+              ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
