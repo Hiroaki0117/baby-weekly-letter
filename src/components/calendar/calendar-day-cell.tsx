@@ -62,9 +62,11 @@ export function CalendarDayCell({
         <span className="h-5" /> /* プレースホルダー */
       )}
 
-      {/* マイルストーン付箋マーク */}
+      {/* マイルストーン付箋マーク（上から貼り付くタブ） */}
       {hasMilestone && (
-        <span className="absolute left-0 inset-y-1.5 w-[3px] rounded-r-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.5)]" />
+        <span className="absolute left-1/2 -translate-x-1/2 -top-1 z-10 flex items-center justify-center h-3.5 w-5 rounded-b-md bg-amber-400 shadow-sm text-[7px] leading-none text-amber-900">
+          ★
+        </span>
       )}
 
       {/* ログ件数バッジ */}
