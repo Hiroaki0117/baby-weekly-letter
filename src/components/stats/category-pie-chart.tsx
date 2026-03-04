@@ -10,8 +10,9 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
+import { cn } from "@/lib/utils";
 import { CATEGORY_OPTIONS } from "@/types";
-import type { CategoryCount } from "@/lib/stats";
+import type { CategoryCount, PeriodType } from "@/lib/stats";
 
 const COLORS = [
   "#f472b6", // ピンク
@@ -23,6 +24,8 @@ const COLORS = [
   "#94a3b8", // グレー
   "#f87171", // レッド
 ];
+
+const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 function CustomTooltip({
   active,
@@ -50,9 +53,12 @@ function CustomTooltip({
 
 type Props = {
   data: CategoryCount[];
+  period?: PeriodType;
+  selectedMonth?: number;
+  onChangeMonth?: (month: number) => void;
 };
 
-export function CategoryPieChart({ data }: Props) {
+export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }: Props) {
   // 全カテゴリを含め、件数降順でソート
   const dataMap = new Map(data.map((d) => [d.category, d.count]));
   const full = CATEGORY_OPTIONS.map((c) => ({
@@ -64,6 +70,28 @@ export function CategoryPieChart({ data }: Props) {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-foreground">カテゴリ別の記録</h3>
+
+      {/* 月セレクター（月別タブ時のみ表示） */}
+      {period === "monthly" && onChangeMonth && (
+        <div className="flex flex-wrap gap-1">
+          {MONTHS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => onChangeMonth(m)}
+              className={cn(
+                "rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                selectedMonth === m
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              {m}月
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart

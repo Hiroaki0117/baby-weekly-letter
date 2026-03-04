@@ -9,7 +9,7 @@ import {
   calcMonthlyMoods,
   calcYearlyMoods,
   calcWeeklyCategoryCounts,
-  calcMonthlyCategoryCounts,
+  calcSingleMonthCategoryCounts,
   calcYearlyCategoryCounts,
 } from "@/lib/stats";
 import type { PeriodType } from "@/lib/stats";
@@ -44,6 +44,7 @@ export default function StatsPage() {
   const [period, setPeriod] = useState<PeriodType>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
   const supabaseRef = useRef(createClient());
 
   useEffect(() => {
@@ -128,11 +129,11 @@ export default function StatsPage() {
       case "weekly":
         return calcWeeklyCategoryCounts(filtered, weekStart);
       case "monthly":
-        return calcMonthlyCategoryCounts(filtered, selectedYear);
+        return calcSingleMonthCategoryCounts(filtered, selectedYear, selectedMonth);
       case "yearly":
         return calcYearlyCategoryCounts(filtered);
     }
-  }, [filtered, period, weekStart, selectedYear]);
+  }, [filtered, period, weekStart, selectedYear, selectedMonth]);
 
   const milestoneCount = useMemo(
     () => filtered.filter((log) => milestoneMap[log.id]).length,
@@ -258,7 +259,12 @@ export default function StatsPage() {
 
               {categoryCounts.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-                  <CategoryPieChart data={categoryCounts} />
+                  <CategoryPieChart
+                    data={categoryCounts}
+                    period={period}
+                    selectedMonth={selectedMonth}
+                    onChangeMonth={setSelectedMonth}
+                  />
                 </div>
               )}
 

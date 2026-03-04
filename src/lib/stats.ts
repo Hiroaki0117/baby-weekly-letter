@@ -201,6 +201,19 @@ export function calcMonthlyCategoryCounts(logs: DailyLog[], year: number): Categ
 }
 
 /**
+ * 特定の年月のカテゴリ集計
+ */
+export function calcSingleMonthCategoryCounts(logs: DailyLog[], year: number, month: number): CategoryCount[] {
+  return countCategories(
+    logs.filter((l) => {
+      const y = parseInt(l.log_date.slice(0, 4), 10);
+      const m = parseInt(l.log_date.slice(5, 7), 10);
+      return y === year && m === month;
+    })
+  );
+}
+
+/**
  * 年別のカテゴリ集計（直近5年分）
  */
 export function calcYearlyCategoryCounts(logs: DailyLog[]): CategoryCount[] {
