@@ -48,8 +48,8 @@ export function PeriodTabs({
       </div>
 
       {/* ナビゲーション */}
-      <div className="flex items-center justify-center gap-3">
-        {onPrev && (
+      <div className="flex h-8 items-center justify-center gap-3">
+        {onPrev ? (
           <button
             type="button"
             onClick={onPrev}
@@ -57,9 +57,11 @@ export function PeriodTabs({
           >
             ‹
           </button>
+        ) : (
+          <span className="h-8 w-8" />
         )}
         <span className="text-sm font-semibold text-foreground">{label}</span>
-        {onNext && (
+        {onNext ? (
           <button
             type="button"
             onClick={onNext}
@@ -73,6 +75,8 @@ export function PeriodTabs({
           >
             ›
           </button>
+        ) : (
+          <span className="h-8 w-8" />
         )}
       </div>
     </div>
