@@ -10,6 +10,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
+import { CATEGORY_OPTIONS } from "@/types";
 import type { CategoryCount } from "@/lib/stats";
 
 const COLORS = [
@@ -28,7 +29,7 @@ function CustomTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: { name?: string; value?: number; payload?: { fill?: string } }[];
+  payload?: { value?: number; payload?: { category?: string; fill?: string } }[];
 }) {
   if (!active || !payload?.length) return null;
   const item = payload[0];
@@ -40,7 +41,7 @@ function CustomTooltip({
           className="inline-block h-2.5 w-2.5 rounded-sm"
           style={{ backgroundColor: item.payload?.fill }}
         />
-        <span className="font-semibold text-foreground">{item.name}</span>
+        <span className="font-semibold text-foreground">{item.payload?.category}</span>
         <span className="ml-auto font-bold text-foreground">{item.value}件</span>
       </div>
     </div>
@@ -52,12 +53,18 @@ type Props = {
 };
 
 export function CategoryPieChart({ data }: Props) {
-  const sorted = [...data].sort((a, b) => b.count - a.count);
+  // 全カテゴリを含め、件数降順でソート
+  const dataMap = new Map(data.map((d) => [d.category, d.count]));
+  const full = CATEGORY_OPTIONS.map((c) => ({
+    category: c.label,
+    count: dataMap.get(c.label) ?? 0,
+  }));
+  const sorted = full.sort((a, b) => b.count - a.count);
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-foreground">カテゴリ別の記録</h3>
-      <div className="h-56">
+      <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={sorted}
