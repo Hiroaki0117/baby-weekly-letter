@@ -166,3 +166,50 @@ export function calcCategoryCounts(logs: DailyLog[]): CategoryCount[] {
     .map(([category, count]) => ({ category, count }))
     .sort((a, b) => b.count - a.count);
 }
+
+function countCategories(logs: DailyLog[]): CategoryCount[] {
+  const map = new Map<string, number>();
+  for (const log of logs) {
+    for (const cat of log.categories) {
+      const label = categoryLabelMap.get(cat) ?? cat;
+      map.set(label, (map.get(label) ?? 0) + 1);
+    }
+  }
+  return Array.from(map.entries())
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * 週別のカテゴリ集計（weekStart〜7日間）
+ */
+export function calcWeeklyCategoryCounts(logs: DailyLog[], weekStart: Date): CategoryCount[] {
+  const dates = new Set<string>();
+  for (let i = 0; i < 7; i++) {
+    dates.add(format(addDays(weekStart, i), "yyyy-MM-dd"));
+  }
+  return countCategories(logs.filter((l) => dates.has(l.log_date)));
+}
+
+/**
+ * 月別のカテゴリ集計（指定年のログのみ）
+ */
+export function calcMonthlyCategoryCounts(logs: DailyLog[], year: number): CategoryCount[] {
+  return countCategories(
+    logs.filter((l) => parseInt(l.log_date.slice(0, 4), 10) === year)
+  );
+}
+
+/**
+ * 年別のカテゴリ集計（直近5年分）
+ */
+export function calcYearlyCategoryCounts(logs: DailyLog[]): CategoryCount[] {
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 4;
+  return countCategories(
+    logs.filter((l) => {
+      const y = parseInt(l.log_date.slice(0, 4), 10);
+      return y >= minYear && y <= currentYear;
+    })
+  );
+}

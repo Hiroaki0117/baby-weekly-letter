@@ -8,7 +8,9 @@ import {
   calcWeeklyMoods,
   calcMonthlyMoods,
   calcYearlyMoods,
-  calcCategoryCounts,
+  calcWeeklyCategoryCounts,
+  calcMonthlyCategoryCounts,
+  calcYearlyCategoryCounts,
 } from "@/lib/stats";
 import type { PeriodType } from "@/lib/stats";
 import { fetchGrowthRecords } from "@/lib/growth";
@@ -121,7 +123,16 @@ export default function StatsPage() {
     }
   }, [filtered, period, weekStart, selectedYear]);
 
-  const categoryCounts = useMemo(() => calcCategoryCounts(filtered), [filtered]);
+  const categoryCounts = useMemo(() => {
+    switch (period) {
+      case "weekly":
+        return calcWeeklyCategoryCounts(filtered, weekStart);
+      case "monthly":
+        return calcMonthlyCategoryCounts(filtered, selectedYear);
+      case "yearly":
+        return calcYearlyCategoryCounts(filtered);
+    }
+  }, [filtered, period, weekStart, selectedYear]);
 
   const milestoneCount = useMemo(
     () => filtered.filter((log) => milestoneMap[log.id]).length,
