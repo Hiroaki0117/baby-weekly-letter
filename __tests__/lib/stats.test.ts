@@ -7,6 +7,9 @@ import {
   calcYearlyCounts,
   calcYearlyMoods,
   calcCategoryCounts,
+  calcWeeklyCategoryCounts,
+  calcMonthlyCategoryCounts,
+  calcYearlyCategoryCounts,
 } from "@/lib/stats";
 import type { DailyLog } from "@/types";
 
@@ -142,5 +145,49 @@ describe("calcCategoryCounts", () => {
     expect(result[0]).toEqual({ category: "食事", count: 3 });
     expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
     expect(result.find((c) => c.category === "遊び")?.count).toBe(1);
+  });
+});
+
+describe("calcWeeklyCategoryCounts", () => {
+  it("週内のログのカテゴリのみ集計する", () => {
+    const weekStart = new Date(2025, 5, 16); // 2025-06-16 月曜
+    const logs = [
+      makelog({ id: "1", log_date: "2025-06-16", categories: ["meal", "sleep"] }),
+      makelog({ id: "2", log_date: "2025-06-18", categories: ["meal"] }),
+      makelog({ id: "3", log_date: "2025-06-23", categories: ["play"] }), // 週外
+    ];
+    const result = calcWeeklyCategoryCounts(logs, weekStart);
+    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
+    expect(result.find((c) => c.category === "遊び")).toBeUndefined();
+  });
+});
+
+describe("calcMonthlyCategoryCounts", () => {
+  it("指定年のログのカテゴリのみ集計する", () => {
+    const logs = [
+      makelog({ id: "1", log_date: "2025-03-10", categories: ["meal"] }),
+      makelog({ id: "2", log_date: "2025-06-15", categories: ["meal", "play"] }),
+      makelog({ id: "3", log_date: "2024-03-10", categories: ["sleep"] }), // 別の年
+    ];
+    const result = calcMonthlyCategoryCounts(logs, 2025);
+    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result.find((c) => c.category === "遊び")?.count).toBe(1);
+    expect(result.find((c) => c.category === "睡眠")).toBeUndefined();
+  });
+});
+
+describe("calcYearlyCategoryCounts", () => {
+  it("直近5年分のログのカテゴリのみ集計する", () => {
+    const currentYear = new Date().getFullYear();
+    const logs = [
+      makelog({ id: "1", log_date: `${currentYear}-06-15`, categories: ["meal"] }),
+      makelog({ id: "2", log_date: `${currentYear - 1}-03-10`, categories: ["meal", "sleep"] }),
+      makelog({ id: "3", log_date: `${currentYear - 10}-01-01`, categories: ["play"] }), // 範囲外
+    ];
+    const result = calcYearlyCategoryCounts(logs);
+    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
+    expect(result.find((c) => c.category === "遊び")).toBeUndefined();
   });
 });
