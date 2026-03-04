@@ -23,6 +23,7 @@ export type MoodEntry = {
 export type CategoryCount = {
   category: string;
   count: number;
+  milestoneCount: number;
 };
 
 const MOODS: Mood[] = ["moved", "happy", "neutral", "tired", "sad"];
@@ -154,41 +155,37 @@ const categoryLabelMap = new Map(
 /**
  * カテゴリ別の記録件数を降順で返す（日本語ラベル）
  */
-export function calcCategoryCounts(logs: DailyLog[]): CategoryCount[] {
-  const map = new Map<string, number>();
-  for (const log of logs) {
-    for (const cat of log.categories) {
-      const label = categoryLabelMap.get(cat) ?? cat;
-      map.set(label, (map.get(label) ?? 0) + 1);
-    }
-  }
-  return Array.from(map.entries())
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => b.count - a.count);
+export function calcCategoryCounts(logs: DailyLog[], milestoneLogIds?: Set<string>): CategoryCount[] {
+  return countCategories(logs, milestoneLogIds);
 }
 
-function countCategories(logs: DailyLog[]): CategoryCount[] {
-  const map = new Map<string, number>();
+function countCategories(logs: DailyLog[], milestoneLogIds?: Set<string>): CategoryCount[] {
+  const countMap = new Map<string, number>();
+  const msMap = new Map<string, number>();
   for (const log of logs) {
+    const hasMilestone = milestoneLogIds?.has(log.id) ?? false;
     for (const cat of log.categories) {
       const label = categoryLabelMap.get(cat) ?? cat;
-      map.set(label, (map.get(label) ?? 0) + 1);
+      countMap.set(label, (countMap.get(label) ?? 0) + 1);
+      if (hasMilestone) {
+        msMap.set(label, (msMap.get(label) ?? 0) + 1);
+      }
     }
   }
-  return Array.from(map.entries())
-    .map(([category, count]) => ({ category, count }))
+  return Array.from(countMap.entries())
+    .map(([category, count]) => ({ category, count, milestoneCount: msMap.get(category) ?? 0 }))
     .sort((a, b) => b.count - a.count);
 }
 
 /**
  * 週別のカテゴリ集計（weekStart〜7日間）
  */
-export function calcWeeklyCategoryCounts(logs: DailyLog[], weekStart: Date): CategoryCount[] {
+export function calcWeeklyCategoryCounts(logs: DailyLog[], weekStart: Date, milestoneLogIds?: Set<string>): CategoryCount[] {
   const dates = new Set<string>();
   for (let i = 0; i < 7; i++) {
     dates.add(format(addDays(weekStart, i), "yyyy-MM-dd"));
   }
-  return countCategories(logs.filter((l) => dates.has(l.log_date)));
+  return countCategories(logs.filter((l) => dates.has(l.log_date)), milestoneLogIds);
 }
 
 /**
@@ -203,26 +200,28 @@ export function calcMonthlyCategoryCounts(logs: DailyLog[], year: number): Categ
 /**
  * 特定の年月のカテゴリ集計
  */
-export function calcSingleMonthCategoryCounts(logs: DailyLog[], year: number, month: number): CategoryCount[] {
+export function calcSingleMonthCategoryCounts(logs: DailyLog[], year: number, month: number, milestoneLogIds?: Set<string>): CategoryCount[] {
   return countCategories(
     logs.filter((l) => {
       const y = parseInt(l.log_date.slice(0, 4), 10);
       const m = parseInt(l.log_date.slice(5, 7), 10);
       return y === year && m === month;
-    })
+    }),
+    milestoneLogIds,
   );
 }
 
 /**
  * 年別のカテゴリ集計（直近5年分）
  */
-export function calcYearlyCategoryCounts(logs: DailyLog[]): CategoryCount[] {
+export function calcYearlyCategoryCounts(logs: DailyLog[], milestoneLogIds?: Set<string>): CategoryCount[] {
   const currentYear = new Date().getFullYear();
   const minYear = currentYear - 4;
   return countCategories(
     logs.filter((l) => {
       const y = parseInt(l.log_date.slice(0, 4), 10);
       return y >= minYear && y <= currentYear;
-    })
+    }),
+    milestoneLogIds,
   );
 }

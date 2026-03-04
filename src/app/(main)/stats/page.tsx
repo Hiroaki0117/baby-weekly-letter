@@ -124,20 +124,25 @@ export default function StatsPage() {
     }
   }, [filtered, period, weekStart, selectedYear]);
 
+  const milestoneLogIds = useMemo(
+    () => new Set(filtered.filter((log) => milestoneMap[log.id]).map((log) => log.id)),
+    [filtered, milestoneMap]
+  );
+
   const categoryCounts = useMemo(() => {
     switch (period) {
       case "weekly":
-        return calcWeeklyCategoryCounts(filtered, weekStart);
+        return calcWeeklyCategoryCounts(filtered, weekStart, milestoneLogIds);
       case "monthly":
-        return calcSingleMonthCategoryCounts(filtered, selectedYear, selectedMonth);
+        return calcSingleMonthCategoryCounts(filtered, selectedYear, selectedMonth, milestoneLogIds);
       case "yearly":
-        return calcYearlyCategoryCounts(filtered);
+        return calcYearlyCategoryCounts(filtered, milestoneLogIds);
     }
-  }, [filtered, period, weekStart, selectedYear, selectedMonth]);
+  }, [filtered, period, weekStart, selectedYear, selectedMonth, milestoneLogIds]);
 
   const milestoneCount = useMemo(
-    () => filtered.filter((log) => milestoneMap[log.id]).length,
-    [filtered, milestoneMap]
+    () => milestoneLogIds.size,
+    [milestoneLogIds]
   );
 
   // ナビゲーション
