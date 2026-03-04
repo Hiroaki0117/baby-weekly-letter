@@ -257,7 +257,7 @@ export default function StatsPage() {
                 <MoodChart data={moodData} scrollable={scrollable} />
               </div>
 
-              {categoryCounts.length > 0 && (
+              {filtered.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
                   <CategoryPieChart
                     data={categoryCounts}
