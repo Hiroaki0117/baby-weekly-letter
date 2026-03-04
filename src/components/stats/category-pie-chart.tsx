@@ -2,10 +2,13 @@
 
 import {
   ResponsiveContainer,
-  PieChart,
-  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   Cell,
-  Legend,
 } from "recharts";
 import type { CategoryCount } from "@/lib/stats";
 
@@ -20,44 +23,77 @@ const COLORS = [
   "#f87171", // レッド
 ];
 
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { name?: string; value?: number; payload?: { fill?: string } }[];
+}) {
+  if (!active || !payload?.length) return null;
+  const item = payload[0];
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
+      <div className="flex items-center gap-2 text-xs">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-sm"
+          style={{ backgroundColor: item.payload?.fill }}
+        />
+        <span className="font-semibold text-foreground">{item.name}</span>
+        <span className="ml-auto font-bold text-foreground">{item.value}件</span>
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   data: CategoryCount[];
 };
 
 export function CategoryPieChart({ data }: Props) {
+  const sorted = [...data].sort((a, b) => b.count - a.count);
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-foreground">カテゴリ別の記録</h3>
-      <div className="h-72">
+      <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="count"
-              nameKey="category"
-              cx="50%"
-              cy="45%"
-              outerRadius={80}
-              innerRadius={40}
-              paddingAngle={2}
-              label={({ name, value }: { name?: string; value?: number }) =>
-                `${name ?? ""} (${value ?? 0})`
-              }
-              labelLine={{ strokeWidth: 1 }}
-            >
-              {data.map((_, i) => (
-                <Cell
-                  key={`cell-${i}`}
-                  fill={COLORS[i % COLORS.length]}
-                />
-              ))}
-            </Pie>
-            <Legend
-              formatter={(value: string) => (
-                <span className="text-xs">{value}</span>
-              )}
+          <BarChart
+            data={sorted}
+            layout="vertical"
+            margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(var(--border))"
+              horizontal={false}
             />
-          </PieChart>
+            <XAxis
+              type="number"
+              allowDecimals={false}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="category"
+              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tickLine={false}
+              axisLine={false}
+              width={72}
+            />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ fill: "rgba(148, 163, 184, 0.1)" }}
+            />
+            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+              {sorted.map((_, i) => (
+                <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
