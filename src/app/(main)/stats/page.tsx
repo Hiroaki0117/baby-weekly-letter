@@ -140,11 +140,6 @@ export default function StatsPage() {
     }
   }, [filtered, period, weekStart, selectedYear, selectedMonth, milestoneLogIds]);
 
-  const milestoneCount = useMemo(
-    () => milestoneLogIds.size,
-    [milestoneLogIds]
-  );
-
   // ナビゲーション
   const currentMonday = getMonday(new Date());
   const currentYear = new Date().getFullYear();
@@ -273,25 +268,6 @@ export default function StatsPage() {
                 </div>
               )}
 
-              {/* 初めての出来事サマリー */}
-              <div className="overflow-hidden rounded-xl border border-amber-200/60 bg-amber-50/50 p-4 shadow-sm dark:border-amber-500/20 dark:bg-amber-950/20">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">✨</span>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      初めての出来事
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {milestoneCount > 0
-                        ? `${milestoneCount}件の「初めて」を記録しました`
-                        : "まだ記録がありません"}
-                    </p>
-                  </div>
-                  <span className="ml-auto text-2xl font-bold text-amber-600 dark:text-amber-400">
-                    {milestoneCount}
-                  </span>
-                </div>
-              </div>
             </div>
           )}
         </>
