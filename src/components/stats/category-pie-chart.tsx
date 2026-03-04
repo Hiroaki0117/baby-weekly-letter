@@ -85,9 +85,9 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
     color: MILESTONE_COLOR,
   };
 
-  // カテゴリ + マイルストーンをまとめて件数降順ソート
-  const all = [...categoryEntries, milestoneEntry];
-  const sorted = all.sort((a, b) => b.count - a.count);
+  // 初めての出来事を先頭に、残りは件数降順ソート
+  const sortedCategories = [...categoryEntries].sort((a, b) => b.count - a.count);
+  const sorted = [milestoneEntry, ...sortedCategories];
 
   return (
     <div className="space-y-3">
@@ -136,7 +136,22 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
             <YAxis
               type="category"
               dataKey="category"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tick={(props: { x: number | string; y: number | string; payload: { value: string } }) => {
+                const isMilestone = props.payload.value === MILESTONE_LABEL;
+                return (
+                  <text
+                    x={props.x}
+                    y={props.y}
+                    textAnchor="end"
+                    dominantBaseline="central"
+                    fontSize={isMilestone ? 12.5 : 11}
+                    fontWeight={isMilestone ? 600 : 400}
+                    fill="hsl(var(--muted-foreground))"
+                  >
+                    {props.payload.value}
+                  </text>
+                );
+              }}
               tickLine={false}
               axisLine={false}
               width={90}
