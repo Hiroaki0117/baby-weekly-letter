@@ -8,44 +8,51 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Cell,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { CATEGORY_OPTIONS } from "@/types";
 import type { CategoryCount, PeriodType } from "@/lib/stats";
 
-const COLORS = [
-  "#f472b6", // ピンク
-  "#fbbf24", // イエロー
-  "#34d399", // グリーン
-  "#60a5fa", // ブルー
-  "#818cf8", // パープル
-  "#fb923c", // オレンジ
-  "#94a3b8", // グレー
-  "#f87171", // レッド
-];
-
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+type ChartEntry = {
+  category: string;
+  records: number;
+  milestones: number;
+};
 
 function CustomTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: { value?: number; payload?: { category?: string; fill?: string } }[];
+  payload?: { dataKey?: string; value?: number; payload?: ChartEntry }[];
 }) {
   if (!active || !payload?.length) return null;
-  const item = payload[0];
+  const entry = payload[0]?.payload;
+  if (!entry) return null;
+  const total = entry.records + entry.milestones;
 
   return (
     <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
-      <div className="flex items-center gap-2 text-xs">
-        <span
-          className="inline-block h-2.5 w-2.5 rounded-sm"
-          style={{ backgroundColor: item.payload?.fill }}
-        />
-        <span className="font-semibold text-foreground">{item.payload?.category}</span>
-        <span className="ml-auto font-bold text-foreground">{item.value}件</span>
+      <div className="mb-1 text-xs font-semibold text-foreground">{entry.category}</div>
+      <div className="space-y-0.5 text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary/70" />
+          <span className="text-muted-foreground">記録</span>
+          <span className="ml-auto font-semibold text-foreground">{entry.records}件</span>
+        </div>
+        {entry.milestones > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
+            <span className="text-muted-foreground">初めて</span>
+            <span className="ml-auto font-semibold text-foreground">{entry.milestones}件</span>
+          </div>
+        )}
+        <div className="border-t border-border/40 pt-0.5 flex justify-between">
+          <span className="text-muted-foreground">合計</span>
+          <span className="font-bold text-foreground">{total}件</span>
+        </div>
       </div>
     </div>
   );
@@ -60,12 +67,18 @@ type Props = {
 
 export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }: Props) {
   // 全カテゴリを含め、件数降順でソート
-  const dataMap = new Map(data.map((d) => [d.category, d.count]));
-  const full = CATEGORY_OPTIONS.map((c) => ({
-    category: c.label,
-    count: dataMap.get(c.label) ?? 0,
-  }));
-  const sorted = full.sort((a, b) => b.count - a.count);
+  const dataMap = new Map(data.map((d) => [d.category, d]));
+  const full: ChartEntry[] = CATEGORY_OPTIONS.map((c) => {
+    const entry = dataMap.get(c.label);
+    return {
+      category: c.label,
+      records: (entry?.count ?? 0) - (entry?.milestoneCount ?? 0),
+      milestones: entry?.milestoneCount ?? 0,
+    };
+  });
+  const sorted = full.sort((a, b) => (b.records + b.milestones) - (a.records + a.milestones));
+
+  const hasMilestones = sorted.some((d) => d.milestones > 0);
 
   return (
     <div className="space-y-3">
@@ -89,6 +102,20 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
               {m}月
             </button>
           ))}
+        </div>
+      )}
+
+      {/* 凡例 */}
+      {hasMilestones && (
+        <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center gap-1">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary/70" />
+            <span className="text-xs text-muted-foreground">記録</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
+            <span className="text-xs text-muted-foreground">初めての出来事</span>
+          </div>
         </div>
       )}
 
@@ -123,11 +150,19 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
               content={<CustomTooltip />}
               cursor={{ fill: "rgba(148, 163, 184, 0.1)" }}
             />
-            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
-              {sorted.map((_, i) => (
-                <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Bar>
+            <Bar
+              dataKey="records"
+              stackId="category"
+              fill="hsl(var(--primary) / 0.7)"
+              barSize={20}
+            />
+            <Bar
+              dataKey="milestones"
+              stackId="category"
+              fill="#fbbf24"
+              radius={[0, 4, 4, 0]}
+              barSize={20}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>

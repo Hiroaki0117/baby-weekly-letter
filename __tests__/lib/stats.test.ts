@@ -143,9 +143,22 @@ describe("calcCategoryCounts", () => {
       makelog({ id: "3", categories: ["meal"] }),
     ];
     const result = calcCategoryCounts(logs);
-    expect(result[0]).toEqual({ category: "食事", count: 3 });
+    expect(result[0]).toEqual({ category: "食事", count: 3, milestoneCount: 0 });
     expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
     expect(result.find((c) => c.category === "遊び")?.count).toBe(1);
+  });
+
+  it("milestoneLogIdsを渡すとマイルストーン件数も集計する", () => {
+    const logs = [
+      makelog({ id: "1", categories: ["meal", "sleep"] }),
+      makelog({ id: "2", categories: ["meal", "play"] }),
+      makelog({ id: "3", categories: ["meal"] }),
+    ];
+    const milestoneLogIds = new Set(["1", "3"]);
+    const result = calcCategoryCounts(logs, milestoneLogIds);
+    expect(result[0]).toEqual({ category: "食事", count: 3, milestoneCount: 2 });
+    expect(result.find((c) => c.category === "睡眠")).toEqual({ category: "睡眠", count: 1, milestoneCount: 1 });
+    expect(result.find((c) => c.category === "遊び")).toEqual({ category: "遊び", count: 1, milestoneCount: 0 });
   });
 });
 
@@ -158,7 +171,7 @@ describe("calcWeeklyCategoryCounts", () => {
       makelog({ id: "3", log_date: "2025-06-23", categories: ["play"] }), // 週外
     ];
     const result = calcWeeklyCategoryCounts(logs, weekStart);
-    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result[0]).toEqual({ category: "食事", count: 2, milestoneCount: 0 });
     expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
     expect(result.find((c) => c.category === "遊び")).toBeUndefined();
   });
@@ -172,7 +185,7 @@ describe("calcMonthlyCategoryCounts", () => {
       makelog({ id: "3", log_date: "2024-03-10", categories: ["sleep"] }), // 別の年
     ];
     const result = calcMonthlyCategoryCounts(logs, 2025);
-    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result[0]).toEqual({ category: "食事", count: 2, milestoneCount: 0 });
     expect(result.find((c) => c.category === "遊び")?.count).toBe(1);
     expect(result.find((c) => c.category === "睡眠")).toBeUndefined();
   });
@@ -187,7 +200,7 @@ describe("calcSingleMonthCategoryCounts", () => {
       makelog({ id: "4", log_date: "2024-03-10", categories: ["sleep"] }), // 別の年
     ];
     const result = calcSingleMonthCategoryCounts(logs, 2025, 3);
-    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result[0]).toEqual({ category: "食事", count: 2, milestoneCount: 0 });
     expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
     expect(result.find((c) => c.category === "遊び")).toBeUndefined();
   });
@@ -202,7 +215,7 @@ describe("calcYearlyCategoryCounts", () => {
       makelog({ id: "3", log_date: `${currentYear - 10}-01-01`, categories: ["play"] }), // 範囲外
     ];
     const result = calcYearlyCategoryCounts(logs);
-    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result[0]).toEqual({ category: "食事", count: 2, milestoneCount: 0 });
     expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
     expect(result.find((c) => c.category === "遊び")).toBeUndefined();
   });
