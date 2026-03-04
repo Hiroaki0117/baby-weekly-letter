@@ -9,6 +9,7 @@ import {
   calcCategoryCounts,
   calcWeeklyCategoryCounts,
   calcMonthlyCategoryCounts,
+  calcSingleMonthCategoryCounts,
   calcYearlyCategoryCounts,
 } from "@/lib/stats";
 import type { DailyLog } from "@/types";
@@ -174,6 +175,21 @@ describe("calcMonthlyCategoryCounts", () => {
     expect(result[0]).toEqual({ category: "食事", count: 2 });
     expect(result.find((c) => c.category === "遊び")?.count).toBe(1);
     expect(result.find((c) => c.category === "睡眠")).toBeUndefined();
+  });
+});
+
+describe("calcSingleMonthCategoryCounts", () => {
+  it("指定年月のログのカテゴリのみ集計する", () => {
+    const logs = [
+      makelog({ id: "1", log_date: "2025-03-10", categories: ["meal", "sleep"] }),
+      makelog({ id: "2", log_date: "2025-03-20", categories: ["meal"] }),
+      makelog({ id: "3", log_date: "2025-06-15", categories: ["play"] }), // 別の月
+      makelog({ id: "4", log_date: "2024-03-10", categories: ["sleep"] }), // 別の年
+    ];
+    const result = calcSingleMonthCategoryCounts(logs, 2025, 3);
+    expect(result[0]).toEqual({ category: "食事", count: 2 });
+    expect(result.find((c) => c.category === "睡眠")?.count).toBe(1);
+    expect(result.find((c) => c.category === "遊び")).toBeUndefined();
   });
 });
 
