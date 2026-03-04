@@ -114,7 +114,7 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
         </div>
       )}
 
-      <div className="h-72">
+      <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={sorted}
@@ -154,7 +154,7 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
               }}
               tickLine={false}
               axisLine={false}
-              width={90}
+              width={110}
             />
             <Tooltip
               content={<CustomTooltip />}
