@@ -85,9 +85,8 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
     color: MILESTONE_COLOR,
   };
 
-  // 初めての出来事を先頭に、残りは件数降順ソート
-  const sortedCategories = [...categoryEntries].sort((a, b) => b.count - a.count);
-  const sorted = [milestoneEntry, ...sortedCategories];
+  // 初めての出来事を先頭に、残りはCATEGORY_OPTIONSの定義順を維持
+  const sorted = [milestoneEntry, ...categoryEntries];
 
   return (
     <div className="space-y-3">
