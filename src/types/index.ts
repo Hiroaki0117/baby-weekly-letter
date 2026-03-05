@@ -26,6 +26,10 @@ export type GrowthRecord = Database["public"]["Tables"]["growth_records"]["Row"]
 export type GrowthRecordInsert =
   Database["public"]["Tables"]["growth_records"]["Insert"];
 
+export type TemperatureRecord = Database["public"]["Tables"]["temperature_records"]["Row"];
+export type TemperatureRecordInsert =
+  Database["public"]["Tables"]["temperature_records"]["Insert"];
+
 export type Milestone = Database["public"]["Tables"]["milestones"]["Row"];
 export type MilestoneInsert = Database["public"]["Tables"]["milestones"]["Insert"];
 export type MilestoneUpdate = Database["public"]["Tables"]["milestones"]["Update"];
