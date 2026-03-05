@@ -26,6 +26,7 @@ export default function HomePage() {
   const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
   const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [newReactionCount, setNewReactionCount] = useState(0);
+  const [newCommentCount, setNewCommentCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState("");
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
@@ -136,16 +137,25 @@ export default function HomePage() {
         setMilestoneMap(msMap);
       }
 
-      // 新着リアクション件数（自分が書いたログへの他人のリアクション）
+      // 新着リアクション・コメント件数（自分が書いたログへの他人の反応）
       if (userId) {
-        const lastChecked = localStorage.getItem("lastReactionCheckedAt") ?? "1970-01-01T00:00:00Z";
-        const { count } = await client
+        const lastReactionChecked = localStorage.getItem("lastReactionCheckedAt") ?? "1970-01-01T00:00:00Z";
+        const { count: reactionCount } = await client
           .from("log_reactions")
           .select("id, daily_logs!inner(author_id)", { count: "exact", head: true })
           .eq("daily_logs.author_id", userId)
           .neq("user_id", userId)
-          .gt("created_at", lastChecked);
-        setNewReactionCount(count ?? 0);
+          .gt("created_at", lastReactionChecked);
+        setNewReactionCount(reactionCount ?? 0);
+
+        const lastCommentChecked = localStorage.getItem("lastCommentCheckedAt") ?? "1970-01-01T00:00:00Z";
+        const { count: commentCount } = await client
+          .from("log_comments")
+          .select("id, daily_logs!inner(author_id)", { count: "exact", head: true })
+          .eq("daily_logs.author_id", userId)
+          .neq("user_id", userId)
+          .gt("created_at", lastCommentChecked);
+        setNewCommentCount(commentCount ?? 0);
       }
 
       setCardLoaded(true);
@@ -279,7 +289,7 @@ export default function HomePage() {
       </div>
 
       {/* 新着リアクション通知 */}
-      <ReactionNotice count={newReactionCount} />
+      <ReactionNotice reactionCount={newReactionCount} commentCount={newCommentCount} />
 
       {/* ○年前の今日 */}
       <MemoriesSection childrenList={childrenList} />

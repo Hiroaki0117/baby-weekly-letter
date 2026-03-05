@@ -6,9 +6,11 @@ import { AccentCard } from "@/components/ui/accent-card";
 import { formatDateJa } from "@/lib/date";
 import { MOOD_OPTIONS, CATEGORY_OPTIONS, type DailyLog } from "@/types";
 import type { ReactionSummary } from "@/lib/reactions";
+import type { CommentEntry } from "@/lib/comments";
 import type { Milestone } from "@/types";
 import { AuthorBadge } from "./author-badge";
 import { ReactionBar } from "./reaction-bar";
+import { CommentSection } from "./comment-section";
 import { ChildBadge } from "@/components/child/child-badge";
 import { createClient } from "@/lib/supabase/client";
 
@@ -18,13 +20,18 @@ type LogCardProps = {
   authorDisplayName?: string | null;
   milestone?: Milestone | null;
   reactions?: ReactionSummary[];
+  comments?: CommentEntry[];
+  currentUserId?: string;
   nameMap?: Record<string, string>;
   onEdit: (log: DailyLog) => void;
   onDelete: (id: string) => void;
   onToggleReaction?: (logId: string, emoji: string) => void;
+  onAddComment?: (logId: string, text: string) => void;
+  onUpdateComment?: (commentId: string, text: string) => void;
+  onDeleteComment?: (commentId: string) => void;
 };
 
-export function LogCard({ log, childName, authorDisplayName, milestone, reactions, nameMap, onEdit, onDelete, onToggleReaction }: LogCardProps) {
+export function LogCard({ log, childName, authorDisplayName, milestone, reactions, comments, currentUserId, nameMap, onEdit, onDelete, onToggleReaction, onAddComment, onUpdateComment, onDeleteComment }: LogCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -138,6 +145,19 @@ export function LogCard({ log, childName, authorDisplayName, milestone, reaction
               reactions={reactions ?? []}
               nameMap={nameMap ?? {}}
               onToggle={onToggleReaction}
+            />
+          )}
+
+          {/* コメント */}
+          {onAddComment && onUpdateComment && onDeleteComment && currentUserId && (
+            <CommentSection
+              logId={log.id}
+              comments={comments ?? []}
+              currentUserId={currentUserId}
+              nameMap={nameMap ?? {}}
+              onAdd={onAddComment}
+              onUpdate={onUpdateComment}
+              onDelete={onDeleteComment}
             />
           )}
         </div>

@@ -19,6 +19,9 @@ export type FamilyInvitationInsert =
 
 export type LogReaction = Database["public"]["Tables"]["log_reactions"]["Row"];
 
+export type LogComment = Database["public"]["Tables"]["log_comments"]["Row"];
+export type LogCommentInsert = Database["public"]["Tables"]["log_comments"]["Insert"];
+
 export type GrowthRecord = Database["public"]["Tables"]["growth_records"]["Row"];
 export type GrowthRecordInsert =
   Database["public"]["Tables"]["growth_records"]["Insert"];
