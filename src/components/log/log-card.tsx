@@ -80,6 +80,9 @@ export function LogCard({ log, childName, authorDisplayName, milestone, reaction
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-medium text-foreground">
                     {formatDateJa(log.log_date)}
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      {new Date(log.created_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </p>
                   {childName && <ChildBadge name={childName} />}
                   <AuthorBadge displayName={authorDisplayName ?? null} />
