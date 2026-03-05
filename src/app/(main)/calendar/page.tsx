@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString, getCalendarRange, formatDateJa } from "@/lib/date";
 import { deleteLog } from "@/lib/log-actions";
+import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
+import { buildCommentMap, addComment, updateComment, deleteComment, type CommentEntry } from "@/lib/comments";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { LogCard } from "@/components/log/log-card";
@@ -23,6 +25,9 @@ export default function CalendarPage() {
   const [editingLog, setEditingLog] = useState<DailyLog | null>(null);
   const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
   const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
+  const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
+  const [commentMap, setCommentMap] = useState<Record<string, CommentEntry[]>>({});
+  const [currentUserId, setCurrentUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
   const membersFetchedRef = useRef(false);
@@ -57,11 +62,35 @@ export default function CalendarPage() {
       }
       setLogsByDate(grouped);
 
-      // マイルストーン取得
+      // ユーザーID取得
+      const userRes = await client.auth.getUser();
+      const userId = userRes.data.user?.id ?? "";
+      setCurrentUserId(userId);
+
+      // マイルストーン・リアクション・コメント取得
       if (logs.length > 0) {
         const logIds = logs.map((l) => l.id);
         const msMap = await fetchMilestonesByLogIds(client, logIds);
         setMilestoneMap(msMap);
+
+        if (userId) {
+          const { data: reactionsData } = await client
+            .from("log_reactions")
+            .select("log_id, user_id, emoji")
+            .in("log_id", logIds);
+          if (reactionsData) {
+            setReactionMap(buildReactionMap(reactionsData, userId));
+          }
+        }
+
+        const { data: commentsData } = await client
+          .from("log_comments")
+          .select("id, log_id, user_id, text, created_at, updated_at")
+          .in("log_id", logIds)
+          .order("created_at", { ascending: true });
+        if (commentsData) {
+          setCommentMap(buildCommentMap(commentsData));
+        }
       }
 
       if (!membersFetchedRef.current) {
@@ -149,6 +178,25 @@ export default function CalendarPage() {
       const logIds = logs.map((l) => l.id);
       const msMap = await fetchMilestonesByLogIds(supabase, logIds);
       setMilestoneMap(msMap);
+
+      if (currentUserId) {
+        const { data: reactionsData } = await supabase
+          .from("log_reactions")
+          .select("log_id, user_id, emoji")
+          .in("log_id", logIds);
+        if (reactionsData) {
+          setReactionMap(buildReactionMap(reactionsData, currentUserId));
+        }
+      }
+
+      const { data: commentsData } = await supabase
+        .from("log_comments")
+        .select("id, log_id, user_id, text, created_at, updated_at")
+        .in("log_id", logIds)
+        .order("created_at", { ascending: true });
+      if (commentsData) {
+        setCommentMap(buildCommentMap(commentsData));
+      }
     }
   }
 
@@ -181,6 +229,134 @@ export default function CalendarPage() {
     setEditingPhotoUrl(null);
     reloadMonth();
     router.refresh();
+  }
+
+  async function handleToggleReaction(logId: string, emoji: string) {
+    if (!currentUserId) return;
+    const current = reactionMap[logId] ?? [];
+    const summary = current.find((r) => r.emoji === emoji);
+    const wasReacted = summary?.reacted ?? false;
+
+    setReactionMap((prev) => {
+      const updated = { ...prev };
+      const base = updated[logId] ?? emptyReactionSummaries();
+      updated[logId] = base.map((r) =>
+        r.emoji === emoji
+          ? {
+              ...r,
+              count: r.count + (wasReacted ? -1 : 1),
+              reacted: !wasReacted,
+              userIds: wasReacted
+                ? r.userIds.filter((id) => id !== currentUserId)
+                : [...r.userIds, currentUserId],
+            }
+          : r
+      );
+      return updated;
+    });
+
+    await toggleReaction(supabase, logId, currentUserId, emoji, wasReacted);
+  }
+
+  async function handleAddComment(logId: string, text: string) {
+    if (!currentUserId) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const nowIso = new Date().toISOString();
+    const tempEntry: CommentEntry = {
+      id: tempId,
+      logId,
+      userId: currentUserId,
+      text,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    setCommentMap((prev) => ({
+      ...prev,
+      [logId]: [...(prev[logId] ?? []), tempEntry],
+    }));
+
+    try {
+      const created = await addComment(supabase, logId, currentUserId, text);
+      setCommentMap((prev) => ({
+        ...prev,
+        [logId]: (prev[logId] ?? []).map((c) =>
+          c.id === tempId
+            ? { id: created.id, logId: created.log_id, userId: created.user_id, text: created.text, createdAt: created.created_at, updatedAt: created.updated_at }
+            : c
+        ),
+      }));
+    } catch {
+      setCommentMap((prev) => ({
+        ...prev,
+        [logId]: (prev[logId] ?? []).filter((c) => c.id !== tempId),
+      }));
+      toast.error("コメントの投稿に失敗しました");
+    }
+  }
+
+  async function handleUpdateComment(commentId: string, text: string) {
+    let targetLogId = "";
+    let oldText = "";
+    for (const [logId, entries] of Object.entries(commentMap)) {
+      const found = entries.find((c) => c.id === commentId);
+      if (found) {
+        targetLogId = logId;
+        oldText = found.text;
+        break;
+      }
+    }
+    if (!targetLogId) return;
+
+    setCommentMap((prev) => ({
+      ...prev,
+      [targetLogId]: (prev[targetLogId] ?? []).map((c) =>
+        c.id === commentId ? { ...c, text, updatedAt: new Date().toISOString() } : c
+      ),
+    }));
+
+    try {
+      await updateComment(supabase, commentId, text);
+    } catch {
+      setCommentMap((prev) => ({
+        ...prev,
+        [targetLogId]: (prev[targetLogId] ?? []).map((c) =>
+          c.id === commentId ? { ...c, text: oldText } : c
+        ),
+      }));
+      toast.error("コメントの更新に失敗しました");
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    let targetLogId = "";
+    let deletedEntry: CommentEntry | undefined;
+    for (const [logId, entries] of Object.entries(commentMap)) {
+      const found = entries.find((c) => c.id === commentId);
+      if (found) {
+        targetLogId = logId;
+        deletedEntry = found;
+        break;
+      }
+    }
+    if (!targetLogId || !deletedEntry) return;
+
+    setCommentMap((prev) => ({
+      ...prev,
+      [targetLogId]: (prev[targetLogId] ?? []).filter((c) => c.id !== commentId),
+    }));
+
+    try {
+      await deleteComment(supabase, commentId);
+    } catch {
+      setCommentMap((prev) => ({
+        ...prev,
+        [targetLogId]: [...(prev[targetLogId] ?? []), deletedEntry!].sort(
+          (a, b) => a.createdAt.localeCompare(b.createdAt)
+        ),
+      }));
+      toast.error("コメントの削除に失敗しました");
+    }
   }
 
   if (loading) {
@@ -264,8 +440,16 @@ export default function CalendarPage() {
                 childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
                 authorDisplayName={authorNames[log.author_id]}
                 milestone={milestoneMap[log.id]}
+                reactions={reactionMap[log.id]}
+                comments={commentMap[log.id]}
+                currentUserId={currentUserId}
+                nameMap={authorNames}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onToggleReaction={handleToggleReaction}
+                onAddComment={handleAddComment}
+                onUpdateComment={handleUpdateComment}
+                onDeleteComment={handleDeleteComment}
               />
             ))
           )}

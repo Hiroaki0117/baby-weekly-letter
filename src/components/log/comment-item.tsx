@@ -70,22 +70,22 @@ export function CommentItem({ comment, authorName, isOwn, onUpdate, onDelete }: 
     <div className="group/comment flex items-start gap-1.5 text-xs">
       <span className="font-medium text-foreground/70">{authorName}:</span>
       <span className="flex-1 text-foreground/85">{comment.text}</span>
-      <span className="shrink-0 text-[10px] text-foreground/85">
+      <span className="shrink-0 text-[11px] text-muted-foreground">
         {formatDateTime(comment.createdAt)}
       </span>
       {isOwn && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="shrink-0 text-[10px] text-foreground/85 hover:underline"
+            className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground hover:underline"
           >
             編集
           </button>
           <button
             type="button"
             onClick={() => onDelete(comment.id)}
-            className="shrink-0 text-[10px] text-foreground/85 hover:underline"
+            className="shrink-0 text-[11px] text-destructive/70 hover:text-destructive hover:underline"
           >
             削除
           </button>

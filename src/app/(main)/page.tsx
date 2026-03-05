@@ -7,6 +7,7 @@ import { getMyFamilyId } from "@/lib/supabase/family";
 import { getStreak } from "@/lib/streak";
 import { deleteLog } from "@/lib/log-actions";
 import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
+import { buildCommentMap, addComment, updateComment, deleteComment, type CommentEntry } from "@/lib/comments";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [streak, setStreak] = useState(0);
   const [cardLoaded, setCardLoaded] = useState(false);
   const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
+  const [commentMap, setCommentMap] = useState<Record<string, CommentEntry[]>>({});
   const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [newReactionCount, setNewReactionCount] = useState(0);
   const [newCommentCount, setNewCommentCount] = useState(0);
@@ -63,6 +65,16 @@ export default function HomePage() {
         if (reactionsData) {
           setReactionMap(buildReactionMap(reactionsData, currentUserId));
         }
+      }
+
+      // コメント取得
+      const { data: commentsData } = await supabase
+        .from("log_comments")
+        .select("id, log_id, user_id, text, created_at, updated_at")
+        .in("log_id", logIds)
+        .order("created_at", { ascending: true });
+      if (commentsData) {
+        setCommentMap(buildCommentMap(commentsData));
       }
 
       // マイルストーン取得
@@ -131,6 +143,16 @@ export default function HomePage() {
           if (reactionsData) {
             setReactionMap(buildReactionMap(reactionsData, userId));
           }
+        }
+
+        // コメント取得
+        const { data: commentsData } = await client
+          .from("log_comments")
+          .select("id, log_id, user_id, text, created_at, updated_at")
+          .in("log_id", logIds)
+          .order("created_at", { ascending: true });
+        if (commentsData) {
+          setCommentMap(buildCommentMap(commentsData));
         }
 
         const msMap = await fetchMilestonesByLogIds(client, logIds);
@@ -221,6 +243,116 @@ export default function HomePage() {
       await toggleReaction(supabase, logId, currentUserId, emoji, wasReacted);
     },
     [currentUserId, reactionMap, supabase]
+  );
+
+  const handleAddComment = useCallback(
+    async (logId: string, text: string) => {
+      if (!currentUserId) return;
+
+      const tempId = `temp-${Date.now()}`;
+      const nowIso = new Date().toISOString();
+      const tempEntry: CommentEntry = {
+        id: tempId,
+        logId,
+        userId: currentUserId,
+        text,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      setCommentMap((prev) => ({
+        ...prev,
+        [logId]: [...(prev[logId] ?? []), tempEntry],
+      }));
+
+      try {
+        const created = await addComment(supabase, logId, currentUserId, text);
+        setCommentMap((prev) => ({
+          ...prev,
+          [logId]: (prev[logId] ?? []).map((c) =>
+            c.id === tempId
+              ? { id: created.id, logId: created.log_id, userId: created.user_id, text: created.text, createdAt: created.created_at, updatedAt: created.updated_at }
+              : c
+          ),
+        }));
+      } catch {
+        setCommentMap((prev) => ({
+          ...prev,
+          [logId]: (prev[logId] ?? []).filter((c) => c.id !== tempId),
+        }));
+        toast.error("コメントの投稿に失敗しました");
+      }
+    },
+    [currentUserId, supabase]
+  );
+
+  const handleUpdateComment = useCallback(
+    async (commentId: string, text: string) => {
+      let targetLogId = "";
+      let oldText = "";
+      for (const [logId, entries] of Object.entries(commentMap)) {
+        const found = entries.find((c) => c.id === commentId);
+        if (found) {
+          targetLogId = logId;
+          oldText = found.text;
+          break;
+        }
+      }
+      if (!targetLogId) return;
+
+      setCommentMap((prev) => ({
+        ...prev,
+        [targetLogId]: (prev[targetLogId] ?? []).map((c) =>
+          c.id === commentId ? { ...c, text, updatedAt: new Date().toISOString() } : c
+        ),
+      }));
+
+      try {
+        await updateComment(supabase, commentId, text);
+      } catch {
+        setCommentMap((prev) => ({
+          ...prev,
+          [targetLogId]: (prev[targetLogId] ?? []).map((c) =>
+            c.id === commentId ? { ...c, text: oldText } : c
+          ),
+        }));
+        toast.error("コメントの更新に失敗しました");
+      }
+    },
+    [commentMap, supabase]
+  );
+
+  const handleDeleteComment = useCallback(
+    async (commentId: string) => {
+      let targetLogId = "";
+      let deletedEntry: CommentEntry | undefined;
+      for (const [logId, entries] of Object.entries(commentMap)) {
+        const found = entries.find((c) => c.id === commentId);
+        if (found) {
+          targetLogId = logId;
+          deletedEntry = found;
+          break;
+        }
+      }
+      if (!targetLogId || !deletedEntry) return;
+
+      setCommentMap((prev) => ({
+        ...prev,
+        [targetLogId]: (prev[targetLogId] ?? []).filter((c) => c.id !== commentId),
+      }));
+
+      try {
+        await deleteComment(supabase, commentId);
+      } catch {
+        setCommentMap((prev) => ({
+          ...prev,
+          [targetLogId]: [...(prev[targetLogId] ?? []), deletedEntry!].sort(
+            (a, b) => a.createdAt.localeCompare(b.createdAt)
+          ),
+        }));
+        toast.error("コメントの削除に失敗しました");
+      }
+    },
+    [commentMap, supabase]
   );
 
   const now = new Date();
@@ -329,10 +461,15 @@ export default function HomePage() {
               authorDisplayName={authorNames[log.author_id]}
               milestone={milestoneMap[log.id]}
               reactions={reactionMap[log.id]}
+              comments={commentMap[log.id]}
+              currentUserId={currentUserId}
               nameMap={authorNames}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggleReaction={handleToggleReaction}
+              onAddComment={handleAddComment}
+              onUpdateComment={handleUpdateComment}
+              onDeleteComment={handleDeleteComment}
             />
           ))}
         </div>
