@@ -11,9 +11,9 @@ type CommentItemProps = {
   onDelete: (commentId: string) => void;
 };
 
-function formatTime(dateStr: string): string {
+function formatDateTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 export function CommentItem({ comment, authorName, isOwn, onUpdate, onDelete }: CommentItemProps) {
@@ -84,7 +84,7 @@ export function CommentItem({ comment, authorName, isOwn, onUpdate, onDelete }: 
       <span className="font-medium text-foreground/70">{authorName}:</span>
       <span className="flex-1 text-foreground/85">{comment.text}</span>
       <span className="shrink-0 text-[10px] text-muted-foreground/60">
-        {formatTime(comment.createdAt)}
+        {formatDateTime(comment.createdAt)}
       </span>
       {isOwn && (
         <div className="relative" ref={menuRef}>
