@@ -14,13 +14,15 @@ import {
 } from "@/lib/stats";
 import type { PeriodType } from "@/lib/stats";
 import { fetchGrowthRecords } from "@/lib/growth";
+import { fetchTemperatureRecords } from "@/lib/temperature";
 import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { GrowthChart } from "@/components/stats/growth-chart";
+import { TemperatureChart } from "@/components/stats/temperature-chart";
 import { ChildSelector } from "@/components/child/child-selector";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
-import type { Child, DailyLog, GrowthRecord, Gender, Milestone } from "@/types";
+import type { Child, DailyLog, GrowthRecord, TemperatureRecord, Gender, Milestone } from "@/types";
 
 type StatsTab = "logs" | "growth";
 
@@ -39,6 +41,7 @@ export default function StatsPage() {
   const [selectedChildId, setSelectedChildId] = useState("");
   const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
   const [growthRecords, setGrowthRecords] = useState<Record<string, GrowthRecord[]>>({});
+  const [temperatureRecords, setTemperatureRecords] = useState<Record<string, TemperatureRecord[]>>({});
   const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [statsTab, setStatsTab] = useState<StatsTab>("logs");
   const [period, setPeriod] = useState<PeriodType>("weekly");
@@ -87,8 +90,9 @@ export default function StatsPage() {
         setMilestoneMap(msMap);
       }
 
-      // 成長記録を並行取得
+      // 成長記録・体温記録を並行取得
       const growthMap: Record<string, GrowthRecord[]> = {};
+      const tempMap: Record<string, TemperatureRecord[]> = {};
       await Promise.all(
         children.map(async (child) => {
           try {
@@ -96,9 +100,15 @@ export default function StatsPage() {
           } catch {
             growthMap[child.id] = [];
           }
+          try {
+            tempMap[child.id] = await fetchTemperatureRecords(client, child.id);
+          } catch {
+            tempMap[child.id] = [];
+          }
         })
       );
       setGrowthRecords(growthMap);
+      setTemperatureRecords(tempMap);
 
       setLoading(false);
     }
@@ -176,6 +186,7 @@ export default function StatsPage() {
   // 成長タブ用
   const selectedChild = childrenList.find((c) => c.id === selectedChildId);
   const selectedGrowthRecords = growthRecords[selectedChildId] ?? [];
+  const selectedTempRecords = temperatureRecords[selectedChildId] ?? [];
   const hasGrowthData = selectedChild?.birth_date && selectedGrowthRecords.length > 0;
 
   if (loading) {
@@ -215,7 +226,7 @@ export default function StatsPage() {
         {(
           [
             { key: "logs", label: "記録" },
-            { key: "growth", label: "成長" },
+            { key: "growth", label: "からだの記録" },
           ] as const
         ).map((t) => (
           <button
@@ -273,20 +284,26 @@ export default function StatsPage() {
         </>
       )}
 
-      {/* 成長タブ */}
+      {/* からだの記録タブ */}
       {statsTab === "growth" && (
-        <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-          {hasGrowthData ? (
-            <GrowthChart
-              records={selectedGrowthRecords}
-              birthDate={selectedChild!.birth_date!}
-              gender={(selectedChild!.gender as Gender) ?? null}
-            />
-          ) : (
-            <p className="py-12 text-center text-sm text-muted-foreground">
-              家族画面からお子さまの成長記録を追加すると、成長曲線が表示されます。
-            </p>
-          )}
+        <div className="space-y-5">
+          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+            {hasGrowthData ? (
+              <GrowthChart
+                records={selectedGrowthRecords}
+                birthDate={selectedChild!.birth_date!}
+                gender={(selectedChild!.gender as Gender) ?? null}
+              />
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                家族画面からお子さまの成長記録を追加すると、成長曲線が表示されます。
+              </p>
+            )}
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+            <TemperatureChart records={selectedTempRecords} />
+          </div>
         </div>
       )}
     </div>

@@ -339,6 +339,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      temperature_records: {
+        Row: {
+          id: string;
+          child_id: string;
+          measured_at: string;
+          temperature: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          child_id: string;
+          measured_at: string;
+          temperature: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          child_id?: string;
+          measured_at?: string;
+          temperature?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       report_preferences: {
         Row: {
           id: string;

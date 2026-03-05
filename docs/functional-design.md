@@ -43,6 +43,7 @@ erDiagram
     children ||--o{ weekly_reports : "has many"
     children ||--o{ monthly_reports : "has many"
     children ||--o{ growth_records : "has many"
+    children ||--o{ temperature_records : "has many"
     children ||--o{ milestones : "has many"
     daily_logs ||--o{ log_reactions : "has many"
     daily_logs ||--o{ log_comments : "has many"
@@ -133,6 +134,15 @@ erDiagram
         date measured_date
         numeric height_cm
         numeric weight_kg
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    temperature_records {
+        uuid id PK
+        uuid child_id FK
+        timestamptz measured_at
+        numeric temperature
         timestamptz created_at
         timestamptz updated_at
     }
@@ -264,6 +274,21 @@ erDiagram
 - インデックス: (child_id, measured_date)
 - RLS: children 経由で family_id = my_family_id()
 
+#### temperature_records
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| child_id | uuid | NOT NULL | | FK → children（ON DELETE CASCADE） |
+| measured_at | timestamptz | NOT NULL | | 計測日時 |
+| temperature | numeric(3,1) | NOT NULL | | 体温（℃） |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- CHECK制約: temperature >= 34.0 AND temperature <= 42.0
+- インデックス: (child_id, measured_at)
+- RLS: children 経由で family_id = my_family_id()
+
 #### milestones
 
 | カラム | 型 | NULL | デフォルト | 備考 |
@@ -345,6 +370,15 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 | INSERT | insert_family_growth | children JOIN で family_id = my_family_id() |
 | UPDATE | update_family_growth | children JOIN で family_id = my_family_id() |
 | DELETE | delete_family_growth | children JOIN で family_id = my_family_id() |
+
+### temperature_records
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_temperature | children JOIN で family_id = my_family_id() |
+| INSERT | insert_family_temperature | children JOIN で family_id = my_family_id() |
+| UPDATE | update_family_temperature | children JOIN で family_id = my_family_id() |
+| DELETE | delete_family_temperature | children JOIN で family_id = my_family_id() |
 
 ### milestones
 
