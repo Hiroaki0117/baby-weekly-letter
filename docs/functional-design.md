@@ -45,6 +45,7 @@ erDiagram
     children ||--o{ growth_records : "has many"
     children ||--o{ milestones : "has many"
     daily_logs ||--o{ log_reactions : "has many"
+    daily_logs ||--o{ log_comments : "has many"
     daily_logs ||--o{ milestones : "has many"
     daily_logs }o--o| weekly_reports : "source_log_ids"
 
@@ -115,6 +116,15 @@ erDiagram
         uuid user_id FK
         text emoji
         timestamptz created_at
+    }
+
+    log_comments {
+        uuid id PK
+        uuid log_id FK
+        uuid user_id FK
+        text text
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     growth_records {
@@ -224,6 +234,21 @@ erDiagram
 - ユニーク制約: (log_id, user_id, emoji)
 - RLS: 家族スコープ（daily_logs 経由で family_id を参照）
 
+#### log_comments
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| log_id | uuid | NOT NULL | | FK → daily_logs（ON DELETE CASCADE） |
+| user_id | uuid | NOT NULL | | FK → auth.users |
+| text | text | NOT NULL | | コメント本文（1〜100文字） |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- CHECK制約: char_length(text) <= 100, char_length(trim(text)) > 0
+- RLS: 家族スコープ（daily_logs 経由で family_id を参照）
+- トリガー: updated_at 自動更新
+
 #### growth_records
 
 | カラム | 型 | NULL | デフォルト | 備考 |
@@ -302,6 +327,15 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 | SELECT | select_family_reactions | daily_logs JOIN で family_id = my_family_id() |
 | INSERT | insert_own_reactions | user_id = auth.uid() AND daily_logs JOIN で family_id = my_family_id() |
 | DELETE | delete_own_reactions | user_id = auth.uid() |
+
+### log_comments
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_comments | daily_logs JOIN で family_id = my_family_id() |
+| INSERT | insert_own_comment | user_id = auth.uid() AND daily_logs JOIN で family_id = my_family_id() |
+| UPDATE | update_own_comment | user_id = auth.uid() |
+| DELETE | delete_own_comment | user_id = auth.uid() |
 
 ### growth_records
 
@@ -685,6 +719,8 @@ app/
 | LogFilter | `log/` | ログ絞り込み（気分・カテゴリ・テキスト・子供） |
 | LogsTabs | `log/` | 記録一覧のタブ切り替え（ログ・週次・月次） |
 | ReactionBar | `log/` | スタンプリアクション表示・トグル操作 |
+| CommentSection | `log/` | コメント一覧 + 入力欄 |
+| CommentItem | `log/` | 個別コメント表示・編集・削除 |
 | AuthorBadge | `log/` | 記録者の表示名バッジ |
 | ChildSelector | `child/` | 子供選択（複数子供時にフォーム上部に表示） |
 | ChildBadge | `child/` | 子供名バッジ（記録カードに表示） |
@@ -703,7 +739,7 @@ app/
 | MilestoneTimeline | `stats/` | マイルストーン時系列タイムライン |
 | MemoriesSection | `memory/` | ○年前の今日セクション |
 | MemoryCard | `memory/` | 過去の記録カード |
-| ReactionNotice | `home/` | リアクション新着通知 |
+| ReactionNotice | `home/` | リアクション・コメント新着通知 |
 | InviteLink | `family/` | 招待リンク生成・共有 |
 | MemberList | `family/` | 家族メンバー一覧 |
 | ExportLayout | `export/` | エクスポート用専用レイアウト |
@@ -858,15 +894,16 @@ AI生成の週次通信をユーザーの好みに合わせてカスタマイズ
 - **AI抽出ロジック**: 週次通信生成プロンプトに「初めて」系イベントの検出を追加。検出結果を自動保存
 - **手動操作**: ユーザーがマイルストーンの編集・削除可能
 
-### 10.4 家族コメント（優先度4）
+### 10.4 家族コメント ✅ 実装済み（v3.4）
 
 リアクション（スタンプ）に加えて、短文コメントを残せる機能。
 
-- **コメント仕様**: 1コメントあたり最大100文字程度の短文
-- **データモデル**: `log_comments` テーブル（log_id, user_id, text, created_at）
-- **表示**: LogCard のリアクションバー下部にコメント一覧を表示
-- **操作**: コメント入力フィールド + 送信ボタン。自分のコメントは削除可能
-- **通知**: 既存のリアクション通知と統合
+- **コメント仕様**: 1コメントあたり最大100文字の短文。Zodバリデーション + DB CHECK制約
+- **データモデル**: `log_comments` テーブル（log_id, user_id, text, created_at, updated_at）。ON DELETE CASCADE
+- **表示**: LogCard のリアクションバー下部にコメント一覧をインライン表示
+- **操作**: コメント入力フィールド + 送信ボタン。自分のコメントは編集・削除可能（三点メニュー）
+- **楽観的UI**: 追加・編集・削除すべて楽観的更新。エラー時はロールバック
+- **通知**: リアクション通知と統合。ホーム画面に「○件のリアクション・○件のコメント」表示。localStorage で `lastCommentCheckedAt` を管理
 
 ### 10.5 記録リマインダー（優先度5）
 
