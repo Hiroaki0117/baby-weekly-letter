@@ -23,21 +23,22 @@ const PERIOD_TABS = [
   { label: "1ヶ月", days: 30 },
 ] as const;
 
-// 39℃以上を圧縮する変換（3℃分 → 0.5℃分の高さ）
+// 39℃以上を圧縮する変換（1℃ステップ → 0.5単位の高さ）
 function compressTemp(t: number): number {
   if (t <= 39) return t;
-  return 39 + (t - 39) / 6;
+  return 39 + (t - 39) / 2;
 }
 
 function decompressTemp(t: number): number {
   if (t <= 39) return t;
-  return Math.round((39 + (t - 39) * 6) * 10) / 10;
+  return 39 + (t - 39) * 2;
 }
 
-// 変換後のtick位置 → 実際の℃ラベル
+// 変換後のtick位置（すべて0.5刻みで等間隔）
+// 35〜39: 実値そのまま（0.5℃刻み）
+// 39.5=40℃, 40=41℃, 40.5=42℃
 const Y_TICKS = [
-  35, 35.5, 36, 36.5, 37, 37.5, 38, 38.5, 39,
-  compressTemp(40), compressTemp(41), compressTemp(42),
+  35, 35.5, 36, 36.5, 37, 37.5, 38, 38.5, 39, 39.5, 40, 40.5,
 ];
 
 type ChartDataPoint = {
