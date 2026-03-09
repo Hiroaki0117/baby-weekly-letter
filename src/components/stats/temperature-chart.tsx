@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { startOfWeek, addWeeks, addDays, isAfter, format } from "date-fns";
 import {
   ResponsiveContainer,
   LineChart,
@@ -16,12 +17,7 @@ import type { TemperatureRecord } from "@/types";
 
 const TEMP_COLOR = "#fb923c"; // orange-400
 const FEVER_LINE = 37.5;
-
-const PERIOD_TABS = [
-  { label: "1週間", days: 7 },
-  { label: "2週間", days: 14 },
-  { label: "1ヶ月", days: 30 },
-] as const;
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 // 39℃以上を圧縮する変換（1℃ステップ → 0.5単位の高さ）
 function compressTemp(t: number): number {
@@ -35,11 +31,18 @@ function decompressTemp(t: number): number {
 }
 
 // 変換後のtick位置（すべて0.5刻みで等間隔）
-// 35〜39: 実値そのまま（0.5℃刻み）
-// 39.5=40℃, 40=41℃, 40.5=42℃
 const Y_TICKS = [
   35, 35.5, 36, 36.5, 37, 37.5, 38, 38.5, 39, 39.5, 40, 40.5,
 ];
+
+function getMonday(date: Date): Date {
+  return startOfWeek(date, { weekStartsOn: 1 });
+}
+
+function formatWeekLabel(weekStart: Date): string {
+  const weekEnd = addDays(weekStart, 6);
+  return `${format(weekStart, "yyyy年M月d日")}〜${format(weekEnd, "M月d日")}`;
+}
 
 type ChartDataPoint = {
   label: string;
@@ -81,54 +84,69 @@ type Props = {
 };
 
 export function TemperatureChart({ records }: Props) {
-  const [periodDays, setPeriodDays] = useState(7);
-  const [now] = useState(() => Date.now());
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+
+  const currentMonday = getMonday(new Date());
+  const canGoNext = !isAfter(addWeeks(weekStart, 1), currentMonday);
 
   const data = useMemo(() => {
-    const cutoff = now - periodDays * 24 * 60 * 60 * 1000;
+    const start = weekStart.getTime();
+    const end = addDays(weekStart, 7).getTime();
 
     return records
-      .filter((r) => new Date(r.measured_at).getTime() >= cutoff)
+      .filter((r) => {
+        const t = new Date(r.measured_at).getTime();
+        return t >= start && t < end;
+      })
       .map((r) => {
         const d = new Date(r.measured_at);
         return {
-          label: `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`,
+          label: `${WEEKDAYS[d.getDay()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`,
           timestamp: d.getTime(),
           temperature: compressTemp(r.temperature),
           displayTemp: r.temperature,
         };
       })
       .sort((a, b) => a.timestamp - b.timestamp);
-  }, [records, periodDays, now]);
+  }, [records, weekStart]);
 
   const yDomain = [35, compressTemp(42)] as const;
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">体温の推移</h3>
-        <div className="flex gap-1">
-          {PERIOD_TABS.map((tab) => (
-            <button
-              key={tab.days}
-              type="button"
-              onClick={() => setPeriodDays(tab.days)}
-              className={cn(
-                "rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                periodDays === tab.days
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* 週ナビゲーション */}
+        <div className="flex h-8 items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setWeekStart((prev) => addWeeks(prev, -1))}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            ‹
+          </button>
+          <span className="text-sm font-semibold text-foreground">
+            {formatWeekLabel(weekStart)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setWeekStart((prev) => addWeeks(prev, 1))}
+            disabled={!canGoNext}
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors",
+              canGoNext
+                ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "text-muted-foreground/30 cursor-not-allowed"
+            )}
+          >
+            ›
+          </button>
         </div>
       </div>
 
       {data.length === 0 ? (
         <p className="py-8 text-center text-xs text-muted-foreground">
-          この期間の体温記録がありません
+          この週の体温記録がありません
         </p>
       ) : (
         <div className="h-[28rem]">
