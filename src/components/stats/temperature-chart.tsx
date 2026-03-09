@@ -110,7 +110,7 @@ export function TemperatureChart({ records }: Props) {
           この期間の体温記録がありません
         </p>
       ) : (
-        <div className="h-80">
+        <div className="h-[28rem]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid
