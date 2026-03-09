@@ -1,5 +1,6 @@
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { NotificationPrompt } from "@/components/notification/notification-prompt";
 
 export default function MainLayout({
   children,
@@ -13,6 +14,7 @@ export default function MainLayout({
         {children}
       </main>
       <BottomNav />
+      <NotificationPrompt />
     </div>
   );
 }

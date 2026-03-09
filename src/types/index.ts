@@ -34,6 +34,12 @@ export type Milestone = Database["public"]["Tables"]["milestones"]["Row"];
 export type MilestoneInsert = Database["public"]["Tables"]["milestones"]["Insert"];
 export type MilestoneUpdate = Database["public"]["Tables"]["milestones"]["Update"];
 
+export type PushSubscriptionRecord = Database["public"]["Tables"]["push_subscriptions"]["Row"];
+export type PushSubscriptionInsert = Database["public"]["Tables"]["push_subscriptions"]["Insert"];
+
+export type NotificationSettings = Database["public"]["Tables"]["notification_settings"]["Row"];
+export type NotificationSettingsInsert = Database["public"]["Tables"]["notification_settings"]["Insert"];
+
 export type Gender = "male" | "female";
 
 export type ReportTone = "warm" | "humor" | "neutral" | "poetic";

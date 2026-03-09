@@ -9,6 +9,14 @@ import {
   profileFormSchema,
   type ProfileFormValues,
 } from "@/schemas/profile";
+import {
+  getNotificationSettings,
+  upsertNotificationSettings,
+  savePushSubscription,
+  deletePushSubscription,
+} from "@/lib/push-subscription";
+import { getMyFamilyId } from "@/lib/supabase/family";
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from "@/lib/vapid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -17,6 +25,9 @@ export default function SettingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [togglingReminder, setTogglingReminder] = useState(false);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -33,6 +44,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const client = supabaseRef.current;
+
+    const supported =
+      typeof window !== "undefined" &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window &&
+      !!VAPID_PUBLIC_KEY;
+    setPushSupported(supported);
+
     async function load() {
       const {
         data: { user },
@@ -50,6 +70,11 @@ export default function SettingsPage() {
           display_name:
             (profile as { display_name: string | null }).display_name ?? "",
         });
+      }
+
+      if (supported) {
+        const settings = await getNotificationSettings(client);
+        setReminderEnabled(settings?.reminder_enabled ?? false);
       }
 
       setLoading(false);
@@ -88,6 +113,56 @@ export default function SettingsPage() {
       });
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function handleToggleReminder() {
+    setTogglingReminder(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const newEnabled = !reminderEnabled;
+
+      if (newEnabled) {
+        // ONにする場合: 通知許可 → Subscription保存
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          toast.error("ブラウザの通知が許可されていません");
+          return;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+
+        const familyId = await getMyFamilyId(supabase);
+        if (!familyId) return;
+
+        await savePushSubscription(supabase, subscription, user.id, familyId);
+      } else {
+        // OFFにする場合: Subscription削除
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          await deletePushSubscription(supabase, subscription.endpoint);
+          await subscription.unsubscribe();
+        }
+      }
+
+      await upsertNotificationSettings(supabase, user.id, {
+        reminder_enabled: newEnabled,
+        prompt_shown: true,
+      });
+
+      setReminderEnabled(newEnabled);
+      toast.success(newEnabled ? "リマインダーをONにしました" : "リマインダーをOFFにしました");
+    } catch {
+      toast.error("設定の変更に失敗しました");
+    } finally {
+      setTogglingReminder(false);
     }
   }
 
@@ -153,6 +228,41 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* 通知設定 */}
+      {pushSupported && (
+        <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+          <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              通知
+            </p>
+          </div>
+          <div className="flex items-center justify-between p-5">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">記録リマインダー</p>
+              <p className="text-[11px] text-muted-foreground">
+                記録がない日の21時に通知します
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleToggleReminder}
+              disabled={togglingReminder}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out disabled:opacity-50 ${
+                reminderEnabled ? "bg-primary" : "bg-muted"
+              }`}
+              role="switch"
+              aria-checked={reminderEnabled}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${
+                  reminderEnabled ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ログアウト（モバイルのみ） */}
       <div className="md:hidden">
