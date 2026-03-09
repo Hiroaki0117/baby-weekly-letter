@@ -13,6 +13,7 @@ import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { MemoriesSection } from "@/components/memory/memories-section";
 import { ReactionNotice } from "@/components/home/reaction-notice";
+import { QuickTemperatureInput } from "@/components/temperature/quick-temperature-input";
 import { toast } from "sonner";
 import type { Child, DailyLog, Milestone } from "@/types";
 
@@ -425,6 +426,9 @@ export default function HomePage() {
 
       {/* ○年前の今日 */}
       <MemoriesSection childrenList={childrenList} />
+
+      {/* 体温クイック入力 */}
+      <QuickTemperatureInput childrenList={childrenList} />
 
       {/* ログフォーム */}
       <LogForm
