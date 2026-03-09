@@ -80,16 +80,7 @@ export function TemperatureChart({ records }: Props) {
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [records, periodDays, now]);
 
-  const yDomain = useMemo(() => {
-    if (data.length === 0) return [35, 40];
-    const temps = data.map((d) => d.temperature);
-    const min = Math.min(...temps);
-    const max = Math.max(...temps);
-    return [
-      Math.floor(Math.min(min, 35) * 2) / 2,
-      Math.ceil(Math.max(max, 38) * 2) / 2,
-    ];
-  }, [data]);
+  const yDomain = [35, 42] as const;
 
   return (
     <div className="space-y-3">
@@ -119,7 +110,7 @@ export function TemperatureChart({ records }: Props) {
           この期間の体温記録がありません
         </p>
       ) : (
-        <div className="h-64">
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid
