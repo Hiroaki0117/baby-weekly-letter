@@ -1,0 +1,16 @@
+name: Send Daily Reminders
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # UTC 12:00 = JST 21:00
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder endpoint
+        run: |
+          curl -X POST "${{ secrets.APP_URL }}/api/cron/send-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --fail --silent --show-error
