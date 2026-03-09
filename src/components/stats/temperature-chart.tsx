@@ -31,7 +31,7 @@ function compressTemp(t: number): number {
 
 function decompressTemp(t: number): number {
   if (t <= 39) return t;
-  return 39 + (t - 39) * 6;
+  return Math.round((39 + (t - 39) * 6) * 10) / 10;
 }
 
 // 変換後のtick位置 → 実際の℃ラベル
