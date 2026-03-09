@@ -1,0 +1,11 @@
+{
+  "name": "すくすく日記",
+  "short_name": "すくすく日記",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

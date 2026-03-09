@@ -45,6 +45,7 @@ erDiagram
     children ||--o{ growth_records : "has many"
     children ||--o{ temperature_records : "has many"
     children ||--o{ milestones : "has many"
+    families ||--o{ push_subscriptions : "has many"
     daily_logs ||--o{ log_reactions : "has many"
     daily_logs ||--o{ log_comments : "has many"
     daily_logs ||--o{ milestones : "has many"
@@ -143,6 +144,26 @@ erDiagram
         uuid child_id FK
         timestamptz measured_at
         numeric temperature
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    push_subscriptions {
+        uuid id PK
+        uuid user_id FK
+        uuid family_id FK
+        text endpoint
+        text p256dh
+        text auth
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    notification_settings {
+        uuid id PK
+        uuid user_id FK
+        boolean reminder_enabled
+        boolean prompt_shown
         timestamptz created_at
         timestamptz updated_at
     }
@@ -289,6 +310,36 @@ erDiagram
 - インデックス: (child_id, measured_at)
 - RLS: children 経由で family_id = my_family_id()
 
+#### push_subscriptions
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| user_id | uuid | NOT NULL | | FK → auth.users（ON DELETE CASCADE） |
+| family_id | uuid | NOT NULL | | FK → families（ON DELETE CASCADE） |
+| endpoint | text | NOT NULL | | Push Subscription endpoint（UNIQUE） |
+| p256dh | text | NOT NULL | | 公開鍵 |
+| auth | text | NOT NULL | | 認証シークレット |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- UNIQUE制約: endpoint
+- RLS: user_id = auth.uid()
+
+#### notification_settings
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| user_id | uuid | NOT NULL | | FK → auth.users（ON DELETE CASCADE, UNIQUE） |
+| reminder_enabled | boolean | NOT NULL | false | リマインダーON/OFF |
+| prompt_shown | boolean | NOT NULL | false | ダイアログ表示済みフラグ |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- UNIQUE制約: user_id
+- RLS: user_id = auth.uid()
+
 #### milestones
 
 | カラム | 型 | NULL | デフォルト | 備考 |
@@ -388,6 +439,18 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 | INSERT | insert_family_milestones | children JOIN で family_id = my_family_id() |
 | UPDATE | update_family_milestones | children JOIN で family_id = my_family_id() |
 | DELETE | delete_family_milestones | children JOIN で family_id = my_family_id() |
+
+### push_subscriptions
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| ALL | 自分の購読を管理 | user_id = auth.uid() |
+
+### notification_settings
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| ALL | 自分の設定を管理 | user_id = auth.uid() |
 
 ### Storage (log-photos バケット)
 
