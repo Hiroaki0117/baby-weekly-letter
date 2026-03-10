@@ -1,6 +1,6 @@
 "use client";
 
-export type LogsTab = "logs" | "weekly" | "monthly" | "report-settings";
+export type LogsTab = "logs" | "weekly" | "monthly" | "annual" | "report-settings";
 
 type TopCategory = "records" | "reports";
 
@@ -10,8 +10,9 @@ type LogsTabsProps = {
 };
 
 const reportTabs: { key: LogsTab; label: string; icon: string }[] = [
-  { key: "weekly", label: "週次通信", icon: "✉" },
-  { key: "monthly", label: "月次まとめ", icon: "📖" },
+  { key: "weekly", label: "週次", icon: "✉" },
+  { key: "monthly", label: "月次", icon: "📖" },
+  { key: "annual", label: "年次", icon: "📚" },
   { key: "report-settings", label: "設定", icon: "⚙" },
 ];
 
