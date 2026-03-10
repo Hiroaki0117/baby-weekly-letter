@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { MoodSelector } from "./mood-selector";
 import { CategoryPicker } from "./category-picker";
 import { PhotoUploader } from "./photo-uploader";
+import { VoiceInputButton } from "./voice-input-button";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
 import type { Child, DailyLog, Mood } from "@/types";
@@ -65,6 +66,15 @@ export function LogForm({
   const childId = watch("child_id");
   const mood = watch("mood");
   const categories = watch("categories");
+  const currentText = watch("text");
+
+  const handleVoiceTranscript = useCallback(
+    (text: string) => {
+      const current = currentText ?? "";
+      setValue("text", current + text, { shouldValidate: true });
+    },
+    [currentText, setValue],
+  );
 
   // childrenList が非同期で読み込まれた後に child_id をセットする
   useEffect(() => {
@@ -231,12 +241,18 @@ export function LogForm({
           >
             今日の出来事
           </Label>
-          <Textarea
-            id="text"
-            placeholder="今日あったことや気持ちを自由に書いてください..."
-            {...register("text")}
-            className="resize-none border-border/60 bg-background/60 leading-8 focus:border-primary/50 h-[6rem] sm:h-[10rem] sm:notebook-lines"
-          />
+          <div className="relative">
+            <Textarea
+              id="text"
+              placeholder="今日あったことや気持ちを自由に書いてください..."
+              {...register("text")}
+              className="resize-none border-border/60 bg-background/60 pr-10 leading-8 focus:border-primary/50 h-[6rem] sm:h-[10rem] sm:notebook-lines"
+            />
+            <VoiceInputButton
+              onTranscript={handleVoiceTranscript}
+              disabled={saving}
+            />
+          </div>
           {errors.text && (
             <p className="text-xs text-destructive">{errors.text.message}</p>
           )}
