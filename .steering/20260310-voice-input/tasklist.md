@@ -4,7 +4,7 @@
 
 ### 1. カスタムフック作成
 
-- [ ] `src/hooks/use-speech-recognition.ts` を作成
+- [x] `src/hooks/use-speech-recognition.ts` を作成
   - Web Speech API の型定義（`window.SpeechRecognition` / `window.webkitSpeechRecognition`）
   - `isSupported` 判定ロジック
   - `start` / `stop` / `onresult` / `onerror` / `onend` のハンドリング
@@ -13,7 +13,7 @@
 
 ### 2. マイクボタンコンポーネント作成
 
-- [ ] `src/components/log/voice-input-button.tsx` を作成
+- [x] `src/components/log/voice-input-button.tsx` を作成
   - `useSpeechRecognition` フックを使用
   - 通常時: `Mic` アイコンボタン
   - 録音中: 赤色背景 + パルスアニメーション + `MicOff` アイコン
@@ -22,7 +22,7 @@
 
 ### 3. LogForm への統合
 
-- [ ] `src/components/log/log-form.tsx` を変更
+- [x] `src/components/log/log-form.tsx` を変更
   - テキスト入力欄を `relative` ラッパーで囲む
   - 右端に `VoiceInputButton` を絶対配置
   - `onTranscript` コールバックで `setValue("text", ...)` により末尾追記
@@ -30,13 +30,13 @@
 
 ### 4. テスト
 
-- [ ] `__tests__/hooks/use-speech-recognition.test.ts` を作成
+- [x] `__tests__/hooks/use-speech-recognition.test.ts` を作成
   - `isSupported` 判定のテスト（`window.SpeechRecognition` の有無）
   - Web Speech API 非対応時の挙動テスト
 
 ### 5. 品質チェック・デプロイ
 
-- [ ] `pnpm lint` 通過
-- [ ] `pnpm type-check` 通過
-- [ ] `pnpm test` 通過
-- [ ] commit & push
+- [x] `pnpm lint` 通過
+- [x] `pnpm type-check` 通過
+- [x] `pnpm test` 通過
+- [x] commit & push
