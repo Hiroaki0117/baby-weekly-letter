@@ -313,27 +313,39 @@ export interface Database {
         Row: {
           id: string;
           child_id: string;
-          daily_log_id: string;
+          daily_log_id: string | null;
           title: string;
           milestone_date: string;
+          category: string;
+          memo: string | null;
+          source: string;
+          weekly_report_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           child_id: string;
-          daily_log_id: string;
+          daily_log_id?: string | null;
           title: string;
           milestone_date: string;
+          category?: string;
+          memo?: string | null;
+          source?: string;
+          weekly_report_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           child_id?: string;
-          daily_log_id?: string;
+          daily_log_id?: string | null;
           title?: string;
           milestone_date?: string;
+          category?: string;
+          memo?: string | null;
+          source?: string;
+          weekly_report_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -474,6 +486,36 @@ export interface Database {
           display_name?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      annual_reports: {
+        Row: {
+          id: string;
+          family_id: string;
+          child_id: string;
+          fiscal_year: number;
+          content: Json;
+          generated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          family_id: string;
+          child_id: string;
+          fiscal_year: number;
+          content: Json;
+          generated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          family_id?: string;
+          child_id?: string;
+          fiscal_year?: number;
+          content?: Json;
+          generated_at?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

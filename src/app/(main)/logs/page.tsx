@@ -15,12 +15,15 @@ import { LogsTabs, type LogsTab } from "@/components/log/logs-tabs";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
 import { UngeneratedWeekCard } from "@/components/weekly/ungenerated-week-card";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
+import { AnnualReportCard } from "@/components/annual/annual-report-card";
+import { AnnualAlbumView } from "@/components/annual/annual-album-view";
 import { ChildSelector } from "@/components/child/child-selector";
 import { ReportPreferencesForm } from "@/components/settings/report-preferences-form";
+import { canGenerate, isInCooldown } from "@/lib/annual-report/data";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { startOfWeek, endOfWeek } from "date-fns";
-import type { Child, DailyLog, Milestone, Mood, WeeklyReport, MonthlyReport } from "@/types";
+import type { Child, DailyLog, Milestone, Mood, WeeklyReport, MonthlyReport, AnnualReport } from "@/types";
 
 export default function LogsPage() {
   return (
@@ -40,7 +43,7 @@ export default function LogsPage() {
 function LogsPageInner() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as LogsTab) ?? "logs";
-  const validTab = ["logs", "weekly", "monthly", "report-settings"].includes(initialTab)
+  const validTab = ["logs", "weekly", "monthly", "annual", "report-settings"].includes(initialTab)
     ? initialTab
     : "logs";
 
@@ -69,6 +72,8 @@ function LogsPageInner() {
   // 通信タブ状態
   const [reports, setReports] = useState<WeeklyReport[]>([]);
   const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
+  const [annualReports, setAnnualReports] = useState<AnnualReport[]>([]);
+  const [viewingAnnual, setViewingAnnual] = useState<AnnualReport | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [generating, setGenerating] = useState(false);
 
@@ -154,7 +159,7 @@ function LogsPageInner() {
   useEffect(() => {
     const client = supabaseRef.current;
     async function load() {
-      const [logsRes, membersRes, childrenRes, weeklyRes, monthlyRes, userRes] =
+      const [logsRes, membersRes, childrenRes, weeklyRes, monthlyRes, annualRes, userRes] =
         await Promise.all([
           client
             .from("daily_logs")
@@ -174,6 +179,10 @@ function LogsPageInner() {
             .from("monthly_reports")
             .select("*")
             .order("month", { ascending: false }),
+          client
+            .from("annual_reports")
+            .select("*")
+            .order("fiscal_year", { ascending: false }),
           client.auth.getUser(),
         ]);
 
@@ -208,6 +217,9 @@ function LogsPageInner() {
       }
       if (!monthlyRes.error) {
         setMonthlyReports((monthlyRes.data as MonthlyReport[]) ?? []);
+      }
+      if (!annualRes.error) {
+        setAnnualReports((annualRes.data as AnnualReport[]) ?? []);
       }
 
       // リアクション・マイルストーン取得
@@ -494,6 +506,36 @@ function LogsPageInner() {
     }
   }
 
+  async function handleGenerateAnnual(fiscalYear: number) {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/annual-report/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fiscalYear, childId: selectedChildId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "生成に失敗しました");
+        return;
+      }
+      toast.success("年次アルバムを生成しました");
+      const newReport = data as AnnualReport;
+      setAnnualReports((prev) => {
+        const filtered = prev.filter(
+          (r) =>
+            !(r.child_id === newReport.child_id && r.fiscal_year === newReport.fiscal_year),
+        );
+        return [newReport, ...filtered];
+      });
+      setViewingAnnual(newReport);
+    } catch {
+      toast.error("生成に失敗しました。再度お試しください");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   // 選択中の子供でフィルター
   const filteredReports = selectedChildId
     ? reports.filter((r) => r.child_id === selectedChildId)
@@ -501,6 +543,9 @@ function LogsPageInner() {
   const filteredMonthlyReports = selectedChildId
     ? monthlyReports.filter((r) => r.child_id === selectedChildId)
     : monthlyReports;
+  const filteredAnnualReports = selectedChildId
+    ? annualReports.filter((r) => r.child_id === selectedChildId)
+    : annualReports;
 
   // 未生成週の算出: ログがある週のうち、通信が未生成の週を抽出
   const ungeneratedWeeks = useMemo(() => {
@@ -540,6 +585,7 @@ function LogsPageInner() {
     logs: { en: "All Records", ja: "記録一覧" },
     weekly: { en: "Weekly Letters", ja: "週次通信" },
     monthly: { en: "Monthly Essays", ja: "月次まとめ" },
+    annual: { en: "Annual Album", ja: "年次アルバム" },
     "report-settings": { en: "Report Settings", ja: "通信設定" },
   };
 
@@ -614,8 +660,8 @@ function LogsPageInner() {
       {/* タブ切替 */}
       <LogsTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* 通信タブ（週次・月次）: 子供セレクター */}
-      {(activeTab === "weekly" || activeTab === "monthly") &&
+      {/* 通信タブ（週次・月次・年次）: 子供セレクター */}
+      {(activeTab === "weekly" || activeTab === "monthly" || activeTab === "annual") &&
         childrenList.length >= 2 && (
           <ChildSelector
             childrenList={childrenList}
@@ -818,8 +864,129 @@ function LogsPageInner() {
         </>
       )}
 
+      {/* ===== 年次アルバムタブ ===== */}
+      {activeTab === "annual" && (
+        <>
+          {viewingAnnual ? (
+            <AnnualAlbumView
+              report={viewingAnnual}
+              onBack={() => setViewingAnnual(null)}
+            />
+          ) : (
+            <AnnualTabContent
+              reports={filteredAnnualReports}
+              generating={generating}
+              onGenerate={handleGenerateAnnual}
+              onView={setViewingAnnual}
+            />
+          )}
+        </>
+      )}
+
       {/* ===== 通信設定タブ ===== */}
       {activeTab === "report-settings" && <ReportPreferencesForm />}
+    </div>
+  );
+}
+
+/** 年次タブのコンテンツ（一覧 + 生成ボタン） */
+function AnnualTabContent({
+  reports,
+  generating,
+  onGenerate,
+  onView,
+}: {
+  reports: AnnualReport[];
+  generating: boolean;
+  onGenerate: (fiscalYear: number) => void;
+  onView: (report: AnnualReport) => void;
+}) {
+  const now = new Date();
+  // 現在の年度を算出（4月始まり）
+  const currentFiscalYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  // 生成可能な最新年度（3月以降なら当年度）
+  const latestGeneratable = canGenerate(currentFiscalYear) ? currentFiscalYear : currentFiscalYear - 1;
+
+  // 既に生成済みの年度
+  const generatedYears = new Set(reports.map((r) => r.fiscal_year));
+
+  // 生成可能だが未生成の年度を提案（最新1年度のみ）
+  const suggestedYear =
+    latestGeneratable >= 2020 && !generatedYears.has(latestGeneratable)
+      ? latestGeneratable
+      : null;
+
+  return (
+    <div className="space-y-4">
+      {/* 生成ボタン */}
+      {suggestedYear !== null && (
+        <button
+          onClick={() => onGenerate(suggestedYear)}
+          disabled={generating}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 py-6 text-sm font-medium text-primary transition-all hover:border-primary/60 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {generating ? (
+            <>
+              <span className="h-4 w-4 rounded-full border-2 border-primary/40 border-t-primary animate-spin" />
+              生成中...（数十秒かかります）
+            </>
+          ) : (
+            <>
+              <span className="text-lg">📚</span>
+              {suggestedYear}年度のアルバムを作る
+            </>
+          )}
+        </button>
+      )}
+
+      {/* 既に生成済みの年度で再生成可能なものも表示 */}
+      {reports.length > 0 && reports.some((r) => !isInCooldown(r.generated_at)) && suggestedYear === null && (
+        <button
+          onClick={() => {
+            const target = reports.find((r) => !isInCooldown(r.generated_at));
+            if (target) onGenerate(target.fiscal_year);
+          }}
+          disabled={generating}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-card py-3 text-xs text-muted-foreground transition-all hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {generating ? (
+            <>
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/40 border-t-primary animate-spin" />
+              再生成中...
+            </>
+          ) : (
+            "最新のアルバムを再生成する"
+          )}
+        </button>
+      )}
+
+      {/* 生成済みアルバム一覧 */}
+      {reports.length === 0 && suggestedYear === null ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
+            <div className="h-2.5 w-full bg-gradient-to-r from-amber-500/60 via-amber-400/40 to-amber-300/20 absolute inset-x-0 top-0" />
+            <span className="mt-2 text-3xl">📚</span>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              まだ年次アルバムがありません
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              年度末（3月）以降にアルバムを生成できます
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {reports.map((report) => (
+            <AnnualReportCard
+              key={report.id}
+              report={report}
+              onView={onView}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

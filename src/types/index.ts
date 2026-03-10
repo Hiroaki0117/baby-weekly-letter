@@ -82,6 +82,38 @@ export type MonthlyReport =
 export type MonthlyReportInsert =
   Database["public"]["Tables"]["monthly_reports"]["Insert"];
 
+export type AnnualReportContent = {
+  coverTitle: string;
+  childAge: string;
+  monthHighlights: {
+    month: number;
+    text: string;
+    photoPath: string | null;
+  }[];
+  milestones: {
+    title: string;
+    date: string;
+    category: string;
+  }[];
+  growthSummary: {
+    startHeight: number | null;
+    endHeight: number | null;
+    startWeight: number | null;
+    endWeight: number | null;
+  } | null;
+  closingMessage: string;
+};
+
+export type AnnualReport = {
+  id: string;
+  family_id: string;
+  child_id: string;
+  fiscal_year: number;
+  content: AnnualReportContent;
+  generated_at: string;
+  created_at: string;
+};
+
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
 export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
