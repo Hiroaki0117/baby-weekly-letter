@@ -71,6 +71,9 @@ export function QuickMealInput({ childrenList }: Props) {
             return (
               <div key={child.id} className="space-y-2">
                 <span className="text-sm text-foreground">{child.name}</span>
+                <p className="text-xs font-medium tracking-wider text-muted-foreground">
+                  食事の種類
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {MEAL_TYPE_OPTIONS.map((opt) => (
                     <button
@@ -92,6 +95,9 @@ export function QuickMealInput({ childrenList }: Props) {
                     </button>
                   ))}
                 </div>
+                <p className="text-xs font-medium tracking-wider text-muted-foreground">
+                  量
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {MEAL_AMOUNT_OPTIONS.map((opt) => (
                     <button
