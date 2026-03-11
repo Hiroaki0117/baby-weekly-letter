@@ -5,13 +5,12 @@ import { format, subDays } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { addSleepRecord, buildTimestamps, calcDurationMinutes } from "@/lib/sleep";
 import { toast } from "sonner";
+import { ChildSelector } from "@/components/child/child-selector";
 import type { Child } from "@/types";
 
 type Props = {
   childrenList: Child[];
 };
-
-const STORAGE_KEY_PREFIX = "sleep_tracking_";
 
 type TrackingState = {
   childId: string;
@@ -66,6 +65,7 @@ function calcPreview(startTime: string, endTime: string): string {
 export function QuickSleepInput({ childrenList }: Props) {
   const [open, setOpen] = useState(false);
   const [tracking, setTracking] = useState<TrackingState | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState(childrenList[0]?.id ?? "");
   const [sleepDate, setSleepDate] = useState(getDefaultDate);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -81,6 +81,8 @@ export function QuickSleepInput({ childrenList }: Props) {
   }, []);
 
   if (childrenList.length === 0) return null;
+
+  const showSelector = childrenList.length >= 2;
 
   // 「寝た」ボタン
   function handleSleepStart(childId: string) {
@@ -283,23 +285,32 @@ export function QuickSleepInput({ childrenList }: Props) {
           {/* タイマー未使用時: 寝たボタン + 手入力 */}
           {!tracking && (
             <>
+              {/* 子供セレクタ（2人以上の場合） */}
+              {showSelector && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium tracking-wider text-muted-foreground">
+                    だれの記録？
+                  </p>
+                  <ChildSelector
+                    childrenList={childrenList}
+                    selectedId={selectedChildId}
+                    onChange={setSelectedChildId}
+                  />
+                </div>
+              )}
+
               {/* 寝たボタン */}
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wider text-muted-foreground">
                   タイマーで記録
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {childrenList.map((child) => (
-                    <button
-                      key={child.id}
-                      type="button"
-                      onClick={() => handleSleepStart(child.id)}
-                      className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
-                    >
-                      {child.name} が寝た
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSleepStart(selectedChildId)}
+                  className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                >
+                  {childrenList.find((c) => c.id === selectedChildId)?.name ?? ""} が寝た
+                </button>
               </div>
 
               {/* 手入力 */}
@@ -307,47 +318,44 @@ export function QuickSleepInput({ childrenList }: Props) {
                 <p className="text-xs font-medium tracking-wider text-muted-foreground">
                   手入力で記録
                 </p>
-                {childrenList.map((child) => (
-                  <div key={child.id} className="space-y-1.5">
-                    <span className="text-sm text-foreground">{child.name}</span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={sleepDate}
-                        onChange={(e) => setSleepDate(e.target.value)}
-                        className="w-32 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                      <span className="text-xs text-muted-foreground">→</span>
-                      <input
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                      {startTime && endTime && (
-                        <span className="text-xs font-medium text-foreground">
-                          {calcPreview(startTime, endTime)}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleManualRecord(child.id)}
-                        disabled={saving || !startTime || !endTime}
-                        className="ml-auto rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-                      >
-                        {saving ? "..." : "記録"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={sleepDate}
+                    onChange={(e) => setSleepDate(e.target.value)}
+                    className="w-32 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                  <span className="text-xs text-muted-foreground">→</span>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                  {startTime && endTime && (
+                    <span className="text-xs font-medium text-foreground">
+                      {calcPreview(startTime, endTime)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleManualRecord(selectedChildId)}
+                    disabled={saving || !startTime || !endTime}
+                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {saving ? "..." : "記録"}
+                  </button>
+                </div>
               </div>
             </>
           )}
