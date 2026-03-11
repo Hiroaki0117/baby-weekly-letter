@@ -45,6 +45,7 @@ erDiagram
     children ||--o{ growth_records : "has many"
     children ||--o{ temperature_records : "has many"
     children ||--o{ milestones : "has many"
+    children ||--o{ annual_reports : "has many"
     families ||--o{ push_subscriptions : "has many"
     daily_logs ||--o{ log_reactions : "has many"
     daily_logs ||--o{ log_comments : "has many"
@@ -180,6 +181,16 @@ erDiagram
         uuid weekly_report_id FK
         timestamptz created_at
         timestamptz updated_at
+    }
+
+    annual_reports {
+        uuid id PK
+        uuid family_id FK
+        uuid child_id FK
+        integer fiscal_year
+        jsonb content
+        timestamptz generated_at
+        timestamptz created_at
     }
 ```
 
@@ -359,6 +370,22 @@ erDiagram
 - インデックス: (child_id, milestone_date)
 - RLS: children 経由で family_id = my_family_id()
 
+#### annual_reports
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| family_id | uuid | NOT NULL | | FK → families |
+| child_id | uuid | NOT NULL | | FK → children |
+| fiscal_year | integer | NOT NULL | | 年度（例: 2025 = 2025年4月〜2026年3月） |
+| content | jsonb | NOT NULL | | AnnualReportContent（月ハイライト・総括等） |
+| generated_at | timestamptz | NOT NULL | now() | AI生成日時（クールダウン判定に使用） |
+| created_at | timestamptz | NOT NULL | now() | |
+
+- ユニーク制約: (family_id, child_id, fiscal_year)
+- インデックス: (child_id, fiscal_year)
+- RLS: children JOIN で family_id = my_family_id()
+
 ---
 
 ## 3. RLS（Row Level Security）ポリシー
@@ -439,6 +466,14 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 | INSERT | insert_family_milestones | children JOIN で family_id = my_family_id() |
 | UPDATE | update_family_milestones | children JOIN で family_id = my_family_id() |
 | DELETE | delete_family_milestones | children JOIN で family_id = my_family_id() |
+
+### annual_reports
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_annual | children JOIN で family_id = my_family_id() |
+| INSERT | insert_family_annual | family_id = my_family_id() |
+| UPDATE | update_family_annual | family_id = my_family_id() |
 
 ### push_subscriptions
 
