@@ -16,23 +16,40 @@ export function calcDurationMinutes(startedAt: string, endedAt: string): number 
 }
 
 /**
+ * ローカルタイムゾーンのオフセット文字列を返す（例: "+09:00", "-05:00"）
+ */
+function getLocalTzOffset(): string {
+  const offset = new Date().getTimezoneOffset(); // 分（UTCとの差、JSTなら -540）
+  const sign = offset <= 0 ? "+" : "-";
+  const abs = Math.abs(offset);
+  const h = String(Math.floor(abs / 60)).padStart(2, "0");
+  const m = String(abs % 60).padStart(2, "0");
+  return `${sign}${h}:${m}`;
+}
+
+/**
  * 時刻文字列（HH:mm）と日付から timestamptz 用の ISO 文字列を構築する。
  * 就寝時刻 > 起床時刻の場合、起床は翌日として扱う。
+ * ローカルタイムゾーンオフセットを付与して正しく timestamptz に格納されるようにする。
  */
 export function buildTimestamps(
   sleepDate: string,
   startTime: string,
   endTime: string,
 ): { startedAt: string; endedAt: string } {
-  const startedAt = `${sleepDate}T${startTime}:00`;
+  const tz = getLocalTzOffset();
   let endDate = sleepDate;
   if (endTime <= startTime) {
     // 日またぎ: 起床は翌日
-    const next = new Date(sleepDate);
+    const next = new Date(`${sleepDate}T00:00:00${tz}`);
     next.setDate(next.getDate() + 1);
-    endDate = next.toISOString().split("T")[0];
+    const y = next.getFullYear();
+    const mo = String(next.getMonth() + 1).padStart(2, "0");
+    const d = String(next.getDate()).padStart(2, "0");
+    endDate = `${y}-${mo}-${d}`;
   }
-  const endedAt = `${endDate}T${endTime}:00`;
+  const startedAt = `${sleepDate}T${startTime}:00${tz}`;
+  const endedAt = `${endDate}T${endTime}:00${tz}`;
   return { startedAt, endedAt };
 }
 
