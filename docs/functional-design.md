@@ -46,6 +46,8 @@ erDiagram
     children ||--o{ temperature_records : "has many"
     children ||--o{ milestones : "has many"
     children ||--o{ annual_reports : "has many"
+    children ||--o{ sleep_records : "has many"
+    children ||--o{ meal_records : "has many"
     families ||--o{ push_subscriptions : "has many"
     daily_logs ||--o{ log_reactions : "has many"
     daily_logs ||--o{ log_comments : "has many"
@@ -386,6 +388,40 @@ erDiagram
 - インデックス: (child_id, fiscal_year)
 - RLS: children JOIN で family_id = my_family_id()
 
+#### sleep_records
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| child_id | uuid | NOT NULL | | FK → children |
+| sleep_date | date | NOT NULL | | 記録対象日（就寝日） |
+| started_at | timestamptz | NOT NULL | | 就寝時刻 |
+| ended_at | timestamptz | NOT NULL | | 起床時刻 |
+| duration_minutes | integer | NOT NULL | | 睡眠時間（分）、自動計算 |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- CHECK: ended_at > started_at
+- インデックス: (child_id, sleep_date)
+- RLS: children JOIN で family_id = my_family_id()
+
+#### meal_records
+
+| カラム | 型 | NULL | デフォルト | 備考 |
+|--------|-----|------|-----------|------|
+| id | uuid | NOT NULL | gen_random_uuid() | PK |
+| child_id | uuid | NOT NULL | | FK → children |
+| meal_date | date | NOT NULL | | 記録対象日 |
+| meal_type | text | NOT NULL | | breakfast / lunch / dinner / snack |
+| amount | text | NOT NULL | | plenty / normal / little / none |
+| created_at | timestamptz | NOT NULL | now() | |
+| updated_at | timestamptz | NOT NULL | now() | |
+
+- CHECK: meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')
+- CHECK: amount IN ('plenty', 'normal', 'little', 'none')
+- インデックス: (child_id, meal_date)
+- RLS: children JOIN で family_id = my_family_id()
+
 ---
 
 ## 3. RLS（Row Level Security）ポリシー
@@ -474,6 +510,24 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 | SELECT | select_family_annual | children JOIN で family_id = my_family_id() |
 | INSERT | insert_family_annual | family_id = my_family_id() |
 | UPDATE | update_family_annual | family_id = my_family_id() |
+
+### sleep_records
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_sleep | children JOIN で family_id = my_family_id() |
+| INSERT | insert_family_sleep | children JOIN で family_id = my_family_id() |
+| UPDATE | update_family_sleep | children JOIN で family_id = my_family_id() |
+| DELETE | delete_family_sleep | children JOIN で family_id = my_family_id() |
+
+### meal_records
+
+| 操作 | ポリシー名 | 条件 |
+|------|-----------|------|
+| SELECT | select_family_meal | children JOIN で family_id = my_family_id() |
+| INSERT | insert_family_meal | children JOIN で family_id = my_family_id() |
+| UPDATE | update_family_meal | children JOIN で family_id = my_family_id() |
+| DELETE | delete_family_meal | children JOIN で family_id = my_family_id() |
 
 ### push_subscriptions
 
