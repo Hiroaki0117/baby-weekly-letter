@@ -11,14 +11,6 @@ type AnnualAlbumViewProps = {
   onBack: () => void;
 };
 
-const MILESTONE_CATEGORY_LABELS: Record<string, string> = {
-  motor: "運動",
-  language: "ことば",
-  eating: "食事",
-  lifestyle: "生活習慣",
-  other: "その他",
-};
-
 const MONTH_NAMES: Record<number, string> = {
   1: "1月", 2: "2月", 3: "3月", 4: "4月", 5: "5月", 6: "6月",
   7: "7月", 8: "8月", 9: "9月", 10: "10月", 11: "11月", 12: "12月",
@@ -124,7 +116,6 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
                     <span className="text-foreground">{m.title}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
                       {m.date}
-                      {m.category !== "other" && ` ・ ${MILESTONE_CATEGORY_LABELS[m.category] ?? m.category}`}
                     </span>
                   </div>
                 </li>

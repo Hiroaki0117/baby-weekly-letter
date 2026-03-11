@@ -313,39 +313,27 @@ export interface Database {
         Row: {
           id: string;
           child_id: string;
-          daily_log_id: string | null;
+          daily_log_id: string;
           title: string;
           milestone_date: string;
-          category: string;
-          memo: string | null;
-          source: string;
-          weekly_report_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           child_id: string;
-          daily_log_id?: string | null;
+          daily_log_id: string;
           title: string;
           milestone_date: string;
-          category?: string;
-          memo?: string | null;
-          source?: string;
-          weekly_report_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           child_id?: string;
-          daily_log_id?: string | null;
+          daily_log_id?: string;
           title?: string;
           milestone_date?: string;
-          category?: string;
-          memo?: string | null;
-          source?: string;
-          weekly_report_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

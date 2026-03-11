@@ -22,9 +22,7 @@ export async function fetchMilestonesByLogIds(
 
   const map: Record<string, Milestone> = {};
   for (const row of (data ?? []) as Milestone[]) {
-    if (row.daily_log_id) {
-      map[row.daily_log_id] = row;
-    }
+    map[row.daily_log_id] = row;
   }
   return map;
 }

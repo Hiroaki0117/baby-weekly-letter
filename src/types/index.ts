@@ -93,7 +93,6 @@ export type AnnualReportContent = {
   milestones: {
     title: string;
     date: string;
-    category: string;
   }[];
   growthSummary: {
     startHeight: number | null;
