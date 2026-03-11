@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { format, subDays } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { addSleepRecord, buildTimestamps, calcDurationMinutes } from "@/lib/sleep";
+import { addSleepRecord, buildTimestamps, calcDurationMinutes, classifySleep } from "@/lib/sleep";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
 import type { Child } from "@/types";
@@ -132,6 +132,7 @@ export function QuickSleepInput({ childrenList }: Props) {
         started_at: startedAt,
         ended_at: endedAt,
         duration_minutes: duration,
+        sleep_category: classifySleep(startedAt),
       });
       const child = childrenList.find((c) => c.id === tracking.childId);
       toast.success(`${child?.name ?? ""}の睡眠を記録しました`);
@@ -165,6 +166,7 @@ export function QuickSleepInput({ childrenList }: Props) {
         started_at: startedAt,
         ended_at: endedAt,
         duration_minutes: duration,
+        sleep_category: classifySleep(startedAt),
       });
       const child = childrenList.find((c) => c.id === childId);
       toast.success(`${child?.name ?? ""}の睡眠を記録しました`);
