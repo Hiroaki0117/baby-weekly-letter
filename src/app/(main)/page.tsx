@@ -17,7 +17,8 @@ import { QuickTemperatureInput } from "@/components/temperature/quick-temperatur
 import { QuickSleepInput } from "@/components/sleep/quick-sleep-input";
 import { QuickMealInput } from "@/components/meal/quick-meal-input";
 import { toast } from "sonner";
-import type { Child, DailyLog, Milestone } from "@/types";
+import { fetchActiveTracking } from "@/lib/sleep";
+import type { Child, DailyLog, Milestone, SleepTracking } from "@/types";
 
 export default function HomePage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -33,6 +34,8 @@ export default function HomePage() {
   const [newReactionCount, setNewReactionCount] = useState(0);
   const [newCommentCount, setNewCommentCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState("");
+  const [activeTracking, setActiveTracking] = useState<SleepTracking[]>([]);
+  const [familyIdRef, setFamilyIdRef] = useState<string | null>(null);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const today = toDateString(new Date());
@@ -124,14 +127,19 @@ export default function HomePage() {
       // 子ども情報を取得（複数対応）
       const familyId = await getMyFamilyId(client);
       if (familyId) {
-        const { data: childrenData } = await client
-          .from("children")
-          .select("*")
-          .eq("family_id", familyId)
-          .order("created_at", { ascending: true });
-        if (childrenData) {
-          setChildrenList(childrenData as Child[]);
+        setFamilyIdRef(familyId);
+        const [childrenRes, trackingData] = await Promise.all([
+          client
+            .from("children")
+            .select("*")
+            .eq("family_id", familyId)
+            .order("created_at", { ascending: true }),
+          fetchActiveTracking(client, familyId),
+        ]);
+        if (childrenRes.data) {
+          setChildrenList(childrenRes.data as Child[]);
         }
+        setActiveTracking(trackingData);
       }
 
       // リアクション・マイルストーン取得
@@ -187,6 +195,12 @@ export default function HomePage() {
     }
     load();
   }, []);
+
+  const refreshTracking = useCallback(async () => {
+    if (!familyIdRef) return;
+    const data = await fetchActiveTracking(supabaseRef.current, familyIdRef);
+    setActiveTracking(data);
+  }, [familyIdRef]);
 
   async function handleEdit(log: DailyLog) {
     let photoUrl: string | null = null;
@@ -431,7 +445,7 @@ export default function HomePage() {
 
       {/* クイック入力セクション */}
       <QuickTemperatureInput childrenList={childrenList} />
-      <QuickSleepInput childrenList={childrenList} />
+      <QuickSleepInput childrenList={childrenList} activeTracking={activeTracking} onTrackingChange={refreshTracking} />
       <QuickMealInput childrenList={childrenList} />
 
       {/* ログフォーム */}

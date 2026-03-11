@@ -3,38 +3,24 @@
 import { useState, useEffect, useRef } from "react";
 import { format, subDays } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { addSleepRecord, buildTimestamps, calcDurationMinutes, classifySleep } from "@/lib/sleep";
+import {
+  addSleepRecord,
+  buildTimestamps,
+  calcDurationMinutes,
+  classifySleep,
+  startTracking,
+  stopTracking,
+} from "@/lib/sleep";
+import { getMyFamilyId } from "@/lib/supabase/family";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
-import type { Child } from "@/types";
+import type { Child, SleepTracking } from "@/types";
 
 type Props = {
   childrenList: Child[];
+  activeTracking: SleepTracking[];
+  onTrackingChange: () => void;
 };
-
-type TrackingState = {
-  childId: string;
-  startTime: string; // HH:mm
-  startDate: string; // yyyy-MM-dd
-};
-
-function getStoredTracking(): TrackingState | null {
-  try {
-    const raw = localStorage.getItem("sleep_tracking");
-    if (!raw) return null;
-    return JSON.parse(raw) as TrackingState;
-  } catch {
-    return null;
-  }
-}
-
-function setStoredTracking(state: TrackingState | null) {
-  if (state) {
-    localStorage.setItem("sleep_tracking", JSON.stringify(state));
-  } else {
-    localStorage.removeItem("sleep_tracking");
-  }
-}
 
 function getDefaultDate(): string {
   const now = new Date();
@@ -62,23 +48,23 @@ function calcPreview(startTime: string, endTime: string): string {
   return `${mins}分`;
 }
 
-export function QuickSleepInput({ childrenList }: Props) {
+function formatTrackingStartTime(startedAt: string): { date: string; time: string } {
+  const d = new Date(startedAt);
+  return {
+    date: format(d, "yyyy-MM-dd"),
+    time: format(d, "HH:mm"),
+  };
+}
+
+export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange }: Props) {
   const [open, setOpen] = useState(false);
-  const [tracking, setTracking] = useState<TrackingState | null>(null);
   const [selectedChildId, setSelectedChildId] = useState(childrenList[0]?.id ?? "");
   const [sleepDate, setSleepDate] = useState(getDefaultDate);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmingTrackingId, setConfirmingTrackingId] = useState<string | null>(null);
   const supabaseRef = useRef(createClient());
-
-  // localStorage から記録中の状態を復元
-  useEffect(() => {
-    const stored = getStoredTracking();
-    if (stored) {
-      setTracking(stored);
-    }
-  }, []);
 
   // childrenList が後から渡された場合に同期
   useEffect(() => {
@@ -91,57 +77,93 @@ export function QuickSleepInput({ childrenList }: Props) {
 
   const showSelector = childrenList.length >= 2;
 
-  // 「寝た」ボタン
-  function handleSleepStart(childId: string) {
-    const state: TrackingState = {
-      childId,
-      startTime: nowTime(),
-      startDate: format(new Date(), "yyyy-MM-dd"),
-    };
-    setTracking(state);
-    setStoredTracking(state);
-    const child = childrenList.find((c) => c.id === childId);
-    toast.success(`${child?.name ?? ""}の睡眠記録を開始しました（${state.startTime}）`);
+  // アクティブな計測（子供ごとに1つ）
+  const currentTracking = activeTracking.find((t) => t.child_id === selectedChildId);
+  const hasAnyTracking = activeTracking.length > 0;
+
+  // 「開始」ボタン
+  async function handleSleepStart(childId: string) {
+    setSaving(true);
+    try {
+      const supabase = supabaseRef.current;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("認証エラー");
+
+      const familyId = await getMyFamilyId(supabase);
+      if (!familyId) throw new Error("家族が設定されていません");
+
+      const now = new Date();
+      await startTracking(supabase, {
+        family_id: familyId,
+        child_id: childId,
+        started_by: user.id,
+        started_at: now.toISOString(),
+        sleep_date: format(now, "yyyy-MM-dd"),
+      });
+
+      const child = childrenList.find((c) => c.id === childId);
+      toast.success(`${child?.name ?? ""}の睡眠記録を開始しました（${format(now, "HH:mm")}）`);
+      onTrackingChange();
+    } catch (e) {
+      toast.error("開始に失敗しました", {
+        description: e instanceof Error ? e.message : "不明なエラー",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
-  // 「起きた」ボタン → 確認画面へ
-  function handleWakeUp() {
-    if (!tracking) return;
-    setSleepDate(tracking.startDate);
-    setStartTime(tracking.startTime);
+  // 「終了」ボタン → 確認画面へ
+  function handleWakeUp(tracking: SleepTracking) {
+    const { date, time } = formatTrackingStartTime(tracking.started_at);
+    setSleepDate(date);
+    setStartTime(time);
     setEndTime(nowTime());
+    setConfirmingTrackingId(tracking.id);
   }
 
   // 記録中をキャンセル
-  function handleCancelTracking() {
-    setTracking(null);
-    setStoredTracking(null);
+  async function handleCancelTracking(trackingId: string) {
+    setSaving(true);
+    try {
+      await stopTracking(supabaseRef.current, trackingId);
+      setConfirmingTrackingId(null);
+      setEndTime("");
+      onTrackingChange();
+      toast.success("計測を取り消しました");
+    } catch {
+      toast.error("取消に失敗しました");
+    } finally {
+      setSaving(false);
+    }
   }
 
   // 確認画面から保存
-  async function handleRecord() {
-    if (!tracking || !startTime || !endTime) return;
+  async function handleRecord(tracking: SleepTracking) {
+    if (!startTime || !endTime) return;
 
     setSaving(true);
     try {
       const { startedAt, endedAt } = buildTimestamps(sleepDate, startTime, endTime);
       const duration = calcDurationMinutes(startedAt, endedAt);
       await addSleepRecord(supabaseRef.current, {
-        child_id: tracking.childId,
+        child_id: tracking.child_id,
         sleep_date: sleepDate,
         started_at: startedAt,
         ended_at: endedAt,
         duration_minutes: duration,
         sleep_category: classifySleep(startedAt),
       });
-      const child = childrenList.find((c) => c.id === tracking.childId);
+      await stopTracking(supabaseRef.current, tracking.id);
+
+      const child = childrenList.find((c) => c.id === tracking.child_id);
       toast.success(`${child?.name ?? ""}の睡眠を記録しました`);
 
       // リセット
-      setTracking(null);
-      setStoredTracking(null);
+      setConfirmingTrackingId(null);
       setStartTime("");
       setEndTime("");
+      onTrackingChange();
     } catch {
       toast.error("記録に失敗しました");
     } finally {
@@ -179,9 +201,6 @@ export function QuickSleepInput({ childrenList }: Props) {
     }
   }
 
-  const isConfirming = tracking && endTime !== "";
-  const trackingChild = tracking ? childrenList.find((c) => c.id === tracking.childId) : null;
-
   return (
     <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
       <button
@@ -191,7 +210,7 @@ export function QuickSleepInput({ childrenList }: Props) {
       >
         <div className="flex items-center gap-2">
           <span>😴 睡眠を記録</span>
-          {tracking && !open && (
+          {hasAnyTracking && !open && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
               記録中
@@ -203,96 +222,110 @@ export function QuickSleepInput({ childrenList }: Props) {
 
       {open && (
         <div className="space-y-3 border-t border-border/40 px-4 py-3">
-          {/* タイマー記録中 → 起きたボタン or 確認画面 */}
-          {tracking && (
-            <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground">
-                    {trackingChild?.name} - 記録中
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {tracking.startDate} {tracking.startTime}〜
-                  </p>
+          {/* アクティブな計測を表示 */}
+          {activeTracking.map((tracking) => {
+            const trackingChild = childrenList.find((c) => c.id === tracking.child_id);
+            const { date, time } = formatTrackingStartTime(tracking.started_at);
+            const isConfirming = confirmingTrackingId === tracking.id;
+
+            return (
+              <div
+                key={tracking.id}
+                className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground">
+                      {trackingChild?.name} - 記録中
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {date} {time}〜
+                    </p>
+                  </div>
+                  {!isConfirming && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleWakeUp(tracking)}
+                        disabled={saving}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        終了
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCancelTracking(tracking.id)}
+                        disabled={saving}
+                        className="rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/60 disabled:opacity-50"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {!isConfirming && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleWakeUp}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                    >
-                      終了
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelTracking}
-                      className="rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/60"
-                    >
-                      取消
-                    </button>
+
+                {/* 確認・修正画面 */}
+                {isConfirming && (
+                  <div className="space-y-2 border-t border-primary/20 pt-3">
+                    <p className="text-xs font-medium tracking-wider text-muted-foreground">
+                      時刻を確認・修正
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={sleepDate}
+                        onChange={(e) => setSleepDate(e.target.value)}
+                        className="w-32 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                      <span className="text-xs text-muted-foreground">→</span>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                      {startTime && endTime && (
+                        <span className="text-xs font-medium text-foreground">
+                          {calcPreview(startTime, endTime)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleRecord(tracking)}
+                        disabled={saving}
+                        className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        {saving ? "保存中..." : "記録する"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmingTrackingId(null);
+                          setEndTime("");
+                        }}
+                        className="rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/60"
+                      >
+                        戻る
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+            );
+          })}
 
-              {/* 確認・修正画面 */}
-              {isConfirming && (
-                <div className="space-y-2 border-t border-primary/20 pt-3">
-                  <p className="text-xs font-medium tracking-wider text-muted-foreground">
-                    時刻を確認・修正
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={sleepDate}
-                      onChange={(e) => setSleepDate(e.target.value)}
-                      className="w-32 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                    <span className="text-xs text-muted-foreground">→</span>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                    {startTime && endTime && (
-                      <span className="text-xs font-medium text-foreground">
-                        {calcPreview(startTime, endTime)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={handleRecord}
-                      disabled={saving}
-                      className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-                    >
-                      {saving ? "保存中..." : "記録する"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEndTime("")}
-                      className="rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/60"
-                    >
-                      戻る
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* タイマー未使用時: 寝たボタン + 手入力 */}
-          {!tracking && (
+          {/* タイマー未使用時: 開始ボタン + 手入力 */}
+          {!currentTracking && (
             <>
               {/* 子供セレクタ（2人以上の場合） */}
               {showSelector && (
@@ -308,7 +341,7 @@ export function QuickSleepInput({ childrenList }: Props) {
                 </div>
               )}
 
-              {/* 寝たボタン */}
+              {/* 開始ボタン */}
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wider text-muted-foreground">
                   タイマーで記録
@@ -316,7 +349,8 @@ export function QuickSleepInput({ childrenList }: Props) {
                 <button
                   type="button"
                   onClick={() => handleSleepStart(selectedChildId)}
-                  className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                  disabled={saving}
+                  className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
                 >
                   開始
                 </button>
