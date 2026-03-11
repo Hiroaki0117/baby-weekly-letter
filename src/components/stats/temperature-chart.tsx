@@ -162,9 +162,10 @@ export function TemperatureChart({ records }: Props) {
               </tr>
             </thead>
             <tbody>
-              {days.map((day) => {
+              {days.map((day, dayIndex) => {
                 const isWeekend =
                   day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                const openUpward = dayIndex >= days.length - 2;
                 return (
                   <tr
                     key={day.dateStr}
@@ -211,7 +212,12 @@ export function TemperatureChart({ records }: Props) {
                           )}
                           {/* ポップオーバー（タップで時刻・体温を表示） */}
                           {isOpen && cellRecords && (
-                            <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                            <div
+                              className={cn(
+                                "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+                                openUpward ? "bottom-full mb-1" : "top-full mt-1",
+                              )}
+                            >
                               <div className="space-y-1 text-xs whitespace-nowrap">
                                 {cellRecords.map((r) => {
                                   const s = tempStyle(r.temperature);
