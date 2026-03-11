@@ -2,28 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { startOfWeek, addWeeks, addDays, isAfter, format } from "date-fns";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
 import { cn } from "@/lib/utils";
 import type { SleepRecord } from "@/types";
-
-const CATEGORY_COLORS = {
-  night: "#818cf8",   // indigo-400
-  daytime: "#fbbf24", // amber-400
-};
-
-const CATEGORY_LABELS = {
-  night: "夜間睡眠",
-  daytime: "日中睡眠",
-};
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -36,55 +16,12 @@ function formatWeekLabel(weekStart: Date): string {
   return `${format(weekStart, "yyyy年M月d日")}〜${format(weekEnd, "M月d日")}`;
 }
 
-function formatHourMin(hours: number): string {
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
-  return m > 0 ? `${h}時間${m}分` : `${h}時間`;
-}
-
-type ChartDataPoint = {
-  label: string;
-  date: string;
-  night: number;
-  daytime: number;
-};
-
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { dataKey?: string; value?: number; color?: string }[];
-}) {
-  if (!active || !payload?.length) return null;
-
-  const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
-  if (total === 0) return null;
-
-  return (
-    <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
-      <div className="space-y-1 text-xs">
-        {payload.filter((p) => (p.value ?? 0) > 0).map((p) => (
-          <div key={p.dataKey} className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ backgroundColor: p.color }}
-            />
-            <span className="text-muted-foreground">
-              {CATEGORY_LABELS[p.dataKey as keyof typeof CATEGORY_LABELS]}:
-            </span>
-            <span className="font-bold text-foreground">
-              {formatHourMin(p.value ?? 0)}
-            </span>
-          </div>
-        ))}
-        <div className="border-t border-border/40 pt-1">
-          <span className="text-muted-foreground">合計: </span>
-          <span className="font-bold text-foreground">{formatHourMin(total)}</span>
-        </div>
-      </div>
-    </div>
-  );
+function formatHourMin(minutes: number): string {
+  if (minutes === 0) return "";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}分`;
+  return m > 0 ? `${h}h${m}m` : `${h}h`;
 }
 
 type Props = {
@@ -97,35 +34,40 @@ export function SleepChart({ records }: Props) {
   const currentMonday = getMonday(new Date());
   const canGoNext = !isAfter(addWeeks(weekStart, 1), currentMonday);
 
-  const data = useMemo(() => {
-    const points: ChartDataPoint[] = [];
-
+  const days = useMemo(() => {
+    const result: { dateStr: string; label: string; dayOfWeek: number }[] = [];
     for (let i = 0; i < 7; i++) {
       const day = addDays(weekStart, i);
-      const dateStr = format(day, "yyyy-MM-dd");
-      const dayLabel = `${WEEKDAYS[day.getDay()]}`;
-
-      const dayRecords = records.filter((r) => r.sleep_date === dateStr);
-
-      const nightMinutes = dayRecords
-        .filter((r) => r.sleep_category === "night")
-        .reduce((sum, r) => sum + r.duration_minutes, 0);
-      const daytimeMinutes = dayRecords
-        .filter((r) => r.sleep_category === "daytime")
-        .reduce((sum, r) => sum + r.duration_minutes, 0);
-
-      points.push({
-        label: dayLabel,
-        date: format(day, "M/d"),
-        night: Math.round((nightMinutes / 60) * 10) / 10,
-        daytime: Math.round((daytimeMinutes / 60) * 10) / 10,
+      result.push({
+        dateStr: format(day, "yyyy-MM-dd"),
+        label: `${format(day, "M/d")}(${WEEKDAYS[day.getDay()]})`,
+        dayOfWeek: day.getDay(),
       });
     }
+    return result;
+  }, [weekStart]);
 
-    return points;
-  }, [records, weekStart]);
+  // 日付ごとに夜間・日中の合計分数を集計
+  const grid = useMemo(() => {
+    const map = new Map<string, { night: number; daytime: number }>();
+    for (const day of days) {
+      map.set(day.dateStr, { night: 0, daytime: 0 });
+    }
+    for (const r of records) {
+      const entry = map.get(r.sleep_date);
+      if (!entry) continue;
+      if (r.sleep_category === "night") {
+        entry.night += r.duration_minutes;
+      } else {
+        entry.daytime += r.duration_minutes;
+      }
+    }
+    return map;
+  }, [records, days]);
 
-  const hasData = data.some((d) => d.night + d.daytime > 0);
+  const hasData = Array.from(grid.values()).some(
+    (v) => v.night + v.daytime > 0,
+  );
 
   return (
     <div className="space-y-3">
@@ -150,11 +92,23 @@ export function SleepChart({ records }: Props) {
               "flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors",
               canGoNext
                 ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                : "text-muted-foreground/30 cursor-not-allowed"
+                : "text-muted-foreground/30 cursor-not-allowed",
             )}
           >
             ›
           </button>
+        </div>
+      </div>
+
+      {/* 凡例 */}
+      <div className="mx-auto grid w-fit grid-cols-2 gap-x-6 gap-y-1">
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-indigo-400" />
+          <span className="text-xs text-muted-foreground">夜間睡眠</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-amber-400" />
+          <span className="text-xs text-muted-foreground">日中睡眠</span>
         </div>
       </div>
 
@@ -163,51 +117,82 @@ export function SleepChart({ records }: Props) {
           この週の睡眠記録がありません
         </p>
       ) : (
-        <div className="h-[20rem]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                tickLine={false}
-                axisLine={false}
-                width={40}
-                tickFormatter={(v: number) => `${v}h`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                formatter={(value: string) => (
-                  <span className="text-xs text-muted-foreground">
-                    {CATEGORY_LABELS[value as keyof typeof CATEGORY_LABELS]}
-                  </span>
-                )}
-              />
-              <Bar
-                dataKey="night"
-                stackId="sleep"
-                fill={CATEGORY_COLORS.night}
-                radius={0}
-                maxBarSize={40}
-              />
-              <Bar
-                dataKey="daytime"
-                stackId="sleep"
-                fill={CATEGORY_COLORS.daytime}
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                  日付
+                </th>
+                <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                  夜間
+                </th>
+                <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                  日中
+                </th>
+                <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                  合計
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((day) => {
+                const entry = grid.get(day.dateStr) ?? {
+                  night: 0,
+                  daytime: 0,
+                };
+                const total = entry.night + entry.daytime;
+                const isWeekend =
+                  day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                return (
+                  <tr
+                    key={day.dateStr}
+                    className={cn(
+                      "border-t border-border/30",
+                      isWeekend && "bg-muted/30",
+                    )}
+                  >
+                    <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
+                      {day.label}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      {entry.night > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">
+                          {formatHourMin(entry.night)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40">
+                          ー
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      {entry.daytime > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                          {formatHourMin(entry.daytime)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40">
+                          ー
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      {total > 0 ? (
+                        <span className="text-xs font-bold text-foreground">
+                          {formatHourMin(total)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/40">
+                          ー
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
