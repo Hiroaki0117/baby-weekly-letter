@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { toDateString } from "@/lib/date";
 import { getMyFamilyId } from "@/lib/supabase/family";
-import { createMilestone } from "@/lib/milestones";
+import { createMilestone, updateMilestone, deleteMilestone } from "@/lib/milestones";
+import type { Milestone } from "@/types";
 import { logFormSchema, type LogFormValues } from "@/schemas/log";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ type LogFormProps = {
   childrenList: Child[];
   editingLog?: DailyLog | null;
   existingPhotoUrl?: string | null;
+  existingMilestone?: Milestone | null;
   onSaved: () => void;
   onCancel?: () => void;
 };
@@ -35,13 +37,15 @@ export function LogForm({
   childrenList,
   editingLog,
   existingPhotoUrl,
+  existingMilestone,
   onSaved,
   onCancel,
 }: LogFormProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoResetKey, setPhotoResetKey] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [milestoneEnabled, setMilestoneEnabled] = useState(false);
+  const [milestoneEnabled, setMilestoneEnabled] = useState(!!existingMilestone);
+  const [milestoneDeleted, setMilestoneDeleted] = useState(false);
   const supabase = createClient();
 
   const {
@@ -60,6 +64,7 @@ export function LogForm({
       mood: editingLog?.mood ?? undefined,
       categories: editingLog?.categories ?? [],
       log_date: editingLog?.log_date ?? toDateString(new Date()),
+      milestone: existingMilestone ? { title: existingMilestone.title } : undefined,
     },
   });
 
@@ -124,6 +129,28 @@ export function LogForm({
             .from("daily_logs")
             .update({ photo_storage_path: photoPath })
             .eq("id", editingLog.id);
+        }
+
+        // マイルストーンの処理
+        if (milestoneDeleted && existingMilestone) {
+          await deleteMilestone(supabase, existingMilestone.id);
+        } else if (milestoneEnabled && existingMilestone && !milestoneDeleted) {
+          const newTitle =
+            values.milestone?.title?.trim() || values.text.slice(0, 30);
+          if (newTitle !== existingMilestone.title) {
+            await updateMilestone(supabase, existingMilestone.id, {
+              title: newTitle,
+            });
+          }
+        } else if (milestoneEnabled && !existingMilestone) {
+          const milestoneTitle =
+            values.milestone?.title?.trim() || values.text.slice(0, 30);
+          await createMilestone(supabase, {
+            child_id: values.child_id,
+            daily_log_id: editingLog.id,
+            title: milestoneTitle,
+            milestone_date: values.log_date,
+          });
         }
 
         toast.success("ログを更新しました");
@@ -269,62 +296,78 @@ export function LogForm({
           />
         </div>
 
-        {/* マイルストーン（新規作成時のみ） */}
-        {!editingLog && (
-          <div className="space-y-2.5">
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <div
-                role="switch"
-                aria-checked={milestoneEnabled}
-                tabIndex={0}
-                onClick={() => {
-                  const next = !milestoneEnabled;
-                  setMilestoneEnabled(next);
-                  if (!next) {
-                    setValue("milestone", undefined);
+        {/* マイルストーン */}
+        <div className="space-y-2.5">
+          <label className="flex cursor-pointer items-center gap-2.5">
+            <div
+              role="switch"
+              aria-checked={milestoneEnabled && !milestoneDeleted}
+              tabIndex={0}
+              onClick={() => {
+                if (milestoneEnabled && !milestoneDeleted) {
+                  // OFF にする
+                  if (existingMilestone) {
+                    setMilestoneDeleted(true);
                   }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    const next = !milestoneEnabled;
-                    setMilestoneEnabled(next);
-                    if (!next) {
-                      setValue("milestone", undefined);
+                  setMilestoneEnabled(false);
+                  setValue("milestone", undefined);
+                } else {
+                  // ON にする
+                  setMilestoneEnabled(true);
+                  setMilestoneDeleted(false);
+                  if (existingMilestone) {
+                    setValue("milestone", { title: existingMilestone.title });
+                  }
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (milestoneEnabled && !milestoneDeleted) {
+                    if (existingMilestone) {
+                      setMilestoneDeleted(true);
+                    }
+                    setMilestoneEnabled(false);
+                    setValue("milestone", undefined);
+                  } else {
+                    setMilestoneEnabled(true);
+                    setMilestoneDeleted(false);
+                    if (existingMilestone) {
+                      setValue("milestone", { title: existingMilestone.title });
                     }
                   }
-                }}
-                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                  milestoneEnabled ? "bg-primary" : "bg-muted"
+                }
+              }}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                milestoneEnabled && !milestoneDeleted ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                  milestoneEnabled && !milestoneDeleted ? "translate-x-[18px]" : "translate-x-[3px]"
                 }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
-                    milestoneEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
-                  }`}
-                />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">
-                ✨ はじめてできたこと
-              </span>
-            </label>
+              />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">
+              ✨ はじめてできたこと
+            </span>
+          </label>
 
-            {milestoneEnabled && (
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <input
-                  {...register("milestone.title")}
-                  placeholder="初めて寝返りした（空欄なら本文から自動生成）"
-                  className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-                />
-                {errors.milestone?.title && (
-                  <p className="mt-1 text-xs text-destructive">
-                    {errors.milestone.title.message}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          {milestoneEnabled && !milestoneDeleted && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <input
+                {...register("milestone.title")}
+                placeholder="初めて寝返りした（空欄なら本文から自動生成）"
+                className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+              />
+              {errors.milestone?.title && (
+                <p className="mt-1 text-xs text-destructive">
+                  {errors.milestone.title.message}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* 写真 */}
         <div className="space-y-2.5">
