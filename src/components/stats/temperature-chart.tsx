@@ -181,7 +181,6 @@ export function TemperatureChart({ records }: Props) {
                         `${day.dateStr}_${p.value}`,
                       );
                       const latest = cellRecords?.[0];
-                      const hasMultiple = (cellRecords?.length ?? 0) > 1;
                       const isOpen =
                         popover?.dateStr === day.dateStr &&
                         popover?.period === p.value;
@@ -194,18 +193,13 @@ export function TemperatureChart({ records }: Props) {
                           {latest ? (
                             <button
                               type="button"
-                              onClick={
-                                hasMultiple
-                                  ? () =>
-                                      togglePopover(day.dateStr, p.value)
-                                  : undefined
+                              onClick={() =>
+                                togglePopover(day.dateStr, p.value)
                               }
                               className={cn(
-                                "inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold",
+                                "inline-flex cursor-pointer items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold",
                                 tempStyle(latest.temperature).bg,
                                 tempStyle(latest.temperature).text,
-                                hasMultiple &&
-                                  "cursor-pointer underline decoration-dotted",
                               )}
                             >
                               {latest.temperature}℃
@@ -215,7 +209,7 @@ export function TemperatureChart({ records }: Props) {
                               ー
                             </span>
                           )}
-                          {/* 複数記録のポップオーバー */}
+                          {/* ポップオーバー（タップで時刻・体温を表示） */}
                           {isOpen && cellRecords && (
                             <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
                               <div className="space-y-1 text-xs whitespace-nowrap">
