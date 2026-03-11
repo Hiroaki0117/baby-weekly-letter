@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { SleepRecord, SleepRecordInsert } from "@/types";
+import type { SleepRecord, SleepRecordInsert, SleepCategory } from "@/types";
 
 type Client = SupabaseClient<Database>;
 
@@ -54,6 +54,16 @@ export function buildTimestamps(
 }
 
 /**
+ * 開始時刻（ISO 8601）から睡眠区分を判定する。
+ * JST（UTC+9）の時刻で 19:00〜翌5:59 を夜間、6:00〜18:59 を日中とする。
+ */
+export function classifySleep(startedAt: string): SleepCategory {
+  const d = new Date(startedAt);
+  const jstHour = (d.getUTCHours() + 9) % 24;
+  return jstHour >= 19 || jstHour < 6 ? "night" : "daytime";
+}
+
+/**
  * 睡眠記録を取得
  */
 export async function fetchSleepRecords(
@@ -98,6 +108,7 @@ export async function updateSleepRecord(
     started_at?: string;
     ended_at?: string;
     duration_minutes?: number;
+    sleep_category?: string;
   },
 ): Promise<SleepRecord> {
   const { data, error } = await supabase

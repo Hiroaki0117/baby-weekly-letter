@@ -33,6 +33,13 @@ export type TemperatureRecordInsert =
 export type SleepRecord = Database["public"]["Tables"]["sleep_records"]["Row"];
 export type SleepRecordInsert = Database["public"]["Tables"]["sleep_records"]["Insert"];
 
+export type SleepCategory = "night" | "daytime";
+
+export const SLEEP_CATEGORY_OPTIONS: { value: SleepCategory; label: string }[] = [
+  { value: "night", label: "夜間睡眠" },
+  { value: "daytime", label: "日中睡眠" },
+];
+
 export type MealRecord = Database["public"]["Tables"]["meal_records"]["Row"];
 export type MealRecordInsert = Database["public"]["Tables"]["meal_records"]["Insert"];
 

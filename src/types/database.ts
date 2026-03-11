@@ -515,6 +515,7 @@ export interface Database {
           started_at: string;
           ended_at: string;
           duration_minutes: number;
+          sleep_category: string;
           created_at: string;
           updated_at: string;
         };
@@ -525,6 +526,7 @@ export interface Database {
           started_at: string;
           ended_at: string;
           duration_minutes: number;
+          sleep_category: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -535,6 +537,7 @@ export interface Database {
           started_at?: string;
           ended_at?: string;
           duration_minutes?: number;
+          sleep_category?: string;
           created_at?: string;
           updated_at?: string;
         };

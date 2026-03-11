@@ -10,11 +10,21 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
 import type { SleepRecord } from "@/types";
 
-const SLEEP_COLOR = "#818cf8"; // indigo-400
+const CATEGORY_COLORS = {
+  night: "#818cf8",   // indigo-400
+  daytime: "#fbbf24", // amber-400
+};
+
+const CATEGORY_LABELS = {
+  night: "夜間睡眠",
+  daytime: "日中睡眠",
+};
+
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 function getMonday(date: Date): Date {
@@ -26,10 +36,17 @@ function formatWeekLabel(weekStart: Date): string {
   return `${format(weekStart, "yyyy年M月d日")}〜${format(weekEnd, "M月d日")}`;
 }
 
+function formatHourMin(hours: number): string {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m > 0 ? `${h}時間${m}分` : `${h}時間`;
+}
+
 type ChartDataPoint = {
   label: string;
   date: string;
-  hours: number;
+  night: number;
+  daytime: number;
 };
 
 function CustomTooltip({
@@ -37,21 +54,34 @@ function CustomTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: { payload?: ChartDataPoint }[];
+  payload?: { dataKey?: string; value?: number; color?: string }[];
 }) {
   if (!active || !payload?.length) return null;
-  const item = payload[0].payload;
-  if (!item) return null;
-  const h = Math.floor(item.hours);
-  const m = Math.round((item.hours - h) * 60);
+
+  const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
+  if (total === 0) return null;
 
   return (
     <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
-      <div className="space-y-0.5 text-xs">
-        <p className="text-muted-foreground">{item.date}</p>
-        <p className="font-bold text-foreground">
-          {h}時間{m > 0 ? `${m}分` : ""}
-        </p>
+      <div className="space-y-1 text-xs">
+        {payload.filter((p) => (p.value ?? 0) > 0).map((p) => (
+          <div key={p.dataKey} className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ backgroundColor: p.color }}
+            />
+            <span className="text-muted-foreground">
+              {CATEGORY_LABELS[p.dataKey as keyof typeof CATEGORY_LABELS]}:
+            </span>
+            <span className="font-bold text-foreground">
+              {formatHourMin(p.value ?? 0)}
+            </span>
+          </div>
+        ))}
+        <div className="border-t border-border/40 pt-1">
+          <span className="text-muted-foreground">合計: </span>
+          <span className="font-bold text-foreground">{formatHourMin(total)}</span>
+        </div>
       </div>
     </div>
   );
@@ -76,19 +106,26 @@ export function SleepChart({ records }: Props) {
       const dayLabel = `${WEEKDAYS[day.getDay()]}`;
 
       const dayRecords = records.filter((r) => r.sleep_date === dateStr);
-      const totalMinutes = dayRecords.reduce((sum, r) => sum + r.duration_minutes, 0);
+
+      const nightMinutes = dayRecords
+        .filter((r) => r.sleep_category === "night")
+        .reduce((sum, r) => sum + r.duration_minutes, 0);
+      const daytimeMinutes = dayRecords
+        .filter((r) => r.sleep_category === "daytime")
+        .reduce((sum, r) => sum + r.duration_minutes, 0);
 
       points.push({
         label: dayLabel,
         date: format(day, "M/d"),
-        hours: Math.round((totalMinutes / 60) * 10) / 10,
+        night: Math.round((nightMinutes / 60) * 10) / 10,
+        daytime: Math.round((daytimeMinutes / 60) * 10) / 10,
       });
     }
 
     return points;
   }, [records, weekStart]);
 
-  const hasData = data.some((d) => d.hours > 0);
+  const hasData = data.some((d) => d.night + d.daytime > 0);
 
   return (
     <div className="space-y-3">
@@ -148,9 +185,24 @@ export function SleepChart({ records }: Props) {
                 tickFormatter={(v: number) => `${v}h`}
               />
               <Tooltip content={<CustomTooltip />} />
+              <Legend
+                formatter={(value: string) => (
+                  <span className="text-xs text-muted-foreground">
+                    {CATEGORY_LABELS[value as keyof typeof CATEGORY_LABELS]}
+                  </span>
+                )}
+              />
               <Bar
-                dataKey="hours"
-                fill={SLEEP_COLOR}
+                dataKey="night"
+                stackId="sleep"
+                fill={CATEGORY_COLORS.night}
+                radius={0}
+                maxBarSize={40}
+              />
+              <Bar
+                dataKey="daytime"
+                stackId="sleep"
+                fill={CATEGORY_COLORS.daytime}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={40}
               />

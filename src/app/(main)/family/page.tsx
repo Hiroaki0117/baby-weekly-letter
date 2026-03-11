@@ -24,6 +24,7 @@ import {
   deleteSleepRecord,
   buildTimestamps,
   calcDurationMinutes,
+  classifySleep,
 } from "@/lib/sleep";
 import {
   fetchMealRecords,
@@ -384,6 +385,7 @@ export default function FamilyPage() {
         started_at: startedAt,
         ended_at: endedAt,
         duration_minutes: duration,
+        sleep_category: classifySleep(startedAt),
       });
       setSleepRecords((prev) => ({
         ...prev,
@@ -407,6 +409,7 @@ export default function FamilyPage() {
         started_at: startedAt,
         ended_at: endedAt,
         duration_minutes: duration,
+        sleep_category: classifySleep(startedAt),
       });
       setSleepRecords((prev) => ({
         ...prev,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcDurationMinutes, buildTimestamps } from "@/lib/sleep";
+import { calcDurationMinutes, buildTimestamps, classifySleep } from "@/lib/sleep";
 
 describe("calcDurationMinutes", () => {
   it("通常の睡眠時間を計算できる", () => {
@@ -68,5 +68,51 @@ describe("buildTimestamps", () => {
     const startTz = result.startedAt.slice(-6);
     const endTz = result.endedAt.slice(-6);
     expect(startTz).toBe(endTz);
+  });
+});
+
+describe("classifySleep", () => {
+  // テスト用ヘルパー: JST 時刻を ISO 文字列に変換
+  function jst(hour: number, minute = 0): string {
+    // JST = UTC+9 なので UTC 時刻は hour - 9
+    const utcHour = (hour - 9 + 24) % 24;
+    const h = String(utcHour).padStart(2, "0");
+    const m = String(minute).padStart(2, "0");
+    return `2026-03-11T${h}:${m}:00+00:00`;
+  }
+
+  it("6:00 JST は日中睡眠", () => {
+    expect(classifySleep(jst(6, 0))).toBe("daytime");
+  });
+
+  it("12:00 JST は日中睡眠", () => {
+    expect(classifySleep(jst(12, 0))).toBe("daytime");
+  });
+
+  it("18:59 JST は日中睡眠", () => {
+    expect(classifySleep(jst(18, 59))).toBe("daytime");
+  });
+
+  it("19:00 JST は夜間睡眠", () => {
+    expect(classifySleep(jst(19, 0))).toBe("night");
+  });
+
+  it("23:00 JST は夜間睡眠", () => {
+    expect(classifySleep(jst(23, 0))).toBe("night");
+  });
+
+  it("0:00 JST は夜間睡眠", () => {
+    expect(classifySleep(jst(0, 0))).toBe("night");
+  });
+
+  it("5:59 JST は夜間睡眠", () => {
+    expect(classifySleep(jst(5, 59))).toBe("night");
+  });
+
+  it("タイムゾーン付きの文字列でも正しく判定する", () => {
+    // 21:30 JST = 12:30 UTC
+    expect(classifySleep("2026-03-11T21:30:00+09:00")).toBe("night");
+    // 14:00 JST = 05:00 UTC
+    expect(classifySleep("2026-03-11T14:00:00+09:00")).toBe("daytime");
   });
 });
