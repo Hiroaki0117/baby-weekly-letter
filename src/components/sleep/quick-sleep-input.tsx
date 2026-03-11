@@ -80,6 +80,13 @@ export function QuickSleepInput({ childrenList }: Props) {
     }
   }, []);
 
+  // childrenList が後から渡された場合に同期
+  useEffect(() => {
+    if (!selectedChildId && childrenList.length > 0) {
+      setSelectedChildId(childrenList[0].id);
+    }
+  }, [childrenList, selectedChildId]);
+
   if (childrenList.length === 0) return null;
 
   const showSelector = childrenList.length >= 2;
