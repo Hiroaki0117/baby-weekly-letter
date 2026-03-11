@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { SleepRecord, SleepRecordInsert, SleepCategory } from "@/types";
+import type { SleepRecord, SleepRecordInsert, SleepCategory, SleepTracking, SleepTrackingInsert } from "@/types";
 
 type Client = SupabaseClient<Database>;
 
@@ -133,6 +133,54 @@ export async function deleteSleepRecord(
     .from("sleep_records")
     .delete()
     .eq("id", id);
+
+  if (error) throw error;
+}
+
+/**
+ * 家族のアクティブな睡眠計測を取得
+ */
+export async function fetchActiveTracking(
+  supabase: Client,
+  familyId: string,
+): Promise<SleepTracking[]> {
+  const { data, error } = await supabase
+    .from("sleep_tracking")
+    .select("*")
+    .eq("family_id", familyId);
+
+  if (error) throw error;
+  return (data as SleepTracking[]) ?? [];
+}
+
+/**
+ * 睡眠計測を開始（sleep_tracking にinsert）
+ */
+export async function startTracking(
+  supabase: Client,
+  record: SleepTrackingInsert,
+): Promise<SleepTracking> {
+  const { data, error } = await supabase
+    .from("sleep_tracking")
+    .insert(record)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SleepTracking;
+}
+
+/**
+ * 睡眠計測を終了・取消（sleep_tracking レコードを削除）
+ */
+export async function stopTracking(
+  supabase: Client,
+  trackingId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("sleep_tracking")
+    .delete()
+    .eq("id", trackingId);
 
   if (error) throw error;
 }

@@ -42,6 +42,9 @@ export const TEMP_PERIOD_OPTIONS: { value: TempPeriod; label: string }[] = [
 export type SleepRecord = Database["public"]["Tables"]["sleep_records"]["Row"];
 export type SleepRecordInsert = Database["public"]["Tables"]["sleep_records"]["Insert"];
 
+export type SleepTracking = Database["public"]["Tables"]["sleep_tracking"]["Row"];
+export type SleepTrackingInsert = Database["public"]["Tables"]["sleep_tracking"]["Insert"];
+
 export type SleepCategory = "night" | "daytime";
 
 export const SLEEP_CATEGORY_OPTIONS: { value: SleepCategory; label: string }[] = [

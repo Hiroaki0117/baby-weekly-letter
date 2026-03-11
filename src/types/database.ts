@@ -546,6 +546,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      sleep_tracking: {
+        Row: {
+          id: string;
+          family_id: string;
+          child_id: string;
+          started_by: string;
+          started_at: string;
+          sleep_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          family_id: string;
+          child_id: string;
+          started_by: string;
+          started_at: string;
+          sleep_date: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          family_id?: string;
+          child_id?: string;
+          started_by?: string;
+          started_at?: string;
+          sleep_date?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       meal_records: {
         Row: {
           id: string;
