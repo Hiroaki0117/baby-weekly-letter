@@ -15,14 +15,18 @@ import {
 import type { PeriodType } from "@/lib/stats";
 import { fetchGrowthRecords } from "@/lib/growth";
 import { fetchTemperatureRecords } from "@/lib/temperature";
+import { fetchSleepRecords } from "@/lib/sleep";
+import { fetchMealRecords } from "@/lib/meal";
 import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
 import { GrowthChart } from "@/components/stats/growth-chart";
 import { TemperatureChart } from "@/components/stats/temperature-chart";
+import { SleepChart } from "@/components/stats/sleep-chart";
+import { MealChart } from "@/components/stats/meal-chart";
 import { ChildSelector } from "@/components/child/child-selector";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
-import type { Child, DailyLog, GrowthRecord, TemperatureRecord, Gender, Milestone } from "@/types";
+import type { Child, DailyLog, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, Gender, Milestone } from "@/types";
 
 type StatsTab = "logs" | "growth";
 
@@ -42,6 +46,8 @@ export default function StatsPage() {
   const [allLogs, setAllLogs] = useState<DailyLog[]>([]);
   const [growthRecords, setGrowthRecords] = useState<Record<string, GrowthRecord[]>>({});
   const [temperatureRecords, setTemperatureRecords] = useState<Record<string, TemperatureRecord[]>>({});
+  const [sleepRecords, setSleepRecords] = useState<Record<string, SleepRecord[]>>({});
+  const [mealRecords, setMealRecords] = useState<Record<string, MealRecord[]>>({});
   const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
   const [statsTab, setStatsTab] = useState<StatsTab>("logs");
   const [period, setPeriod] = useState<PeriodType>("weekly");
@@ -90,9 +96,11 @@ export default function StatsPage() {
         setMilestoneMap(msMap);
       }
 
-      // 成長記録・体温記録を並行取得
+      // 成長記録・体温記録・睡眠記録・食事記録を並行取得
       const growthMap: Record<string, GrowthRecord[]> = {};
       const tempMap: Record<string, TemperatureRecord[]> = {};
+      const sleepMap: Record<string, SleepRecord[]> = {};
+      const mealMap: Record<string, MealRecord[]> = {};
       await Promise.all(
         children.map(async (child) => {
           try {
@@ -105,10 +113,22 @@ export default function StatsPage() {
           } catch {
             tempMap[child.id] = [];
           }
+          try {
+            sleepMap[child.id] = await fetchSleepRecords(client, child.id);
+          } catch {
+            sleepMap[child.id] = [];
+          }
+          try {
+            mealMap[child.id] = await fetchMealRecords(client, child.id);
+          } catch {
+            mealMap[child.id] = [];
+          }
         })
       );
       setGrowthRecords(growthMap);
       setTemperatureRecords(tempMap);
+      setSleepRecords(sleepMap);
+      setMealRecords(mealMap);
 
       setLoading(false);
     }
@@ -187,6 +207,8 @@ export default function StatsPage() {
   const selectedChild = childrenList.find((c) => c.id === selectedChildId);
   const selectedGrowthRecords = growthRecords[selectedChildId] ?? [];
   const selectedTempRecords = temperatureRecords[selectedChildId] ?? [];
+  const selectedSleepRecords = sleepRecords[selectedChildId] ?? [];
+  const selectedMealRecords = mealRecords[selectedChildId] ?? [];
   const hasGrowthData = selectedChild?.birth_date && selectedGrowthRecords.length > 0;
 
   if (loading) {
@@ -303,6 +325,14 @@ export default function StatsPage() {
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
             <TemperatureChart records={selectedTempRecords} />
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+            <SleepChart records={selectedSleepRecords} />
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+            <MealChart records={selectedMealRecords} />
           </div>
         </div>
       )}

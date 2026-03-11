@@ -507,6 +507,69 @@ export interface Database {
         };
         Relationships: [];
       };
+      sleep_records: {
+        Row: {
+          id: string;
+          child_id: string;
+          sleep_date: string;
+          started_at: string;
+          ended_at: string;
+          duration_minutes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          child_id: string;
+          sleep_date: string;
+          started_at: string;
+          ended_at: string;
+          duration_minutes: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          child_id?: string;
+          sleep_date?: string;
+          started_at?: string;
+          ended_at?: string;
+          duration_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      meal_records: {
+        Row: {
+          id: string;
+          child_id: string;
+          meal_date: string;
+          meal_type: string;
+          amount: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          child_id: string;
+          meal_date: string;
+          meal_type: string;
+          amount: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          child_id?: string;
+          meal_date?: string;
+          meal_type?: string;
+          amount?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

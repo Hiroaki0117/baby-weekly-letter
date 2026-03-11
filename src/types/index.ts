@@ -30,6 +30,29 @@ export type TemperatureRecord = Database["public"]["Tables"]["temperature_record
 export type TemperatureRecordInsert =
   Database["public"]["Tables"]["temperature_records"]["Insert"];
 
+export type SleepRecord = Database["public"]["Tables"]["sleep_records"]["Row"];
+export type SleepRecordInsert = Database["public"]["Tables"]["sleep_records"]["Insert"];
+
+export type MealRecord = Database["public"]["Tables"]["meal_records"]["Row"];
+export type MealRecordInsert = Database["public"]["Tables"]["meal_records"]["Insert"];
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealAmount = "plenty" | "normal" | "little" | "none";
+
+export const MEAL_TYPE_OPTIONS: { value: MealType; label: string }[] = [
+  { value: "breakfast", label: "朝食" },
+  { value: "lunch", label: "昼食" },
+  { value: "dinner", label: "夕食" },
+  { value: "snack", label: "おやつ" },
+];
+
+export const MEAL_AMOUNT_OPTIONS: { value: MealAmount; label: string }[] = [
+  { value: "plenty", label: "よく食べた" },
+  { value: "normal", label: "ふつう" },
+  { value: "little", label: "少なめ" },
+  { value: "none", label: "食べなかった" },
+];
+
 export type Milestone = Database["public"]["Tables"]["milestones"]["Row"];
 export type MilestoneInsert = Database["public"]["Tables"]["milestones"]["Insert"];
 export type MilestoneUpdate = Database["public"]["Tables"]["milestones"]["Update"];
