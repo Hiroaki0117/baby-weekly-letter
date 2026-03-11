@@ -94,7 +94,7 @@ export function QuickSleepInput({ childrenList }: Props) {
     setTracking(state);
     setStoredTracking(state);
     const child = childrenList.find((c) => c.id === childId);
-    toast.success(`${child?.name ?? ""}の就寝を記録しました（${state.startTime}）`);
+    toast.success(`${child?.name ?? ""}の睡眠記録を開始しました（${state.startTime}）`);
   }
 
   // 「起きた」ボタン → 確認画面へ
@@ -200,7 +200,7 @@ export function QuickSleepInput({ childrenList }: Props) {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">
-                    {trackingChild?.name} - 就寝中
+                    {trackingChild?.name} - 記録中
                   </p>
                   <p className="text-sm font-medium text-foreground">
                     {tracking.startDate} {tracking.startTime}〜
@@ -213,7 +213,7 @@ export function QuickSleepInput({ childrenList }: Props) {
                       onClick={handleWakeUp}
                       className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
-                      起きた
+                      終了
                     </button>
                     <button
                       type="button"
@@ -309,7 +309,7 @@ export function QuickSleepInput({ childrenList }: Props) {
                   onClick={() => handleSleepStart(selectedChildId)}
                   className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
                 >
-                  {childrenList.find((c) => c.id === selectedChildId)?.name ?? ""} が寝た
+                  開始
                 </button>
               </div>
 
