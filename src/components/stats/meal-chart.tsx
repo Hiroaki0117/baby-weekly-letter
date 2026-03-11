@@ -102,8 +102,8 @@ export function MealChart({ records }: Props) {
         </div>
       </div>
 
-      {/* 凡例 */}
-      <div className="flex flex-wrap justify-center gap-3">
+      {/* 凡例 2×2 グリッド */}
+      <div className="mx-auto grid w-fit grid-cols-2 gap-x-6 gap-y-1">
         {Object.entries(AMOUNT_STYLES).map(([key, style]) => (
           <div key={key} className="flex items-center gap-1">
             <span
