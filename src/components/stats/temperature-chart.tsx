@@ -123,11 +123,11 @@ export function TemperatureChart({ records }: Props) {
       <div className="mx-auto grid w-fit grid-cols-2 gap-x-6 gap-y-1">
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-3 w-3 rounded-sm bg-green-200" />
-          <span className="text-xs text-muted-foreground">平熱</span>
+          <span className="text-xs text-muted-foreground">平熱(36.0〜36.9℃)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-3 w-3 rounded-sm bg-yellow-200" />
-          <span className="text-xs text-muted-foreground">やや高め</span>
+          <span className="text-xs text-muted-foreground">やや高め(37.0〜37.4℃)</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="inline-block h-3 w-3 rounded-sm bg-red-200" />
