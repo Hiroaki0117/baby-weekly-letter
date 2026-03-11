@@ -21,7 +21,7 @@ function formatHourMin(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h === 0) return `${m}分`;
-  return m > 0 ? `${h}h${m}m` : `${h}h`;
+  return m > 0 ? `${h}時間${m}分` : `${h}時間`;
 }
 
 type Props = {
@@ -103,12 +103,12 @@ export function SleepChart({ records }: Props) {
       {/* 凡例 */}
       <div className="mx-auto grid w-fit grid-cols-2 gap-x-6 gap-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-sm bg-indigo-400" />
-          <span className="text-xs text-muted-foreground">夜間睡眠</span>
-        </div>
-        <div className="flex items-center gap-1.5">
           <span className="inline-block h-3 w-3 rounded-sm bg-amber-400" />
           <span className="text-xs text-muted-foreground">日中睡眠</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-indigo-400" />
+          <span className="text-xs text-muted-foreground">夜間睡眠</span>
         </div>
       </div>
 
@@ -125,10 +125,10 @@ export function SleepChart({ records }: Props) {
                   日付
                 </th>
                 <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
-                  夜間
+                  日中
                 </th>
                 <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
-                  日中
+                  夜間
                 </th>
                 <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
                   合計
@@ -156,9 +156,9 @@ export function SleepChart({ records }: Props) {
                       {day.label}
                     </td>
                     <td className="px-2 py-2 text-center">
-                      {entry.night > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">
-                          {formatHourMin(entry.night)}
+                      {entry.daytime > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                          {formatHourMin(entry.daytime)}
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">
@@ -167,9 +167,9 @@ export function SleepChart({ records }: Props) {
                       )}
                     </td>
                     <td className="px-2 py-2 text-center">
-                      {entry.daytime > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
-                          {formatHourMin(entry.daytime)}
+                      {entry.night > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">
+                          {formatHourMin(entry.night)}
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">
