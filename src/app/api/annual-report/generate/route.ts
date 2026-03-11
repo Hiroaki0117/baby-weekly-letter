@@ -169,7 +169,6 @@ export async function POST(request: Request) {
       milestones: milestones.map((m) => ({
         title: m.title,
         date: m.milestone_date,
-        category: m.category,
       })),
       growthSummary,
       closingMessage: generated.closingMessage,
