@@ -16,6 +16,7 @@ import {
   addTemperatureRecord,
   updateTemperatureRecord,
   deleteTemperatureRecord,
+  classifyTempPeriod,
 } from "@/lib/temperature";
 import {
   fetchSleepRecords,
@@ -332,6 +333,7 @@ export default function FamilyPage() {
         child_id: childId,
         measured_at: data.measured_at,
         temperature: data.temperature,
+        temp_period: classifyTempPeriod(data.measured_at),
       });
       setTemperatureRecords((prev) => ({
         ...prev,
@@ -348,7 +350,10 @@ export default function FamilyPage() {
 
   const handleUpdateTemp = useCallback(
     async (childId: string, recordId: string, data: { measured_at: string; temperature: number }) => {
-      const updated = await updateTemperatureRecord(supabase, recordId, data);
+      const updated = await updateTemperatureRecord(supabase, recordId, {
+        ...data,
+        temp_period: classifyTempPeriod(data.measured_at),
+      });
       setTemperatureRecords((prev) => ({
         ...prev,
         [childId]: (prev[childId] ?? [])

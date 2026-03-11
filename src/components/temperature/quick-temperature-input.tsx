@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { addTemperatureRecord } from "@/lib/temperature";
+import { addTemperatureRecord, classifyTempPeriod } from "@/lib/temperature";
 import { toast } from "sonner";
 import type { Child } from "@/types";
 
@@ -30,10 +30,12 @@ export function QuickTemperatureInput({ childrenList }: Props) {
 
     setSaving((prev) => ({ ...prev, [childId]: true }));
     try {
+      const measuredAt = new Date().toISOString();
       await addTemperatureRecord(supabaseRef.current, {
         child_id: childId,
-        measured_at: new Date().toISOString(),
+        measured_at: measuredAt,
         temperature: temp,
+        temp_period: classifyTempPeriod(measuredAt),
       });
       setTemperatures((prev) => ({ ...prev, [childId]: "" }));
       const child = childrenList.find((c) => c.id === childId);

@@ -345,6 +345,7 @@ export interface Database {
           child_id: string;
           measured_at: string;
           temperature: number;
+          temp_period: string;
           created_at: string;
           updated_at: string;
         };
@@ -353,6 +354,7 @@ export interface Database {
           child_id: string;
           measured_at: string;
           temperature: number;
+          temp_period: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -361,6 +363,7 @@ export interface Database {
           child_id?: string;
           measured_at?: string;
           temperature?: number;
+          temp_period?: string;
           created_at?: string;
           updated_at?: string;
         };

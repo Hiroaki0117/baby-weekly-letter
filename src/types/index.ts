@@ -30,6 +30,15 @@ export type TemperatureRecord = Database["public"]["Tables"]["temperature_record
 export type TemperatureRecordInsert =
   Database["public"]["Tables"]["temperature_records"]["Insert"];
 
+export type TempPeriod = "morning" | "afternoon" | "evening" | "night";
+
+export const TEMP_PERIOD_OPTIONS: { value: TempPeriod; label: string }[] = [
+  { value: "morning", label: "朝" },
+  { value: "afternoon", label: "昼" },
+  { value: "evening", label: "夕" },
+  { value: "night", label: "夜" },
+];
+
 export type SleepRecord = Database["public"]["Tables"]["sleep_records"]["Row"];
 export type SleepRecordInsert = Database["public"]["Tables"]["sleep_records"]["Insert"];
 

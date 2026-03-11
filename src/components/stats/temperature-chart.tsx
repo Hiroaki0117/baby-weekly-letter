@@ -2,37 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { startOfWeek, addWeeks, addDays, isAfter, format } from "date-fns";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ReferenceLine,
-} from "recharts";
 import { cn } from "@/lib/utils";
-import type { TemperatureRecord } from "@/types";
+import type { TemperatureRecord, TempPeriod } from "@/types";
 
-const TEMP_COLOR = "#fb923c"; // orange-400
 const FEVER_LINE = 37.5;
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
-// 39℃以上を圧縮する変換（1℃ステップ → 0.5単位の高さ）
-function compressTemp(t: number): number {
-  if (t <= 39) return t;
-  return 39 + (t - 39) / 2;
-}
-
-function decompressTemp(t: number): number {
-  if (t <= 39) return t;
-  return 39 + (t - 39) * 2;
-}
-
-// 変換後のtick位置（すべて0.5刻みで等間隔）
-const Y_TICKS = [
-  35, 35.5, 36, 36.5, 37, 37.5, 38, 38.5, 39, 39.5, 40, 40.5,
+const PERIODS: { value: TempPeriod; label: string }[] = [
+  { value: "morning", label: "朝" },
+  { value: "afternoon", label: "昼" },
+  { value: "evening", label: "夕" },
+  { value: "night", label: "夜" },
 ];
 
 function getMonday(date: Date): Date {
@@ -44,39 +24,16 @@ function formatWeekLabel(weekStart: Date): string {
   return `${format(weekStart, "yyyy年M月d日")}〜${format(weekEnd, "M月d日")}`;
 }
 
-type ChartDataPoint = {
-  label: string;
-  timestamp: number;
-  temperature: number;
-  displayTemp: number;
-};
+function tempStyle(temp: number): { bg: string; text: string } {
+  if (temp >= FEVER_LINE) return { bg: "bg-red-100", text: "text-red-700" };
+  if (temp >= 37.0) return { bg: "bg-yellow-100", text: "text-yellow-700" };
+  if (temp >= 36.0) return { bg: "bg-green-100", text: "text-green-700" };
+  return { bg: "bg-blue-100", text: "text-blue-700" };
+}
 
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { value?: number; payload?: ChartDataPoint }[];
-}) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0];
-  const d = item.payload ? new Date(item.payload.timestamp) : null;
-  const realTemp = item.payload?.displayTemp;
-
-  return (
-    <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
-      <div className="space-y-0.5 text-xs">
-        {d && (
-          <p className="text-muted-foreground">
-            {d.getFullYear()}/{d.getMonth() + 1}/{d.getDate()} {d.getHours()}:{String(d.getMinutes()).padStart(2, "0")}
-          </p>
-        )}
-        <p className={cn("font-bold", (realTemp ?? 0) >= FEVER_LINE ? "text-red-500" : "text-foreground")}>
-          {realTemp}℃
-        </p>
-      </div>
-    </div>
-  );
+function formatTime(isoStr: string): string {
+  const d = new Date(isoStr);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 type Props = {
@@ -85,38 +42,56 @@ type Props = {
 
 export function TemperatureChart({ records }: Props) {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [popover, setPopover] = useState<{ dateStr: string; period: TempPeriod } | null>(null);
 
   const currentMonday = getMonday(new Date());
   const canGoNext = !isAfter(addWeeks(weekStart, 1), currentMonday);
 
-  const data = useMemo(() => {
-    const start = weekStart.getTime();
-    const end = addDays(weekStart, 7).getTime();
+  const days = useMemo(() => {
+    const result: { dateStr: string; label: string; dayOfWeek: number }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(weekStart, i);
+      result.push({
+        dateStr: format(day, "yyyy-MM-dd"),
+        label: `${format(day, "M/d")}(${WEEKDAYS[day.getDay()]})`,
+        dayOfWeek: day.getDay(),
+      });
+    }
+    return result;
+  }, [weekStart]);
 
-    return records
-      .filter((r) => {
-        const t = new Date(r.measured_at).getTime();
-        return t >= start && t < end;
-      })
-      .map((r) => {
-        const d = new Date(r.measured_at);
-        return {
-          label: `${WEEKDAYS[d.getDay()]} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`,
-          timestamp: d.getTime(),
-          temperature: compressTemp(r.temperature),
-          displayTemp: r.temperature,
-        };
-      })
-      .sort((a, b) => a.timestamp - b.timestamp);
-  }, [records, weekStart]);
+  // 日付×区分 → TemperatureRecord[] のマップ（measured_at降順＝最新が先頭）
+  const grid = useMemo(() => {
+    const map = new Map<string, TemperatureRecord[]>();
+    for (const r of records) {
+      const dateStr = format(new Date(r.measured_at), "yyyy-MM-dd");
+      if (!days.some((d) => d.dateStr === dateStr)) continue;
+      const key = `${dateStr}_${r.temp_period}`;
+      const arr = map.get(key) ?? [];
+      arr.push(r);
+      map.set(key, arr);
+    }
+    // 各セル内を最新順にソート
+    for (const arr of map.values()) {
+      arr.sort((a, b) => b.measured_at.localeCompare(a.measured_at));
+    }
+    return map;
+  }, [records, days]);
 
-  const yDomain = [35, compressTemp(42)] as const;
+  const hasData = grid.size > 0;
+
+  function togglePopover(dateStr: string, period: TempPeriod) {
+    if (popover?.dateStr === dateStr && popover?.period === period) {
+      setPopover(null);
+    } else {
+      setPopover({ dateStr, period });
+    }
+  }
 
   return (
     <div className="space-y-3">
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">体温の推移</h3>
-        {/* 週ナビゲーション */}
         <div className="flex h-8 items-center justify-center gap-3">
           <button
             type="button"
@@ -136,7 +111,7 @@ export function TemperatureChart({ records }: Props) {
               "flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors",
               canGoNext
                 ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                : "text-muted-foreground/30 cursor-not-allowed"
+                : "text-muted-foreground/30 cursor-not-allowed",
             )}
           >
             ›
@@ -144,58 +119,138 @@ export function TemperatureChart({ records }: Props) {
         </div>
       </div>
 
-      {data.length === 0 ? (
+      {/* 凡例 */}
+      <div className="mx-auto grid w-fit grid-cols-2 gap-x-6 gap-y-1">
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-green-200" />
+          <span className="text-xs text-muted-foreground">平熱</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-yellow-200" />
+          <span className="text-xs text-muted-foreground">やや高め</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-red-200" />
+          <span className="text-xs text-muted-foreground">発熱(37.5℃〜)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-blue-200" />
+          <span className="text-xs text-muted-foreground">低め(〜35.9℃)</span>
+        </div>
+      </div>
+
+      {!hasData ? (
         <p className="py-8 text-center text-xs text-muted-foreground">
           この週の体温記録がありません
         </p>
       ) : (
-        <div className="h-[28rem]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                tickLine={false}
-                axisLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                domain={yDomain}
-                ticks={Y_TICKS}
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                tickLine={false}
-                axisLine={false}
-                width={40}
-                tickFormatter={(v: number) => `${decompressTemp(v)}℃`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <ReferenceLine
-                y={FEVER_LINE}
-                stroke="#ef4444"
-                strokeDasharray="4 4"
-                strokeOpacity={0.6}
-                label={{
-                  value: "37.5℃",
-                  position: "right",
-                  fontSize: 10,
-                  fill: "#ef4444",
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="temperature"
-                stroke={TEMP_COLOR}
-                strokeWidth={2}
-                dot={{ r: 3, fill: TEMP_COLOR }}
-                activeDot={{ r: 5, fill: TEMP_COLOR }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                  日付
+                </th>
+                {PERIODS.map((p) => (
+                  <th
+                    key={p.value}
+                    className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground"
+                  >
+                    {p.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((day) => {
+                const isWeekend =
+                  day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                return (
+                  <tr
+                    key={day.dateStr}
+                    className={cn(
+                      "border-t border-border/30",
+                      isWeekend && "bg-muted/30",
+                    )}
+                  >
+                    <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
+                      {day.label}
+                    </td>
+                    {PERIODS.map((p) => {
+                      const cellRecords = grid.get(
+                        `${day.dateStr}_${p.value}`,
+                      );
+                      const latest = cellRecords?.[0];
+                      const hasMultiple = (cellRecords?.length ?? 0) > 1;
+                      const isOpen =
+                        popover?.dateStr === day.dateStr &&
+                        popover?.period === p.value;
+
+                      return (
+                        <td
+                          key={p.value}
+                          className="relative px-2 py-2 text-center"
+                        >
+                          {latest ? (
+                            <button
+                              type="button"
+                              onClick={
+                                hasMultiple
+                                  ? () =>
+                                      togglePopover(day.dateStr, p.value)
+                                  : undefined
+                              }
+                              className={cn(
+                                "inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold",
+                                tempStyle(latest.temperature).bg,
+                                tempStyle(latest.temperature).text,
+                                hasMultiple &&
+                                  "cursor-pointer underline decoration-dotted",
+                              )}
+                            >
+                              {latest.temperature}℃
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">
+                              ー
+                            </span>
+                          )}
+                          {/* 複数記録のポップオーバー */}
+                          {isOpen && cellRecords && (
+                            <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                              <div className="space-y-1 text-xs whitespace-nowrap">
+                                {cellRecords.map((r) => {
+                                  const s = tempStyle(r.temperature);
+                                  return (
+                                    <div
+                                      key={r.id}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <span className="text-muted-foreground">
+                                        {formatTime(r.measured_at)}
+                                      </span>
+                                      <span
+                                        className={cn(
+                                          "font-bold",
+                                          s.text,
+                                        )}
+                                      >
+                                        {r.temperature}℃
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
