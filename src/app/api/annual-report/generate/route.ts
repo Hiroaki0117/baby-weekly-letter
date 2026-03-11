@@ -154,8 +154,9 @@ export async function POST(request: Request) {
 
     // AnnualReportContent を構築
     const fiscalStart = new Date(fiscalYear, 3, 1);
+    const fiscalEnd = new Date(fiscalYear + 1, 2, 31);
     const childAge = child?.birth_date
-      ? calcAge(child.birth_date, fiscalStart)
+      ? `${calcAge(child.birth_date, fiscalStart)} 〜 ${calcAge(child.birth_date, fiscalEnd)}`
       : "";
 
     const content: AnnualReportContent = {
