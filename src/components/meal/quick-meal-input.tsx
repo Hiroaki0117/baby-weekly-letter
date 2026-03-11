@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { addMealRecord } from "@/lib/meal";
@@ -25,6 +25,13 @@ export function QuickMealInput({ childrenList }: Props) {
   const [mealAmount, setMealAmount] = useState<MealAmount | "">("");
   const [saving, setSaving] = useState(false);
   const supabaseRef = useRef(createClient());
+
+  // childrenList が後から渡された場合に同期
+  useEffect(() => {
+    if (!selectedChildId && childrenList.length > 0) {
+      setSelectedChildId(childrenList[0].id);
+    }
+  }, [childrenList, selectedChildId]);
 
   if (childrenList.length === 0) return null;
 
