@@ -134,16 +134,16 @@ export function MealChart({ records }: Props) {
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse table-fixed">
             <thead>
               <tr>
-                <th className="px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                <th className="w-[30%] px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
                   日付
                 </th>
                 {MEAL_TYPES.map((mt) => (
                   <th
                     key={mt.value}
-                    className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground"
+                    className="w-[17.5%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground"
                   >
                     {mt.label}
                   </th>

@@ -118,19 +118,19 @@ export function SleepChart({ records }: Props) {
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse table-fixed">
             <thead>
               <tr>
-                <th className="px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                <th className="w-[30%] px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
                   日付
                 </th>
-                <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                <th className="w-[23%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
                   日中
                 </th>
-                <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                <th className="w-[23%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
                   夜間
                 </th>
-                <th className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                <th className="w-[24%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
                   合計
                 </th>
               </tr>
