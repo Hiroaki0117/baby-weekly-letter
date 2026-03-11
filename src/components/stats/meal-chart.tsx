@@ -2,31 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { startOfWeek, addWeeks, addDays, isAfter, format } from "date-fns";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
 import { cn } from "@/lib/utils";
-import type { MealRecord } from "@/types";
+import type { MealRecord, MealType } from "@/types";
 
-const AMOUNT_COLORS = {
-  plenty: "#22c55e",  // green-500
-  normal: "#3b82f6",  // blue-500
-  little: "#eab308",  // yellow-500
-  none: "#ef4444",    // red-500
-};
+const MEAL_TYPES: { value: MealType; label: string }[] = [
+  { value: "breakfast", label: "朝食" },
+  { value: "lunch", label: "昼食" },
+  { value: "dinner", label: "夕食" },
+  { value: "snack", label: "おやつ" },
+];
 
-const AMOUNT_LABELS = {
-  plenty: "よく食べた",
-  normal: "ふつう",
-  little: "少なめ",
-  none: "食べなかった",
+const AMOUNT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  plenty: { bg: "bg-green-100", text: "text-green-700", label: "◎" },
+  normal: { bg: "bg-blue-100", text: "text-blue-700", label: "○" },
+  little: { bg: "bg-yellow-100", text: "text-yellow-700", label: "△" },
+  none:   { bg: "bg-red-100", text: "text-red-700", label: "×" },
 };
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -40,47 +30,6 @@ function formatWeekLabel(weekStart: Date): string {
   return `${format(weekStart, "yyyy年M月d日")}〜${format(weekEnd, "M月d日")}`;
 }
 
-type ChartDataPoint = {
-  label: string;
-  date: string;
-  plenty: number;
-  normal: number;
-  little: number;
-  none: number;
-};
-
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { dataKey?: string; value?: number; color?: string }[];
-}) {
-  if (!active || !payload?.length) return null;
-
-  const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
-  if (total === 0) return null;
-
-  return (
-    <div className="rounded-lg border border-border/60 bg-white px-3 py-2 shadow-md">
-      <div className="space-y-1 text-xs">
-        {payload.filter((p) => (p.value ?? 0) > 0).map((p) => (
-          <div key={p.dataKey} className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ backgroundColor: p.color }}
-            />
-            <span className="text-muted-foreground">
-              {AMOUNT_LABELS[p.dataKey as keyof typeof AMOUNT_LABELS]}:
-            </span>
-            <span className="font-bold text-foreground">{p.value}回</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 type Props = {
   records: MealRecord[];
 };
@@ -91,30 +40,36 @@ export function MealChart({ records }: Props) {
   const currentMonday = getMonday(new Date());
   const canGoNext = !isAfter(addWeeks(weekStart, 1), currentMonday);
 
-  const data = useMemo(() => {
-    const points: ChartDataPoint[] = [];
-
+  const days = useMemo(() => {
+    const result: { dateStr: string; label: string; dayOfWeek: number }[] = [];
     for (let i = 0; i < 7; i++) {
       const day = addDays(weekStart, i);
-      const dateStr = format(day, "yyyy-MM-dd");
-      const dayLabel = `${WEEKDAYS[day.getDay()]}`;
-
-      const dayRecords = records.filter((r) => r.meal_date === dateStr);
-
-      points.push({
-        label: dayLabel,
-        date: format(day, "M/d"),
-        plenty: dayRecords.filter((r) => r.amount === "plenty").length,
-        normal: dayRecords.filter((r) => r.amount === "normal").length,
-        little: dayRecords.filter((r) => r.amount === "little").length,
-        none: dayRecords.filter((r) => r.amount === "none").length,
+      result.push({
+        dateStr: format(day, "yyyy-MM-dd"),
+        label: `${format(day, "M/d")}(${WEEKDAYS[day.getDay()]})`,
+        dayOfWeek: day.getDay(),
       });
     }
+    return result;
+  }, [weekStart]);
 
-    return points;
-  }, [records, weekStart]);
+  // 日付×食事種別 → MealRecord のマップ
+  const grid = useMemo(() => {
+    const map = new Map<string, MealRecord>();
+    for (const r of records) {
+      const key = `${r.meal_date}_${r.meal_type}`;
+      // 同じ日・同じ種別に複数ある場合は最新を使用
+      const existing = map.get(key);
+      if (!existing || r.created_at > existing.created_at) {
+        map.set(key, r);
+      }
+    }
+    return map;
+  }, [records]);
 
-  const hasData = data.some((d) => d.plenty + d.normal + d.little + d.none > 0);
+  const hasData = records.some((r) =>
+    days.some((d) => r.meal_date === d.dateStr),
+  );
 
   return (
     <div className="space-y-3">
@@ -139,7 +94,7 @@ export function MealChart({ records }: Props) {
               "flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors",
               canGoNext
                 ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                : "text-muted-foreground/30 cursor-not-allowed"
+                : "text-muted-foreground/30 cursor-not-allowed",
             )}
           >
             ›
@@ -147,46 +102,98 @@ export function MealChart({ records }: Props) {
         </div>
       </div>
 
+      {/* 凡例 */}
+      <div className="flex flex-wrap justify-center gap-3">
+        {Object.entries(AMOUNT_STYLES).map(([key, style]) => (
+          <div key={key} className="flex items-center gap-1">
+            <span
+              className={cn(
+                "inline-flex h-5 w-5 items-center justify-center rounded text-xs font-bold",
+                style.bg,
+                style.text,
+              )}
+            >
+              {style.label}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {key === "plenty"
+                ? "よく食べた"
+                : key === "normal"
+                  ? "ふつう"
+                  : key === "little"
+                    ? "少なめ"
+                    : "食べなかった"}
+            </span>
+          </div>
+        ))}
+      </div>
+
       {!hasData ? (
         <p className="py-8 text-center text-xs text-muted-foreground">
           この週の食事記録がありません
         </p>
       ) : (
-        <div className="h-[20rem]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                tickLine={false}
-                axisLine={false}
-                width={30}
-                allowDecimals={false}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                formatter={(value: string) => (
-                  <span className="text-xs text-muted-foreground">
-                    {AMOUNT_LABELS[value as keyof typeof AMOUNT_LABELS]}
-                  </span>
-                )}
-              />
-              <Bar dataKey="plenty" stackId="a" fill={AMOUNT_COLORS.plenty} radius={0} maxBarSize={40} />
-              <Bar dataKey="normal" stackId="a" fill={AMOUNT_COLORS.normal} radius={0} maxBarSize={40} />
-              <Bar dataKey="little" stackId="a" fill={AMOUNT_COLORS.little} radius={0} maxBarSize={40} />
-              <Bar dataKey="none" stackId="a" fill={AMOUNT_COLORS.none} radius={[4, 4, 0, 0]} maxBarSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                  日付
+                </th>
+                {MEAL_TYPES.map((mt) => (
+                  <th
+                    key={mt.value}
+                    className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground"
+                  >
+                    {mt.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((day) => {
+                const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                return (
+                  <tr
+                    key={day.dateStr}
+                    className={cn(
+                      "border-t border-border/30",
+                      isWeekend && "bg-muted/30",
+                    )}
+                  >
+                    <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
+                      {day.label}
+                    </td>
+                    {MEAL_TYPES.map((mt) => {
+                      const record = grid.get(`${day.dateStr}_${mt.value}`);
+                      const style = record
+                        ? AMOUNT_STYLES[record.amount]
+                        : null;
+                      return (
+                        <td key={mt.value} className="px-2 py-2 text-center">
+                          {style ? (
+                            <span
+                              className={cn(
+                                "inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-bold",
+                                style.bg,
+                                style.text,
+                              )}
+                            >
+                              {style.label}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">
+                              ー
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
