@@ -702,6 +702,7 @@ function LogsPageInner() {
               childrenList={childrenList}
               editingLog={editingLog}
               existingPhotoUrl={editingPhotoUrl}
+              existingMilestone={milestoneMap[editingLog.id] ?? null}
               onSaved={handleSaved}
               onCancel={() => {
                 setEditingLog(null);
