@@ -266,38 +266,42 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
 
                 {/* 確認・修正画面 */}
                 {isConfirming && (
-                  <div className="space-y-2 border-t border-primary/20 pt-3">
+                  <div className="space-y-3 border-t border-primary/20 pt-3">
                     <p className="text-xs font-medium tracking-wider text-muted-foreground">
                       時刻を確認・修正
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">日付</p>
                       <input
                         type="date"
                         value={sleepDate}
                         onChange={(e) => setSleepDate(e.target.value)}
-                        className="w-32 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        className="w-full rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">就寝時刻</p>
                       <input
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        className="w-full rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       />
-                      <span className="text-xs text-muted-foreground">→</span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">起床時刻</p>
                       <input
                         type="time"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
-                        className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        className="w-full rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       />
-                      {startTime && endTime && (
-                        <span className="text-xs font-medium text-foreground">
-                          {calcPreview(startTime, endTime)}
-                        </span>
-                      )}
                     </div>
+                    {startTime && endTime && (
+                      <p className="text-xs font-medium text-foreground">
+                        ⏱ {calcPreview(startTime, endTime)}
+                      </p>
+                    )}
                     <div className="flex gap-2 pt-1">
                       <button
                         type="button"
@@ -357,38 +361,42 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
               </div>
 
               {/* 手入力 */}
-              <div className="space-y-2 border-t border-border/30 pt-3">
+              <div className="space-y-3 border-t border-border/30 pt-3">
                 <p className="text-xs font-medium tracking-wider text-muted-foreground">
                   手入力で記録
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">日付</p>
                   <input
                     type="date"
                     value={sleepDate}
                     onChange={(e) => setSleepDate(e.target.value)}
-                    className="w-32 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">就寝時刻</p>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                  <span className="text-xs text-muted-foreground">→</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">起床時刻</p>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-24 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="w-full rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                  {startTime && endTime && (
-                    <span className="text-xs font-medium text-foreground">
-                      {calcPreview(startTime, endTime)}
-                    </span>
-                  )}
                 </div>
+                {startTime && endTime && (
+                  <p className="text-xs font-medium text-foreground">
+                    ⏱ {calcPreview(startTime, endTime)}
+                  </p>
+                )}
                 <div className="flex justify-end">
                   <button
                     type="button"
