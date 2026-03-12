@@ -8,6 +8,9 @@ import { deleteLog } from "@/lib/log-actions";
 import { buildReactionMap, toggleReaction, emptyReactionSummaries, type ReactionSummary } from "@/lib/reactions";
 import { buildCommentMap, addComment, updateComment, deleteComment, type CommentEntry } from "@/lib/comments";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
+import { groupPhotosByMonth, type MonthGroup } from "@/lib/gallery";
+import { PhotoGrid } from "@/components/gallery/photo-grid";
+import { PhotoModal } from "@/components/gallery/photo-modal";
 import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
@@ -44,7 +47,7 @@ export default function LogsPage() {
 function LogsPageInner() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as LogsTab) ?? "logs";
-  const validTab = ["logs", "weekly", "monthly", "annual", "report-settings"].includes(initialTab)
+  const validTab = ["logs", "photos", "weekly", "monthly", "annual", "report-settings"].includes(initialTab)
     ? initialTab
     : "logs";
 
@@ -77,6 +80,16 @@ function LogsPageInner() {
   const [viewingAnnual, setViewingAnnual] = useState<AnnualReport | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [generating, setGenerating] = useState(false);
+
+  // 写真タブ状態
+  const [photoMonths, setPhotoMonths] = useState<MonthGroup[]>([]);
+  const [photoModal, setPhotoModal] = useState<{
+    imageUrl: string;
+    logDate: string;
+    text: string;
+    mood: string;
+    childName?: string;
+  } | null>(null);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -160,7 +173,7 @@ function LogsPageInner() {
   useEffect(() => {
     const client = supabaseRef.current;
     async function load() {
-      const [logsRes, membersRes, childrenRes, weeklyRes, monthlyRes, annualRes, userRes] =
+      const [logsRes, membersRes, childrenRes, weeklyRes, monthlyRes, annualRes, photoLogsRes, userRes] =
         await Promise.all([
           client
             .from("daily_logs")
@@ -184,6 +197,12 @@ function LogsPageInner() {
             .from("annual_reports")
             .select("*")
             .order("fiscal_year", { ascending: false }),
+          client
+            .from("daily_logs")
+            .select("id, log_date, text, mood, child_id, photo_storage_path")
+            .not("photo_storage_path", "is", null)
+            .order("log_date", { ascending: false })
+            .order("created_at", { ascending: false }),
           client.auth.getUser(),
         ]);
 
@@ -221,6 +240,20 @@ function LogsPageInner() {
       }
       if (!annualRes.error) {
         setAnnualReports((annualRes.data as AnnualReport[]) ?? []);
+      }
+      if (!photoLogsRes.error && photoLogsRes.data) {
+        setPhotoMonths(
+          groupPhotosByMonth(
+            photoLogsRes.data as {
+              id: string;
+              log_date: string;
+              text: string;
+              mood: string;
+              child_id: string;
+              photo_storage_path: string;
+            }[],
+          ),
+        );
       }
 
       // リアクション・マイルストーン取得
@@ -579,6 +612,7 @@ function LogsPageInner() {
   // ヘッダー情報
   const headerInfo: Record<LogsTab, { en: string; ja: string }> = {
     logs: { en: "All Records", ja: "記録一覧" },
+    photos: { en: "Photos", ja: "写真ギャラリー" },
     weekly: { en: "Weekly Album", ja: "週次アルバム" },
     monthly: { en: "Monthly Album", ja: "月次アルバム" },
     annual: { en: "Annual Album", ja: "年次アルバム" },
@@ -651,6 +685,12 @@ function LogsPageInner() {
         {activeTab === "logs" && logs.length > 0 && (
           <span className="font-mono text-2xl font-light leading-none text-muted-foreground/50">
             {String(logs.length).padStart(3, "0")}
+          </span>
+        )}
+        {/* 写真タブ: 件数 */}
+        {activeTab === "photos" && photoMonths.length > 0 && (
+          <span className="font-mono text-2xl font-light leading-none text-muted-foreground/50">
+            {String(photoMonths.reduce((sum, m) => sum + m.photos.length, 0)).padStart(3, "0")}
           </span>
         )}
       </div>
@@ -768,6 +808,45 @@ function LogsPageInner() {
                 />
               ))}
             </div>
+          )}
+        </>
+      )}
+
+      {/* ===== 写真タブ ===== */}
+      {activeTab === "photos" && (
+        <>
+          {photoMonths.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border text-2xl">
+                📷
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  まだ写真がありません
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground/70">
+                  記録に写真を添付してみましょう
+                </p>
+              </div>
+            </div>
+          ) : (
+            <PhotoGrid
+              months={photoMonths}
+              childrenMap={new Map(childrenList.map((c) => [c.id, c.name ?? ""]))}
+              showChildBadge={childrenList.length >= 2}
+              onSelect={setPhotoModal}
+            />
+          )}
+
+          {photoModal && (
+            <PhotoModal
+              imageUrl={photoModal.imageUrl}
+              logDate={photoModal.logDate}
+              text={photoModal.text}
+              mood={photoModal.mood}
+              childName={photoModal.childName}
+              onClose={() => setPhotoModal(null)}
+            />
           )}
         </>
       )}

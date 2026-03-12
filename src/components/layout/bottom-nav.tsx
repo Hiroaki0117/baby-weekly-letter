@@ -7,9 +7,8 @@ import {
   Home,
   Calendar,
   BookOpen,
-  ImageIcon,
-  MoreHorizontal,
   BarChart3,
+  MoreHorizontal,
   Users,
   Settings,
   LogOut,
@@ -21,16 +20,15 @@ const navItems = [
   { href: "/", label: "今日", icon: Home },
   { href: "/calendar", label: "カレンダー", icon: Calendar },
   { href: "/logs", label: "記録", icon: BookOpen },
-  { href: "/gallery", label: "写真", icon: ImageIcon },
+  { href: "/stats", label: "統計", icon: BarChart3 },
 ];
 
 const moreMenuItems = [
-  { href: "/stats", label: "統計", icon: BarChart3 },
   { href: "/family", label: "家族", icon: Users },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 
-const morePaths = ["/stats", "/family", "/settings"];
+const morePaths = ["/family", "/settings"];
 
 export function BottomNav() {
   const pathname = usePathname();
