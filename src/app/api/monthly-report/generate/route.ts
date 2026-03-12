@@ -77,14 +77,14 @@ export async function POST(request: Request) {
 
     if (weeklyError) {
       return NextResponse.json(
-        { error: "週次通信の取得に失敗しました" },
+        { error: "週次アルバムの取得に失敗しました" },
         { status: 500 }
       );
     }
 
     if (!weeklyReports || weeklyReports.length === 0) {
       return NextResponse.json(
-        { error: "該当月の週次通信がありません" },
+        { error: "該当月の週次アルバムがありません" },
         { status: 400 }
       );
     }
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
 
     if (upsertError) {
       return NextResponse.json(
-        { error: "まとめの保存に失敗しました" },
+        { error: "アルバムの保存に失敗しました" },
         { status: 500 }
       );
     }

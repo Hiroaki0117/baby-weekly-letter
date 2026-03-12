@@ -23,7 +23,7 @@ export async function generateMonthlyReport(
   const text = response.text();
 
   if (!text) {
-    throw new Error("月次まとめの生成に失敗しました（空のレスポンス）");
+    throw new Error("月次アルバムの生成に失敗しました（空のレスポンス）");
   }
 
   return text;

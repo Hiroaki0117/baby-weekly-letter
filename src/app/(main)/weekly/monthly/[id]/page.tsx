@@ -9,6 +9,7 @@ import { MonthlyPhotoGallery } from "@/components/monthly/monthly-photo-gallery"
 import { ShareMenu } from "@/components/export/share-menu";
 import { ExportLayout } from "@/components/export/export-layout";
 import { toast } from "sonner";
+import { GeneratingOverlay } from "@/components/ui/generating-overlay";
 import { format, parseISO } from "date-fns";
 import type { MonthlyReport } from "@/types";
 
@@ -31,7 +32,7 @@ export default function MonthlyDetailPage() {
       .single();
 
     if (error || !data) {
-      toast.error("まとめが見つかりませんでした");
+      toast.error("アルバムが見つかりませんでした");
       router.push("/weekly?tab=monthly");
       return;
     }
@@ -134,7 +135,7 @@ export default function MonthlyDetailPage() {
         return;
       }
 
-      toast.success("月次まとめを再生成しました");
+      toast.success("月次アルバムを再生成しました");
       setReport(data);
     } catch {
       toast.error("再生成に失敗しました。再度お試しください");
@@ -159,12 +160,14 @@ export default function MonthlyDetailPage() {
 
   return (
     <div className="space-y-6">
+      <GeneratingOverlay visible={regenerating} message="アルバムを再生成中です…" />
+
       {/* 戻るリンク */}
       <button
         onClick={() => router.push("/weekly?tab=monthly")}
         className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
-        ← 月次まとめ一覧へ
+        ← 月次アルバム一覧へ
       </button>
 
       {/* エッセイカード */}
@@ -180,10 +183,10 @@ export default function MonthlyDetailPage() {
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                Monthly Essay
+                Monthly Album
               </p>
               <p className="font-mincho text-sm font-semibold text-foreground">
-                {monthLabel}のまとめ
+                {monthLabel}のアルバム
               </p>
             </div>
           </div>
@@ -243,7 +246,7 @@ export default function MonthlyDetailPage() {
           <ExportLayout
             ref={exportRef}
             type="monthly"
-            title={`${monthLabel}のまとめ`}
+            title={`${monthLabel}のアルバム`}
             content={report.content}
             photoUrls={exportData.photoUrls}
           />

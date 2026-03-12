@@ -192,7 +192,7 @@ export default function OnboardingPage() {
             <div className="text-center">
               <h2 className="font-mincho text-lg font-semibold">お子さまの情報</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                通信に名前と月齢が反映されます（任意）
+                アルバムに名前と月齢が反映されます（任意）
               </p>
             </div>
             <div className="space-y-4">

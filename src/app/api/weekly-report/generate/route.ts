@@ -129,7 +129,7 @@ export async function POST(request: Request) {
 
     if (upsertError) {
       return NextResponse.json(
-        { error: "通信の保存に失敗しました" },
+        { error: "アルバムの保存に失敗しました" },
         { status: 500 }
       );
     }

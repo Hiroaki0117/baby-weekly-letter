@@ -20,7 +20,7 @@ const lora = Lora({
 export const metadata: Metadata = {
   title: "すくすく日記",
   description:
-    "日々の育児ログを簡単に残し、週1回AIで週次通信を自動生成するアプリ",
+    "日々の育児ログを簡単に残し、AIで週次・月次・年次アルバムを自動生成するアプリ",
   manifest: "/manifest.webmanifest",
 };
 

@@ -55,11 +55,11 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          ✉ 通信
+          📚 アルバム
         </button>
       </div>
 
-      {/* 小項目タブ（通信カテゴリのみ） */}
+      {/* 小項目タブ（アルバムカテゴリのみ） */}
       {topCategory === "reports" && (
         <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
           {reportTabs.map((tab) => (

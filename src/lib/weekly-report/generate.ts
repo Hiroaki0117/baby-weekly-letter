@@ -23,7 +23,7 @@ export async function generateWeeklyReport(
   const text = response.text();
 
   if (!text) {
-    throw new Error("週次通信の生成に失敗しました（空のレスポンス）");
+    throw new Error("週次アルバムの生成に失敗しました（空のレスポンス）");
   }
 
   return text;
