@@ -27,7 +27,7 @@ export function UngeneratedWeekCard({
               {formatWeekRange(weekStart, weekEnd)}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              まだ通信が作成されていません
+              まだアルバムが作成されていません
             </p>
           </div>
         </div>

@@ -33,7 +33,7 @@ export function MonthlyReportCard({ report }: MonthlyReportCardProps) {
             </div>
             <div>
               <p className="font-mincho text-sm font-semibold text-foreground">
-                {monthLabel}のまとめ
+                {monthLabel}のアルバム
               </p>
               {preview && (
                 <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">

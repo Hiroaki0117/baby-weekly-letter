@@ -84,7 +84,7 @@ export function ReportPreferencesForm() {
 
       if (error) throw error;
 
-      toast.success("通信設定を保存しました");
+      toast.success("アルバム設定を保存しました");
     } catch (error) {
       toast.error("保存に失敗しました", {
         description: error instanceof Error ? error.message : "不明なエラー",
@@ -99,7 +99,7 @@ export function ReportPreferencesForm() {
       <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            通信設定
+            アルバム設定
           </p>
         </div>
         <div className="flex items-center justify-center py-8">
@@ -116,7 +116,7 @@ export function ReportPreferencesForm() {
     >
       <div className="border-b border-border/40 bg-muted/30 px-5 py-3">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          通信設定
+          アルバム設定
         </p>
       </div>
       <div className="space-y-6 p-5">
@@ -178,7 +178,7 @@ export function ReportPreferencesForm() {
             セクション構成
           </Label>
           <p className="text-[11px] text-muted-foreground">
-            通信に含めるセクションを選択してください（最低1つ）
+            アルバムに含めるセクションを選択してください（最低1つ）
           </p>
           <div className="space-y-2">
             {SECTION_OPTIONS.map((opt) => {

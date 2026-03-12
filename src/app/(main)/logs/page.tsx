@@ -12,6 +12,7 @@ import { LogCard } from "@/components/log/log-card";
 import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
 import { LogsTabs, type LogsTab } from "@/components/log/logs-tabs";
+import { GeneratingOverlay } from "@/components/ui/generating-overlay";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
 import { UngeneratedWeekCard } from "@/components/weekly/ungenerated-week-card";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
@@ -69,7 +70,7 @@ function LogsPageInner() {
   const [milestoneOnly, setMilestoneOnly] = useState(false);
   const [searchText, setSearchText] = useState("");
 
-  // 通信タブ状態
+  // アルバムタブ状態
   const [reports, setReports] = useState<WeeklyReport[]>([]);
   const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
   const [annualReports, setAnnualReports] = useState<AnnualReport[]>([]);
@@ -471,7 +472,7 @@ function LogsPageInner() {
         toast.error(data.error ?? "生成に失敗しました");
         return;
       }
-      toast.success("週次通信を生成しました");
+      toast.success("週次アルバムを生成しました");
       router.push(`/weekly/${data.id}`);
     } catch {
       toast.error("生成に失敗しました。再度お試しください");
@@ -497,7 +498,7 @@ function LogsPageInner() {
         toast.error(data.error ?? "生成に失敗しました");
         return;
       }
-      toast.success("月次まとめを生成しました");
+      toast.success("月次アルバムを生成しました");
       router.push(`/weekly/monthly/${data.id}`);
     } catch {
       toast.error("生成に失敗しました。再度お試しください");
@@ -547,7 +548,7 @@ function LogsPageInner() {
     ? annualReports.filter((r) => r.child_id === selectedChildId)
     : annualReports;
 
-  // 未生成週の算出: ログがある週のうち、通信が未生成の週を抽出
+  // 未生成週の算出: ログがある週のうち、アルバムが未生成の週を抽出
   const ungeneratedWeeks = useMemo(() => {
     const targetLogs = selectedChildId
       ? logs.filter((l) => l.child_id === selectedChildId)
@@ -583,10 +584,10 @@ function LogsPageInner() {
   // ヘッダー情報
   const headerInfo: Record<LogsTab, { en: string; ja: string }> = {
     logs: { en: "All Records", ja: "記録一覧" },
-    weekly: { en: "Weekly Letters", ja: "週次通信" },
-    monthly: { en: "Monthly Essays", ja: "月次まとめ" },
+    weekly: { en: "Weekly Album", ja: "週次アルバム" },
+    monthly: { en: "Monthly Album", ja: "月次アルバム" },
     annual: { en: "Annual Album", ja: "年次アルバム" },
-    "report-settings": { en: "Report Settings", ja: "通信設定" },
+    "report-settings": { en: "Album Settings", ja: "アルバム設定" },
   };
 
   if (loading) {
@@ -600,6 +601,8 @@ function LogsPageInner() {
 
   return (
     <div className="space-y-5">
+      <GeneratingOverlay visible={generating} />
+
       {/* ページヘッダー */}
       <div className="flex items-end justify-between">
         <div>
@@ -610,7 +613,7 @@ function LogsPageInner() {
             {headerInfo[activeTab].ja}
           </h1>
         </div>
-        {/* 通信タブ: 生成ボタン */}
+        {/* アルバムタブ: 生成ボタン */}
         {activeTab === "weekly" && (
           <button
             onClick={() => handleGenerateWeekly()}
@@ -625,7 +628,7 @@ function LogsPageInner() {
             ) : (
               <>
                 <span className="text-base leading-none">✉</span>
-                今週（{format(getWeekRange(new Date()).start, "M/d")}〜{format(getWeekRange(new Date()).end, "M/d")}）の通信を作る
+                今週（{format(getWeekRange(new Date()).start, "M/d")}〜{format(getWeekRange(new Date()).end, "M/d")}）のアルバムを作る
               </>
             )}
           </button>
@@ -644,7 +647,7 @@ function LogsPageInner() {
             ) : (
               <>
                 <span className="text-base leading-none">📖</span>
-                {currentMonthLabel}のまとめを作る
+                {currentMonthLabel}のアルバムを作る
               </>
             )}
           </button>
@@ -660,7 +663,7 @@ function LogsPageInner() {
       {/* タブ切替 */}
       <LogsTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* 通信タブ（週次・月次・年次）: 子供セレクター */}
+      {/* アルバムタブ（週次・月次・年次）: 子供セレクター */}
       {(activeTab === "weekly" || activeTab === "monthly" || activeTab === "annual") &&
         childrenList.length >= 2 && (
           <ChildSelector
@@ -774,7 +777,7 @@ function LogsPageInner() {
         </>
       )}
 
-      {/* ===== 週次通信タブ ===== */}
+      {/* ===== 週次アルバムタブ ===== */}
       {activeTab === "weekly" && (
         <>
           {filteredReports.length === 0 && ungeneratedWeeks.length === 0 ? (
@@ -785,10 +788,10 @@ function LogsPageInner() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
-                  まだ週次通信がありません
+                  まだ週次アルバムがありません
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground/70">
-                  ログを記録したら「今週の通信を作る」を押してみましょう
+                  ログを記録したら「今週のアルバムを作る」を押してみましょう
                 </p>
               </div>
             </div>
@@ -837,7 +840,7 @@ function LogsPageInner() {
         </>
       )}
 
-      {/* ===== 月次まとめタブ ===== */}
+      {/* ===== 月次アルバムタブ ===== */}
       {activeTab === "monthly" && (
         <>
           {filteredMonthlyReports.length === 0 ? (
@@ -848,10 +851,10 @@ function LogsPageInner() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
-                  まだ月次まとめがありません
+                  まだ月次アルバムがありません
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground/70">
-                  週次通信が作られたら「まとめを作る」を押してみましょう
+                  週次アルバムが作られたら「アルバムを作る」を押してみましょう
                 </p>
               </div>
             </div>
@@ -884,7 +887,7 @@ function LogsPageInner() {
         </>
       )}
 
-      {/* ===== 通信設定タブ ===== */}
+      {/* ===== アルバム設定タブ ===== */}
       {activeTab === "report-settings" && <ReportPreferencesForm />}
     </div>
   );

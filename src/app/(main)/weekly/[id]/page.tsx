@@ -9,6 +9,7 @@ import { PhotoGallery } from "@/components/weekly/photo-gallery";
 import { ShareMenu } from "@/components/export/share-menu";
 import { ExportLayout } from "@/components/export/export-layout";
 import { toast } from "sonner";
+import { GeneratingOverlay } from "@/components/ui/generating-overlay";
 import type { WeeklyReport } from "@/types";
 
 export default function WeeklyDetailPage() {
@@ -30,7 +31,7 @@ export default function WeeklyDetailPage() {
       .single();
 
     if (error || !data) {
-      toast.error("通信が見つかりませんでした");
+      toast.error("アルバムが見つかりませんでした");
       router.push("/weekly");
       return;
     }
@@ -132,7 +133,7 @@ export default function WeeklyDetailPage() {
         return;
       }
 
-      toast.success("週次通信を再生成しました");
+      toast.success("週次アルバムを再生成しました");
       setReport(data);
     } catch {
       toast.error("再生成に失敗しました。再度お試しください");
@@ -154,6 +155,8 @@ export default function WeeklyDetailPage() {
 
   return (
     <div className="space-y-6">
+      <GeneratingOverlay visible={regenerating} message="アルバムを再生成中です…" />
+
       {/* 戻るリンク */}
       <button
         onClick={() => router.push("/weekly")}
@@ -162,7 +165,7 @@ export default function WeeklyDetailPage() {
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="m15 18-6-6 6-6" />
         </svg>
-        通信一覧へ
+        アルバム一覧へ
       </button>
 
       {/* 手紙カード */}
