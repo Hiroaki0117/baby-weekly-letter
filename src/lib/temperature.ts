@@ -2,6 +2,38 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { TemperatureRecord, TemperatureRecordInsert, TempPeriod } from "@/types";
 
+/**
+ * ソート済み配列の指定パーセンタイル値を線形補間で返す。
+ */
+export function percentile(sorted: number[], p: number): number {
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+/**
+ * IQR（四分位範囲）方式で外れ値を除外し、平熱を算出する。
+ * データが5件未満の場合は null を返す。
+ */
+export function calcNormalTemperature(records: { temperature: number }[]): number | null {
+  const temps = records.map((r) => r.temperature).sort((a, b) => a - b);
+  if (temps.length < 5) return null;
+
+  const q1 = percentile(temps, 25);
+  const q3 = percentile(temps, 75);
+  const iqr = q3 - q1;
+  const lower = q1 - 1.5 * iqr;
+  const upper = q3 + 1.5 * iqr;
+
+  const filtered = temps.filter((t) => t >= lower && t <= upper);
+  if (filtered.length === 0) return null;
+
+  const avg = filtered.reduce((sum, t) => sum + t, 0) / filtered.length;
+  return Math.round(avg * 10) / 10;
+}
+
 type Client = SupabaseClient<Database>;
 
 /**
