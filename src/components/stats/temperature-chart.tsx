@@ -144,14 +144,7 @@ export function TemperatureChart({ records }: Props) {
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">体温の推移</h3>
-          {normalTemp !== null && (
-            <span className="text-xs text-muted-foreground">
-              平熱 <span className="font-semibold text-foreground">{normalTemp}℃</span>
-            </span>
-          )}
-        </div>
+        <h3 className="text-sm font-semibold text-foreground">体温の推移</h3>
 
         {/* 週別/月別タブ */}
         <div className="flex justify-center">
@@ -220,6 +213,15 @@ export function TemperatureChart({ records }: Props) {
             </button>
         </div>
       </div>
+
+      {/* 平熱バッジ */}
+      {normalTemp !== null && (
+        <div className="flex justify-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+            🌡 平熱 {normalTemp}℃
+          </span>
+        </div>
+      )}
 
       {/* 凡例 */}
       <div className="mx-auto grid w-fit grid-cols-2 gap-x-6 gap-y-1">
