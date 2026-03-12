@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { exportAsPdf } from "@/lib/export";
+import { exportAsA4Pdf } from "@/lib/export";
+import { AnnualPdfLayout } from "./annual-pdf-layout";
 import { toast } from "sonner";
 import type { AnnualReport, AnnualReportContent } from "@/types";
 
@@ -20,7 +21,7 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
   const content = report.content;
   const [photoUrls, setPhotoUrls] = useState<Map<number, string>>(new Map());
   const [exporting, setExporting] = useState(false);
-  const exportRef = useRef<HTMLDivElement>(null);
+  const pdfPagesRef = useRef<HTMLDivElement[]>([]);
 
   // 写真の signed URL を取得
   useEffect(() => {
@@ -53,11 +54,12 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
   }, [content.monthHighlights]);
 
   async function handleExportPdf() {
-    if (!exportRef.current) return;
+    const pages = pdfPagesRef.current.filter(Boolean);
+    if (pages.length === 0) return;
     setExporting(true);
     try {
-      await exportAsPdf(
-        exportRef.current,
+      await exportAsA4Pdf(
+        pages,
         `すくすく日記_${report.fiscal_year}年度アルバム.pdf`,
       );
       toast.success("PDFをダウンロードしました");
@@ -78,8 +80,15 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
         ← 年次一覧に戻る
       </button>
 
+      {/* PDF用非表示レイアウト */}
+      <AnnualPdfLayout
+        content={content}
+        photoUrls={photoUrls}
+        pagesRef={pdfPagesRef}
+      />
+
       {/* アルバム本体 */}
-      <div ref={exportRef} className="space-y-6 rounded-2xl border border-border/60 bg-card p-5 sm:p-8 shadow-sm">
+      <div className="space-y-6 rounded-2xl border border-border/60 bg-card p-5 sm:p-8 shadow-sm">
         {/* 表紙 */}
         <div className="text-center space-y-2 pb-6 border-b border-border/40">
           <p className="text-3xl">📚</p>
