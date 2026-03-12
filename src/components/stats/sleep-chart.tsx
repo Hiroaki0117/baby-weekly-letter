@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { startOfWeek, addWeeks, addDays, isAfter, format } from "date-fns";
 import { cn } from "@/lib/utils";
-import type { SleepRecord } from "@/types";
+import type { SleepRecord, SleepCategory } from "@/types";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -24,12 +24,18 @@ function formatHourMin(minutes: number): string {
   return m > 0 ? `${h}時間${m}分` : `${h}時間`;
 }
 
+function formatTimeFromISO(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 type Props = {
   records: SleepRecord[];
 };
 
 export function SleepChart({ records }: Props) {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [popover, setPopover] = useState<{ dateStr: string; category: SleepCategory } | null>(null);
 
   const currentMonday = getMonday(new Date());
   const canGoNext = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -65,9 +71,33 @@ export function SleepChart({ records }: Props) {
     return map;
   }, [records, days]);
 
+  // 日付×カテゴリ → SleepRecord[] のマップ（started_at昇順）
+  const detailMap = useMemo(() => {
+    const map = new Map<string, SleepRecord[]>();
+    for (const r of records) {
+      if (!days.some((d) => d.dateStr === r.sleep_date)) continue;
+      const key = `${r.sleep_date}_${r.sleep_category}`;
+      const arr = map.get(key) ?? [];
+      arr.push(r);
+      map.set(key, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => a.started_at.localeCompare(b.started_at));
+    }
+    return map;
+  }, [records, days]);
+
   const hasData = Array.from(grid.values()).some(
     (v) => v.night + v.daytime > 0,
   );
+
+  function togglePopover(dateStr: string, category: SleepCategory) {
+    if (popover?.dateStr === dateStr && popover?.category === category) {
+      setPopover(null);
+    } else {
+      setPopover({ dateStr, category });
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -136,7 +166,7 @@ export function SleepChart({ records }: Props) {
               </tr>
             </thead>
             <tbody>
-              {days.map((day) => {
+              {days.map((day, dayIndex) => {
                 const entry = grid.get(day.dateStr) ?? {
                   night: 0,
                   daytime: 0,
@@ -144,6 +174,7 @@ export function SleepChart({ records }: Props) {
                 const total = entry.night + entry.daytime;
                 const isWeekend =
                   day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                const openUpward = dayIndex >= days.length - 2;
                 return (
                   <tr
                     key={day.dateStr}
@@ -155,28 +186,51 @@ export function SleepChart({ records }: Props) {
                     <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
                       {day.label}
                     </td>
-                    <td className="px-2 py-2 text-center">
+                    {/* 日中 */}
+                    <td className="relative px-2 py-2 text-center">
                       {entry.daytime > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                        <button
+                          type="button"
+                          onClick={() => togglePopover(day.dateStr, "daytime")}
+                          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-amber-600"
+                        >
                           {formatHourMin(entry.daytime)}
-                        </span>
+                        </button>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">
                           ー
                         </span>
                       )}
+                      {popover?.dateStr === day.dateStr && popover?.category === "daytime" && (
+                        <SleepPopover
+                          records={detailMap.get(`${day.dateStr}_daytime`) ?? []}
+                          openUpward={openUpward}
+                        />
+                      )}
                     </td>
-                    <td className="px-2 py-2 text-center">
+                    {/* 夜間 */}
+                    <td className="relative px-2 py-2 text-center">
                       {entry.night > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">
+                        <button
+                          type="button"
+                          onClick={() => togglePopover(day.dateStr, "night")}
+                          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-indigo-600"
+                        >
                           {formatHourMin(entry.night)}
-                        </span>
+                        </button>
                       ) : (
                         <span className="text-xs text-muted-foreground/40">
                           ー
                         </span>
                       )}
+                      {popover?.dateStr === day.dateStr && popover?.category === "night" && (
+                        <SleepPopover
+                          records={detailMap.get(`${day.dateStr}_night`) ?? []}
+                          openUpward={openUpward}
+                        />
+                      )}
                     </td>
+                    {/* 合計 */}
                     <td className="px-2 py-2 text-center">
                       {total > 0 ? (
                         <span className="text-xs font-bold text-foreground">
@@ -195,6 +249,35 @@ export function SleepChart({ records }: Props) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function SleepPopover({ records, openUpward }: { records: SleepRecord[]; openUpward: boolean }) {
+  if (records.length === 0) return null;
+  return (
+    <div
+      className={cn(
+        "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+        openUpward ? "bottom-full mb-1" : "top-full mt-1",
+      )}
+    >
+      <div className="space-y-1 text-xs whitespace-nowrap">
+        {records.map((r) => (
+          <div key={r.id} className="flex items-center gap-2">
+            <span className="text-muted-foreground">
+              {formatTimeFromISO(r.started_at)}
+            </span>
+            <span className="text-muted-foreground">〜</span>
+            <span className="text-muted-foreground">
+              {formatTimeFromISO(r.ended_at)}
+            </span>
+            <span className="font-medium text-foreground">
+              {formatHourMin(r.duration_minutes)}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
