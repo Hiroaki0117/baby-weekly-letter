@@ -42,23 +42,25 @@ describe("canGenerate", () => {
   });
 });
 
+// NOTE: クールダウンは開発用に無効化中（COOLDOWN_MS = 0）
+// 本番リリース時に COOLDOWN_MS を 24h に戻したらテストも元に戻すこと
 describe("isInCooldown", () => {
-  it("生成から23時間後はクールダウン中", () => {
+  it("クールダウン無効化中は常にfalse", () => {
     const now = new Date("2026-03-10T23:00:00Z");
-    const generatedAt = "2026-03-10T01:00:00Z"; // 22時間前
-    expect(isInCooldown(generatedAt, now)).toBe(true);
+    const generatedAt = "2026-03-10T01:00:00Z";
+    expect(isInCooldown(generatedAt, now)).toBe(false);
   });
 
   it("生成から25時間後はクールダウン外", () => {
     const now = new Date("2026-03-11T02:00:00Z");
-    const generatedAt = "2026-03-10T00:00:00Z"; // 26時間前
+    const generatedAt = "2026-03-10T00:00:00Z";
     expect(isInCooldown(generatedAt, now)).toBe(false);
   });
 
-  it("生成直後はクールダウン中", () => {
+  it("生成直後もクールダウン無効化中はfalse", () => {
     const now = new Date("2026-03-10T00:00:00Z");
     const generatedAt = "2026-03-10T00:00:00Z";
-    expect(isInCooldown(generatedAt, now)).toBe(true);
+    expect(isInCooldown(generatedAt, now)).toBe(false);
   });
 
   it("ちょうど24時間後はクールダウン外", () => {
@@ -69,11 +71,11 @@ describe("isInCooldown", () => {
 });
 
 describe("getCooldownRemaining", () => {
-  it("生成から22時間後は残り2時間分のミリ秒を返す", () => {
+  it("クールダウン無効化中は常に0を返す", () => {
     const now = new Date("2026-03-10T22:00:00Z");
     const generatedAt = "2026-03-10T00:00:00Z";
     const remaining = getCooldownRemaining(generatedAt, now);
-    expect(remaining).toBe(2 * 60 * 60 * 1000);
+    expect(remaining).toBe(0);
   });
 
   it("クールダウン外は0を返す", () => {
