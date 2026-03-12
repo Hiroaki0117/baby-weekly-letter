@@ -110,8 +110,7 @@ export function QuickTemperatureInput({ childrenList }: Props) {
                   {saving[child.id] ? "..." : "記録"}
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 pl-[4.5rem]">
-                <span className="text-[11px] text-muted-foreground">🕐</span>
+              <div className="flex items-center gap-2 pl-[4.5rem]">
                 <input
                   type="datetime-local"
                   value={measuredAts[child.id] ?? toLocalDatetimeString(new Date())}
@@ -121,7 +120,7 @@ export function QuickTemperatureInput({ childrenList }: Props) {
                       [child.id]: e.target.value,
                     }))
                   }
-                  className="rounded-md border border-border/60 bg-background/60 px-2 py-1 text-xs text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-center text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
             </div>
