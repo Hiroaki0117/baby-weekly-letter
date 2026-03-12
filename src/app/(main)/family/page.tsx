@@ -11,28 +11,6 @@ import {
   updateGrowthRecord,
   deleteGrowthRecord,
 } from "@/lib/growth";
-import {
-  fetchTemperatureRecords,
-  addTemperatureRecord,
-  updateTemperatureRecord,
-  deleteTemperatureRecord,
-  classifyTempPeriod,
-} from "@/lib/temperature";
-import {
-  fetchSleepRecords,
-  addSleepRecord,
-  updateSleepRecord,
-  deleteSleepRecord,
-  buildTimestamps,
-  calcDurationMinutes,
-  classifySleep,
-} from "@/lib/sleep";
-import {
-  fetchMealRecords,
-  addMealRecord,
-  updateMealRecord,
-  deleteMealRecord,
-} from "@/lib/meal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MemberList } from "@/components/family/member-list";
@@ -40,14 +18,8 @@ import { InviteLink } from "@/components/family/invite-link";
 import { GrowthRecordForm } from "@/components/growth/growth-record-form";
 import { GrowthRecordList } from "@/components/growth/growth-record-list";
 import { GrowthChart } from "@/components/stats/growth-chart";
-import { TemperatureRecordForm } from "@/components/temperature/temperature-record-form";
-import { TemperatureRecordList } from "@/components/temperature/temperature-record-list";
-import { SleepRecordForm } from "@/components/sleep/sleep-record-form";
-import { SleepRecordList } from "@/components/sleep/sleep-record-list";
-import { MealRecordForm } from "@/components/meal/meal-record-form";
-import { MealRecordList } from "@/components/meal/meal-record-list";
 import { toast } from "sonner";
-import type { Child, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, MealType, MealAmount, Gender } from "@/types";
+import type { Child, GrowthRecord, Gender } from "@/types";
 
 export default function FamilyPage() {
   const [loading, setLoading] = useState(true);
@@ -72,18 +44,6 @@ export default function FamilyPage() {
   const [growthRecords, setGrowthRecords] = useState<Record<string, GrowthRecord[]>>({});
   const [showGrowthForm, setShowGrowthForm] = useState<string | null>(null);
   const [editingGrowthRecord, setEditingGrowthRecord] = useState<GrowthRecord | null>(null);
-  // 体温記録
-  const [temperatureRecords, setTemperatureRecords] = useState<Record<string, TemperatureRecord[]>>({});
-  const [showTempForm, setShowTempForm] = useState<string | null>(null);
-  const [editingTempRecord, setEditingTempRecord] = useState<TemperatureRecord | null>(null);
-  // 睡眠記録
-  const [sleepRecords, setSleepRecords] = useState<Record<string, SleepRecord[]>>({});
-  const [showSleepForm, setShowSleepForm] = useState<string | null>(null);
-  const [editingSleepRecord, setEditingSleepRecord] = useState<SleepRecord | null>(null);
-  // 食事記録
-  const [mealRecords, setMealRecords] = useState<Record<string, MealRecord[]>>({});
-  const [showMealForm, setShowMealForm] = useState<string | null>(null);
-  const [editingMealRecord, setEditingMealRecord] = useState<MealRecord | null>(null);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -138,11 +98,8 @@ export default function FamilyPage() {
         const kids = childrenRes.data as Child[];
         setChildrenList(kids);
 
-        // 成長記録・体温記録・睡眠記録・食事記録を並行取得
+        // 成長記録を並行取得
         const growthMap: Record<string, GrowthRecord[]> = {};
-        const tempMap: Record<string, TemperatureRecord[]> = {};
-        const sleepMap: Record<string, SleepRecord[]> = {};
-        const mealMap: Record<string, MealRecord[]> = {};
         await Promise.all(
           kids.map(async (child) => {
             try {
@@ -150,27 +107,9 @@ export default function FamilyPage() {
             } catch {
               growthMap[child.id] = [];
             }
-            try {
-              tempMap[child.id] = await fetchTemperatureRecords(client, child.id);
-            } catch {
-              tempMap[child.id] = [];
-            }
-            try {
-              sleepMap[child.id] = await fetchSleepRecords(client, child.id);
-            } catch {
-              sleepMap[child.id] = [];
-            }
-            try {
-              mealMap[child.id] = await fetchMealRecords(client, child.id);
-            } catch {
-              mealMap[child.id] = [];
-            }
           })
         );
         setGrowthRecords(growthMap);
-        setTemperatureRecords(tempMap);
-        setSleepRecords(sleepMap);
-        setMealRecords(mealMap);
       }
 
       setLoading(false);
@@ -322,171 +261,6 @@ export default function FamilyPage() {
         [childId]: (prev[childId] ?? []).filter((r) => r.id !== recordId),
       }));
       toast.success("成長記録を削除しました");
-    },
-    [supabase]
-  );
-
-  // 体温記録ハンドラ
-  const handleAddTemp = useCallback(
-    async (childId: string, data: { measured_at: string; temperature: number }) => {
-      const record = await addTemperatureRecord(supabase, {
-        child_id: childId,
-        measured_at: data.measured_at,
-        temperature: data.temperature,
-        temp_period: classifyTempPeriod(data.measured_at),
-      });
-      setTemperatureRecords((prev) => ({
-        ...prev,
-        [childId]: [...(prev[childId] ?? []), record].sort(
-          (a, b) => a.measured_at.localeCompare(b.measured_at)
-        ),
-      }));
-      setShowTempForm(null);
-      setEditingTempRecord(null);
-      toast.success("体温記録を追加しました");
-    },
-    [supabase]
-  );
-
-  const handleUpdateTemp = useCallback(
-    async (childId: string, recordId: string, data: { measured_at: string; temperature: number }) => {
-      const updated = await updateTemperatureRecord(supabase, recordId, {
-        ...data,
-        temp_period: classifyTempPeriod(data.measured_at),
-      });
-      setTemperatureRecords((prev) => ({
-        ...prev,
-        [childId]: (prev[childId] ?? [])
-          .map((r) => (r.id === recordId ? updated : r))
-          .sort((a, b) => a.measured_at.localeCompare(b.measured_at)),
-      }));
-      setShowTempForm(null);
-      setEditingTempRecord(null);
-      toast.success("体温記録を更新しました");
-    },
-    [supabase]
-  );
-
-  const handleDeleteTemp = useCallback(
-    async (childId: string, recordId: string) => {
-      await deleteTemperatureRecord(supabase, recordId);
-      setTemperatureRecords((prev) => ({
-        ...prev,
-        [childId]: (prev[childId] ?? []).filter((r) => r.id !== recordId),
-      }));
-      toast.success("体温記録を削除しました");
-    },
-    [supabase]
-  );
-
-  // 睡眠記録ハンドラ
-  const handleAddSleep = useCallback(
-    async (childId: string, data: { sleep_date: string; startTime: string; endTime: string }) => {
-      const { startedAt, endedAt } = buildTimestamps(data.sleep_date, data.startTime, data.endTime);
-      const duration = calcDurationMinutes(startedAt, endedAt);
-      const record = await addSleepRecord(supabase, {
-        child_id: childId,
-        sleep_date: data.sleep_date,
-        started_at: startedAt,
-        ended_at: endedAt,
-        duration_minutes: duration,
-        sleep_category: classifySleep(startedAt),
-      });
-      setSleepRecords((prev) => ({
-        ...prev,
-        [childId]: [...(prev[childId] ?? []), record].sort(
-          (a, b) => a.started_at.localeCompare(b.started_at)
-        ),
-      }));
-      setShowSleepForm(null);
-      setEditingSleepRecord(null);
-      toast.success("睡眠記録を追加しました");
-    },
-    [supabase]
-  );
-
-  const handleUpdateSleep = useCallback(
-    async (childId: string, recordId: string, data: { sleep_date: string; startTime: string; endTime: string }) => {
-      const { startedAt, endedAt } = buildTimestamps(data.sleep_date, data.startTime, data.endTime);
-      const duration = calcDurationMinutes(startedAt, endedAt);
-      const updated = await updateSleepRecord(supabase, recordId, {
-        sleep_date: data.sleep_date,
-        started_at: startedAt,
-        ended_at: endedAt,
-        duration_minutes: duration,
-        sleep_category: classifySleep(startedAt),
-      });
-      setSleepRecords((prev) => ({
-        ...prev,
-        [childId]: (prev[childId] ?? [])
-          .map((r) => (r.id === recordId ? updated : r))
-          .sort((a, b) => a.started_at.localeCompare(b.started_at)),
-      }));
-      setShowSleepForm(null);
-      setEditingSleepRecord(null);
-      toast.success("睡眠記録を更新しました");
-    },
-    [supabase]
-  );
-
-  const handleDeleteSleep = useCallback(
-    async (childId: string, recordId: string) => {
-      await deleteSleepRecord(supabase, recordId);
-      setSleepRecords((prev) => ({
-        ...prev,
-        [childId]: (prev[childId] ?? []).filter((r) => r.id !== recordId),
-      }));
-      toast.success("睡眠記録を削除しました");
-    },
-    [supabase]
-  );
-
-  // 食事記録ハンドラ
-  const handleAddMeal = useCallback(
-    async (childId: string, data: { meal_date: string; meal_type: MealType; amount: MealAmount }) => {
-      const record = await addMealRecord(supabase, {
-        child_id: childId,
-        meal_date: data.meal_date,
-        meal_type: data.meal_type,
-        amount: data.amount,
-      });
-      setMealRecords((prev) => ({
-        ...prev,
-        [childId]: [...(prev[childId] ?? []), record],
-      }));
-      setShowMealForm(null);
-      setEditingMealRecord(null);
-      toast.success("食事記録を追加しました");
-    },
-    [supabase]
-  );
-
-  const handleUpdateMeal = useCallback(
-    async (childId: string, recordId: string, data: { meal_date: string; meal_type: MealType; amount: MealAmount }) => {
-      const updated = await updateMealRecord(supabase, recordId, {
-        meal_date: data.meal_date,
-        meal_type: data.meal_type,
-        amount: data.amount,
-      });
-      setMealRecords((prev) => ({
-        ...prev,
-        [childId]: (prev[childId] ?? []).map((r) => (r.id === recordId ? updated : r)),
-      }));
-      setShowMealForm(null);
-      setEditingMealRecord(null);
-      toast.success("食事記録を更新しました");
-    },
-    [supabase]
-  );
-
-  const handleDeleteMeal = useCallback(
-    async (childId: string, recordId: string) => {
-      await deleteMealRecord(supabase, recordId);
-      setMealRecords((prev) => ({
-        ...prev,
-        [childId]: (prev[childId] ?? []).filter((r) => r.id !== recordId),
-      }));
-      toast.success("食事記録を削除しました");
     },
     [supabase]
   );
@@ -729,144 +503,6 @@ export default function FamilyPage() {
                         setEditingGrowthRecord(record);
                       }}
                       onDelete={(id) => handleDeleteGrowth(child.id, id)}
-                    />
-                  </div>
-
-                  {/* 体温記録セクション */}
-                  <div className="space-y-3 border-t border-border/30 pt-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        体温記録
-                      </p>
-                      {showTempForm !== child.id && (
-                        <button
-                          onClick={() => {
-                            setShowTempForm(child.id);
-                            setEditingTempRecord(null);
-                          }}
-                          className="text-xs text-primary transition-colors hover:text-primary/80"
-                        >
-                          + 記録を追加
-                        </button>
-                      )}
-                    </div>
-
-                    {showTempForm === child.id && (
-                      <TemperatureRecordForm
-                        editingRecord={editingTempRecord}
-                        onSubmit={async (data) => {
-                          if (editingTempRecord) {
-                            await handleUpdateTemp(child.id, editingTempRecord.id, data);
-                          } else {
-                            await handleAddTemp(child.id, data);
-                          }
-                        }}
-                        onCancel={() => {
-                          setShowTempForm(null);
-                          setEditingTempRecord(null);
-                        }}
-                      />
-                    )}
-
-                    <TemperatureRecordList
-                      records={temperatureRecords[child.id] ?? []}
-                      onEdit={(record) => {
-                        setShowTempForm(child.id);
-                        setEditingTempRecord(record);
-                      }}
-                      onDelete={(id) => handleDeleteTemp(child.id, id)}
-                    />
-                  </div>
-
-                  {/* 睡眠記録セクション */}
-                  <div className="space-y-3 border-t border-border/30 pt-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        睡眠記録
-                      </p>
-                      {showSleepForm !== child.id && (
-                        <button
-                          onClick={() => {
-                            setShowSleepForm(child.id);
-                            setEditingSleepRecord(null);
-                          }}
-                          className="text-xs text-primary transition-colors hover:text-primary/80"
-                        >
-                          + 記録を追加
-                        </button>
-                      )}
-                    </div>
-
-                    {showSleepForm === child.id && (
-                      <SleepRecordForm
-                        editingRecord={editingSleepRecord}
-                        onSubmit={async (data) => {
-                          if (editingSleepRecord) {
-                            await handleUpdateSleep(child.id, editingSleepRecord.id, data);
-                          } else {
-                            await handleAddSleep(child.id, data);
-                          }
-                        }}
-                        onCancel={() => {
-                          setShowSleepForm(null);
-                          setEditingSleepRecord(null);
-                        }}
-                      />
-                    )}
-
-                    <SleepRecordList
-                      records={sleepRecords[child.id] ?? []}
-                      onEdit={(record) => {
-                        setShowSleepForm(child.id);
-                        setEditingSleepRecord(record);
-                      }}
-                      onDelete={(id) => handleDeleteSleep(child.id, id)}
-                    />
-                  </div>
-
-                  {/* 食事記録セクション */}
-                  <div className="space-y-3 border-t border-border/30 pt-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        食事記録
-                      </p>
-                      {showMealForm !== child.id && (
-                        <button
-                          onClick={() => {
-                            setShowMealForm(child.id);
-                            setEditingMealRecord(null);
-                          }}
-                          className="text-xs text-primary transition-colors hover:text-primary/80"
-                        >
-                          + 記録を追加
-                        </button>
-                      )}
-                    </div>
-
-                    {showMealForm === child.id && (
-                      <MealRecordForm
-                        editingRecord={editingMealRecord}
-                        onSubmit={async (data) => {
-                          if (editingMealRecord) {
-                            await handleUpdateMeal(child.id, editingMealRecord.id, data);
-                          } else {
-                            await handleAddMeal(child.id, data);
-                          }
-                        }}
-                        onCancel={() => {
-                          setShowMealForm(null);
-                          setEditingMealRecord(null);
-                        }}
-                      />
-                    )}
-
-                    <MealRecordList
-                      records={mealRecords[child.id] ?? []}
-                      onEdit={(record) => {
-                        setShowMealForm(child.id);
-                        setEditingMealRecord(record);
-                      }}
-                      onDelete={(id) => handleDeleteMeal(child.id, id)}
                     />
                   </div>
                 </div>
