@@ -1,8 +1,8 @@
 "use client";
 
-export type LogsTab = "logs" | "weekly" | "monthly" | "annual" | "report-settings";
+export type LogsTab = "logs" | "photos" | "weekly" | "monthly" | "annual" | "report-settings";
 
-type TopCategory = "records" | "reports";
+type TopCategory = "records" | "photos" | "reports";
 
 type LogsTabsProps = {
   activeTab: LogsTab;
@@ -17,7 +17,9 @@ const reportTabs: { key: LogsTab; label: string; icon: string }[] = [
 ];
 
 function getTopCategory(tab: LogsTab): TopCategory {
-  return tab === "logs" ? "records" : "reports";
+  if (tab === "logs") return "records";
+  if (tab === "photos") return "photos";
+  return "reports";
 }
 
 export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
@@ -26,8 +28,10 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
   function handleTopChange(category: TopCategory) {
     if (category === "records") {
       onTabChange("logs");
+    } else if (category === "photos") {
+      onTabChange("photos");
     } else {
-      if (activeTab === "logs") {
+      if (activeTab === "logs" || activeTab === "photos") {
         onTabChange("weekly");
       }
     }
@@ -46,6 +50,16 @@ export function LogsTabs({ activeTab, onTabChange }: LogsTabsProps) {
           }`}
         >
           📝 記録
+        </button>
+        <button
+          onClick={() => handleTopChange("photos")}
+          className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            topCategory === "photos"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          📸 写真
         </button>
         <button
           onClick={() => handleTopChange("reports")}
