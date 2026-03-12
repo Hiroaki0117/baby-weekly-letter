@@ -6,6 +6,7 @@ describe("reportPreferencesSchema", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "warm",
       sections: ["highlight", "digest", "growth"],
+      autoGenerate: true,
     });
     expect(result.success).toBe(true);
   });
@@ -15,6 +16,7 @@ describe("reportPreferencesSchema", () => {
       const result = reportPreferencesSchema.safeParse({
         tone,
         sections: ["highlight"],
+        autoGenerate: true,
       });
       expect(result.success).toBe(true);
     }
@@ -24,6 +26,7 @@ describe("reportPreferencesSchema", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "unknown",
       sections: ["highlight"],
+      autoGenerate: true,
     });
     expect(result.success).toBe(false);
   });
@@ -32,6 +35,7 @@ describe("reportPreferencesSchema", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "warm",
       sections: ["highlight", "digest", "growth", "encouragement", "quote"],
+      autoGenerate: false,
     });
     expect(result.success).toBe(true);
   });
@@ -40,6 +44,7 @@ describe("reportPreferencesSchema", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "warm",
       sections: ["quote"],
+      autoGenerate: true,
     });
     expect(result.success).toBe(true);
   });
@@ -48,6 +53,7 @@ describe("reportPreferencesSchema", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "warm",
       sections: [],
+      autoGenerate: true,
     });
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -61,6 +67,7 @@ describe("reportPreferencesSchema", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "warm",
       sections: ["invalid_section"],
+      autoGenerate: true,
     });
     expect(result.success).toBe(false);
   });
@@ -68,6 +75,7 @@ describe("reportPreferencesSchema", () => {
   it("toneが欠けていると拒否", () => {
     const result = reportPreferencesSchema.safeParse({
       sections: ["highlight"],
+      autoGenerate: true,
     });
     expect(result.success).toBe(false);
   });
@@ -75,7 +83,25 @@ describe("reportPreferencesSchema", () => {
   it("sectionsが欠けていると拒否", () => {
     const result = reportPreferencesSchema.safeParse({
       tone: "warm",
+      autoGenerate: true,
     });
     expect(result.success).toBe(false);
+  });
+
+  it("autoGenerateが欠けていると拒否", () => {
+    const result = reportPreferencesSchema.safeParse({
+      tone: "warm",
+      sections: ["highlight"],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("autoGenerate が false で有効", () => {
+    const result = reportPreferencesSchema.safeParse({
+      tone: "warm",
+      sections: ["highlight"],
+      autoGenerate: false,
+    });
+    expect(result.success).toBe(true);
   });
 });

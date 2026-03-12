@@ -31,6 +31,7 @@ export function ReportPreferencesForm() {
     defaultValues: {
       tone: DEFAULT_TONE,
       sections: DEFAULT_SECTIONS,
+      autoGenerate: true,
     },
   });
 
@@ -49,7 +50,7 @@ export function ReportPreferencesForm() {
 
       const { data } = await client
         .from("report_preferences")
-        .select("tone, sections")
+        .select("tone, sections, auto_generate")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -57,6 +58,7 @@ export function ReportPreferencesForm() {
         form.reset({
           tone: data.tone as ReportTone,
           sections: data.sections as ReportSection[],
+          autoGenerate: data.auto_generate ?? true,
         });
       }
 
@@ -78,6 +80,7 @@ export function ReportPreferencesForm() {
           user_id: user.id,
           tone: values.tone,
           sections: values.sections,
+          auto_generate: values.autoGenerate,
         },
         { onConflict: "user_id" }
       );
@@ -120,6 +123,28 @@ export function ReportPreferencesForm() {
         </p>
       </div>
       <div className="space-y-6 p-5">
+        {/* 自動生成 */}
+        <div className="space-y-3">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            自動生成
+          </Label>
+          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border/60 p-3 transition-colors hover:border-border">
+            <div>
+              <span className="text-sm font-medium text-foreground">
+                アルバムを自動で作成する
+              </span>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                週末・月末に自動で生成されます
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              {...form.register("autoGenerate")}
+              className="h-4 w-4 rounded border-muted-foreground/40 text-primary focus:ring-primary/30"
+            />
+          </label>
+        </div>
+
         {/* トーン選択 */}
         <div className="space-y-3">
           <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
