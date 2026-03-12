@@ -1,11 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { startOfWeek, addWeeks, addDays, isAfter, format } from "date-fns";
+import {
+  startOfWeek,
+  addWeeks,
+  addDays,
+  addMonths,
+  isAfter,
+  format,
+  startOfMonth,
+} from "date-fns";
 import { cn } from "@/lib/utils";
+import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
 import type { SleepRecord, SleepCategory } from "@/types";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const CAL_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
 
 function getMonday(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
@@ -33,13 +43,20 @@ type Props = {
   records: SleepRecord[];
 };
 
+type ViewMode = "weekly" | "monthly";
+
 export function SleepChart({ records }: Props) {
+  const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
-  const [popover, setPopover] = useState<{ dateStr: string; category: SleepCategory } | null>(null);
+  const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
+  const [popover, setPopover] = useState<{ dateStr: string; category?: SleepCategory } | null>(null);
 
   const currentMonday = getMonday(new Date());
-  const canGoNext = !isAfter(addWeeks(weekStart, 1), currentMonday);
+  const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
+  const currentMonth = startOfMonth(new Date());
+  const canGoNextMonth = !isAfter(addMonths(monthDate, 1), currentMonth);
 
+  // ===== 週別 =====
   const days = useMemo(() => {
     const result: { dateStr: string; label: string; dayOfWeek: number }[] = [];
     for (let i = 0; i < 7; i++) {
@@ -53,8 +70,7 @@ export function SleepChart({ records }: Props) {
     return result;
   }, [weekStart]);
 
-  // 日付ごとに夜間・日中の合計分数を集計
-  const grid = useMemo(() => {
+  const weekGrid = useMemo(() => {
     const map = new Map<string, { night: number; daytime: number }>();
     for (const day of days) {
       map.set(day.dateStr, { night: 0, daytime: 0 });
@@ -71,7 +87,6 @@ export function SleepChart({ records }: Props) {
     return map;
   }, [records, days]);
 
-  // 日付×カテゴリ → SleepRecord[] のマップ（started_at昇順）
   const detailMap = useMemo(() => {
     const map = new Map<string, SleepRecord[]>();
     for (const r of records) {
@@ -87,11 +102,87 @@ export function SleepChart({ records }: Props) {
     return map;
   }, [records, days]);
 
-  const hasData = Array.from(grid.values()).some(
-    (v) => v.night + v.daytime > 0,
+  const hasWeekData = Array.from(weekGrid.values()).some((v) => v.night + v.daytime > 0);
+
+  // ===== 月別 =====
+  const calendarWeeks = useMemo(
+    () => buildCalendarWeeks(monthDate.getFullYear(), monthDate.getMonth()),
+    [monthDate],
   );
 
-  function togglePopover(dateStr: string, category: SleepCategory) {
+  const monthGrid = useMemo(() => {
+    const map = new Map<string, { night: number; daytime: number }>();
+    for (const r of records) {
+      const entry = map.get(r.sleep_date) ?? { night: 0, daytime: 0 };
+      if (r.sleep_category === "night") {
+        entry.night += r.duration_minutes;
+      } else {
+        entry.daytime += r.duration_minutes;
+      }
+      map.set(r.sleep_date, entry);
+    }
+    return map;
+  }, [records]);
+
+  const monthDetailMap = useMemo(() => {
+    const map = new Map<string, SleepRecord[]>();
+    for (const r of records) {
+      const arr = map.get(r.sleep_date) ?? [];
+      arr.push(r);
+      map.set(r.sleep_date, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => a.started_at.localeCompare(b.started_at));
+    }
+    return map;
+  }, [records]);
+
+  // 月別で当月に該当する日の合計分数から最大値を取得（バー正規化用）
+  const monthMaxMinutes = useMemo(() => {
+    let max = 0;
+    for (const week of calendarWeeks) {
+      for (const d of week) {
+        if (!d) continue;
+        const entry = monthGrid.get(d);
+        if (entry) {
+          max = Math.max(max, entry.night + entry.daytime);
+        }
+      }
+    }
+    return max || 1;
+  }, [calendarWeeks, monthGrid]);
+
+  const hasMonthData = useMemo(() => {
+    return calendarWeeks.some((week) => week.some((d) => d && monthGrid.has(d)));
+  }, [calendarWeeks, monthGrid]);
+
+  // 月別サマリー
+  const monthSummary = useMemo(() => {
+    let totalMinutes = 0;
+    let dayCount = 0;
+    let maxMinutes = 0;
+    for (const week of calendarWeeks) {
+      for (const d of week) {
+        if (!d) continue;
+        const entry = monthGrid.get(d);
+        if (entry) {
+          const total = entry.night + entry.daytime;
+          if (total > 0) {
+            totalMinutes += total;
+            dayCount++;
+            maxMinutes = Math.max(maxMinutes, total);
+          }
+        }
+      }
+    }
+    if (dayCount === 0) return null;
+    return {
+      avg: formatHourMin(Math.round(totalMinutes / dayCount)),
+      max: formatHourMin(maxMinutes),
+    };
+  }, [calendarWeeks, monthGrid]);
+
+  function togglePopover(dateStr: string, category?: SleepCategory) {
     if (popover?.dateStr === dateStr && popover?.category === category) {
       setPopover(null);
     } else {
@@ -99,34 +190,77 @@ export function SleepChart({ records }: Props) {
     }
   }
 
+  const BAR_MAX_H = 32;
+
   return (
     <div className="space-y-3">
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">睡眠時間の推移</h3>
-        <div className="flex h-8 items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setWeekStart((prev) => addWeeks(prev, -1))}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            ‹
-          </button>
-          <span className="text-sm font-semibold text-foreground">
-            {formatWeekLabel(weekStart)}
-          </span>
-          <button
-            type="button"
-            onClick={() => setWeekStart((prev) => addWeeks(prev, 1))}
-            disabled={!canGoNext}
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors",
-              canGoNext
-                ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                : "text-muted-foreground/30 cursor-not-allowed",
-            )}
-          >
-            ›
-          </button>
+
+        {/* 週別/月別タブ + ナビ */}
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-border/60 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("weekly")}
+              className={cn(
+                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                viewMode === "weekly"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              週別
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("monthly")}
+              className={cn(
+                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                viewMode === "monthly"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              月別
+            </button>
+          </div>
+
+          <div className="flex flex-1 items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                viewMode === "weekly"
+                  ? setWeekStart((prev) => addWeeks(prev, -1))
+                  : setMonthDate((prev) => addMonths(prev, -1))
+              }
+              className="flex h-7 w-7 items-center justify-center rounded-md text-base text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              ‹
+            </button>
+            <span className="text-xs font-semibold text-foreground">
+              {viewMode === "weekly"
+                ? formatWeekLabel(weekStart)
+                : formatMonthLabel(monthDate.getFullYear(), monthDate.getMonth())}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                viewMode === "weekly"
+                  ? setWeekStart((prev) => addWeeks(prev, 1))
+                  : setMonthDate((prev) => addMonths(prev, 1))
+              }
+              disabled={viewMode === "weekly" ? !canGoNextWeek : !canGoNextMonth}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-md text-base transition-colors",
+                (viewMode === "weekly" ? canGoNextWeek : canGoNextMonth)
+                  ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground/30 cursor-not-allowed",
+              )}
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
 
@@ -142,112 +276,214 @@ export function SleepChart({ records }: Props) {
         </div>
       </div>
 
-      {!hasData ? (
-        <p className="py-8 text-center text-xs text-muted-foreground">
-          この週の睡眠記録がありません
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse table-fixed">
-            <thead>
-              <tr>
-                <th className="w-[30%] px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
-                  日付
-                </th>
-                <th className="w-[23%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
-                  日中
-                </th>
-                <th className="w-[23%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
-                  夜間
-                </th>
-                <th className="w-[24%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
-                  合計
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {days.map((day, dayIndex) => {
-                const entry = grid.get(day.dateStr) ?? {
-                  night: 0,
-                  daytime: 0,
-                };
-                const total = entry.night + entry.daytime;
-                const isWeekend =
-                  day.dayOfWeek === 0 || day.dayOfWeek === 6;
-                const openUpward = dayIndex >= days.length - 2;
-                return (
-                  <tr
-                    key={day.dateStr}
-                    className={cn(
-                      "border-t border-border/30",
-                      isWeekend && "bg-muted/30",
-                    )}
-                  >
-                    <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
-                      {day.label}
-                    </td>
-                    {/* 日中 */}
-                    <td className="relative px-2 py-2 text-center">
-                      {entry.daytime > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => togglePopover(day.dateStr, "daytime")}
-                          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-amber-600"
-                        >
-                          {formatHourMin(entry.daytime)}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/40">
-                          ー
-                        </span>
-                      )}
-                      {popover?.dateStr === day.dateStr && popover?.category === "daytime" && (
-                        <SleepPopover
-                          records={detailMap.get(`${day.dateStr}_daytime`) ?? []}
-                          openUpward={openUpward}
-                        />
-                      )}
-                    </td>
-                    {/* 夜間 */}
-                    <td className="relative px-2 py-2 text-center">
-                      {entry.night > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => togglePopover(day.dateStr, "night")}
-                          className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-indigo-600"
-                        >
-                          {formatHourMin(entry.night)}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/40">
-                          ー
-                        </span>
-                      )}
-                      {popover?.dateStr === day.dateStr && popover?.category === "night" && (
-                        <SleepPopover
-                          records={detailMap.get(`${day.dateStr}_night`) ?? []}
-                          openUpward={openUpward}
-                        />
-                      )}
-                    </td>
-                    {/* 合計 */}
-                    <td className="px-2 py-2 text-center">
-                      {total > 0 ? (
-                        <span className="text-xs font-bold text-foreground">
-                          {formatHourMin(total)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/40">
-                          ー
-                        </span>
-                      )}
-                    </td>
+      {/* ===== 週別テーブル ===== */}
+      {viewMode === "weekly" && (
+        <>
+          {!hasWeekData ? (
+            <p className="py-8 text-center text-xs text-muted-foreground">
+              この週の睡眠記録がありません
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse table-fixed">
+                <thead>
+                  <tr>
+                    <th className="w-[30%] px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                      日付
+                    </th>
+                    <th className="w-[23%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                      日中
+                    </th>
+                    <th className="w-[23%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                      夜間
+                    </th>
+                    <th className="w-[24%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground">
+                      合計
+                    </th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {days.map((day, dayIndex) => {
+                    const entry = weekGrid.get(day.dateStr) ?? { night: 0, daytime: 0 };
+                    const total = entry.night + entry.daytime;
+                    const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                    const openUpward = dayIndex >= days.length - 2;
+                    return (
+                      <tr
+                        key={day.dateStr}
+                        className={cn(
+                          "border-t border-border/30",
+                          isWeekend && "bg-muted/30",
+                        )}
+                      >
+                        <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
+                          {day.label}
+                        </td>
+                        <td className="relative px-2 py-2 text-center">
+                          {entry.daytime > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => togglePopover(day.dateStr, "daytime")}
+                              className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-amber-600"
+                            >
+                              {formatHourMin(entry.daytime)}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">ー</span>
+                          )}
+                          {popover?.dateStr === day.dateStr && popover?.category === "daytime" && (
+                            <SleepPopover
+                              records={detailMap.get(`${day.dateStr}_daytime`) ?? []}
+                              openUpward={openUpward}
+                            />
+                          )}
+                        </td>
+                        <td className="relative px-2 py-2 text-center">
+                          {entry.night > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => togglePopover(day.dateStr, "night")}
+                              className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-indigo-600"
+                            >
+                              {formatHourMin(entry.night)}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">ー</span>
+                          )}
+                          {popover?.dateStr === day.dateStr && popover?.category === "night" && (
+                            <SleepPopover
+                              records={detailMap.get(`${day.dateStr}_night`) ?? []}
+                              openUpward={openUpward}
+                            />
+                          )}
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          {total > 0 ? (
+                            <span className="text-xs font-bold text-foreground">
+                              {formatHourMin(total)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">ー</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ===== 月別カレンダー ===== */}
+      {viewMode === "monthly" && (
+        <>
+          {!hasMonthData ? (
+            <p className="py-8 text-center text-xs text-muted-foreground">
+              この月の睡眠記録がありません
+            </p>
+          ) : (
+            <div>
+              {/* 曜日ヘッダー */}
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {CAL_WEEKDAYS.map((wd) => (
+                  <div key={wd} className="text-center text-[10px] font-medium text-muted-foreground">
+                    {wd}
+                  </div>
+                ))}
+              </div>
+
+              {/* カレンダーグリッド */}
+              <div className="space-y-1">
+                {calendarWeeks.map((week, wi) => (
+                  <div key={wi} className="grid grid-cols-7 gap-1">
+                    {week.map((dateStr, di) => {
+                      if (!dateStr) {
+                        return <div key={di} className="h-12" />;
+                      }
+                      const dayNum = parseInt(dateStr.slice(8), 10);
+                      const entry = monthGrid.get(dateStr);
+                      const total = entry ? entry.night + entry.daytime : 0;
+                      const nightH = entry ? (entry.night / monthMaxMinutes) * BAR_MAX_H : 0;
+                      const dayH = entry ? (entry.daytime / monthMaxMinutes) * BAR_MAX_H : 0;
+                      const isOpen = popover?.dateStr === dateStr && popover?.category === undefined;
+
+                      return (
+                        <div key={di} className="relative">
+                          <button
+                            type="button"
+                            onClick={() => total > 0 && togglePopover(dateStr)}
+                            className={cn(
+                              "flex h-12 w-full flex-col items-center justify-end gap-0 rounded-md pb-0.5 transition-colors",
+                              total > 0 ? "cursor-pointer hover:bg-muted/50" : "cursor-default",
+                            )}
+                          >
+                            <span className="text-[10px] text-muted-foreground mb-auto pt-0.5">
+                              {dayNum}
+                            </span>
+                            {total > 0 ? (
+                              <div className="flex flex-col items-center justify-end w-3">
+                                <div
+                                  className="w-full rounded-t-sm bg-indigo-400"
+                                  style={{ height: `${Math.max(nightH, 1)}px` }}
+                                />
+                                {dayH > 0 && (
+                                  <div
+                                    className="w-full bg-amber-400"
+                                    style={{ height: `${dayH}px` }}
+                                  />
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground/30">ー</span>
+                            )}
+                          </button>
+
+                          {isOpen && entry && (
+                            <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                              <div className="space-y-1 text-xs whitespace-nowrap">
+                                {(monthDetailMap.get(dateStr) ?? []).map((r) => (
+                                  <div key={r.id} className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">
+                                      {formatTimeFromISO(r.started_at)}〜{formatTimeFromISO(r.ended_at)}
+                                    </span>
+                                    <span
+                                      className={cn(
+                                        "font-medium",
+                                        r.sleep_category === "night"
+                                          ? "text-indigo-600"
+                                          : "text-amber-600",
+                                      )}
+                                    >
+                                      {formatHourMin(r.duration_minutes)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* サマリー */}
+              {monthSummary && (
+                <div className="mt-3 flex justify-center gap-6 text-xs text-muted-foreground">
+                  <span>
+                    平均 <span className="font-semibold text-foreground">{monthSummary.avg}</span>
+                  </span>
+                  <span>
+                    最長 <span className="font-semibold text-foreground">{monthSummary.max}</span>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -265,16 +501,10 @@ function SleepPopover({ records, openUpward }: { records: SleepRecord[]; openUpw
       <div className="space-y-1 text-xs whitespace-nowrap">
         {records.map((r) => (
           <div key={r.id} className="flex items-center gap-2">
-            <span className="text-muted-foreground">
-              {formatTimeFromISO(r.started_at)}
-            </span>
+            <span className="text-muted-foreground">{formatTimeFromISO(r.started_at)}</span>
             <span className="text-muted-foreground">〜</span>
-            <span className="text-muted-foreground">
-              {formatTimeFromISO(r.ended_at)}
-            </span>
-            <span className="font-medium text-foreground">
-              {formatHourMin(r.duration_minutes)}
-            </span>
+            <span className="text-muted-foreground">{formatTimeFromISO(r.ended_at)}</span>
+            <span className="font-medium text-foreground">{formatHourMin(r.duration_minutes)}</span>
           </div>
         ))}
       </div>
