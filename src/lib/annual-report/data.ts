@@ -23,14 +23,17 @@ export function canGenerate(fiscalYear: number, now: Date = new Date()): boolean
   return now >= enableDate;
 }
 
+// TODO: 本番リリース前にクールダウンを24時間に戻す
+// 現在は開発用に無効化中。元の値: 24 * 60 * 60 * 1000
+const COOLDOWN_MS = 0;
+
 /**
  * 前回生成から24時間以内かどうかを判定する
  */
 export function isInCooldown(generatedAt: string, now: Date = new Date()): boolean {
   const generated = new Date(generatedAt);
   const diff = now.getTime() - generated.getTime();
-  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-  return diff < TWENTY_FOUR_HOURS;
+  return diff < COOLDOWN_MS;
 }
 
 /**
@@ -38,8 +41,7 @@ export function isInCooldown(generatedAt: string, now: Date = new Date()): boole
  */
 export function getCooldownRemaining(generatedAt: string, now: Date = new Date()): number {
   const generated = new Date(generatedAt);
-  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-  const remaining = TWENTY_FOUR_HOURS - (now.getTime() - generated.getTime());
+  const remaining = COOLDOWN_MS - (now.getTime() - generated.getTime());
   return Math.max(0, remaining);
 }
 
