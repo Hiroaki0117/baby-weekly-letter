@@ -91,6 +91,39 @@ export async function exportAsPdf(
 }
 
 /**
+ * 複数のDOM要素をA4サイズの複数ページPDFとしてダウンロードする。
+ */
+export async function exportAsA4Pdf(
+  pages: HTMLElement[],
+  filename: string,
+): Promise<void> {
+  const { toPng } = await import("html-to-image");
+  const { jsPDF } = await import("jspdf");
+
+  const A4_WIDTH = 210; // mm
+  const A4_HEIGHT = 297; // mm
+
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  for (let i = 0; i < pages.length; i++) {
+    if (i > 0) pdf.addPage();
+
+    const imgData = await toPng(pages[i], {
+      pixelRatio: 2,
+      backgroundColor: "#ffffff",
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, A4_WIDTH, A4_HEIGHT);
+  }
+
+  pdf.save(filename);
+}
+
+/**
  * エクスポート用のファイル名を生成する。
  */
 export function buildExportFilename(
