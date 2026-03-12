@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { exportAsA4Pdf } from "@/lib/export";
 import { AnnualPdfLayout } from "./annual-pdf-layout";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { AnnualReport, AnnualReportContent } from "@/types";
 
 type AnnualAlbumViewProps = {
@@ -17,10 +18,25 @@ const MONTH_NAMES: Record<number, string> = {
   7: "7月", 8: "8月", 9: "9月", 10: "10月", 11: "11月", 12: "12月",
 };
 
+const FISCAL_MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
+
+const TOTAL_PAGES = 6;
+
+const PAGE_LABELS = [
+  "表紙",
+  "4月〜7月",
+  "8月〜11月",
+  "12月〜3月",
+  "マイルストーン",
+  "振り返り",
+];
+
 export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
   const content = report.content;
   const [photoUrls, setPhotoUrls] = useState<Map<number, string>>(new Map());
   const [exporting, setExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right" | null>(null);
   const pdfPagesRef = useRef<HTMLDivElement[]>([]);
 
   // 写真の signed URL を取得
@@ -53,6 +69,12 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
     fetchUrls();
   }, [content.monthHighlights]);
 
+  function goToPage(page: number) {
+    if (page < 0 || page >= TOTAL_PAGES || page === currentPage) return;
+    setSlideDirection(page > currentPage ? "left" : "right");
+    setCurrentPage(page);
+  }
+
   async function handleExportPdf() {
     const pages = pdfPagesRef.current.filter(Boolean);
     if (pages.length === 0) return;
@@ -67,6 +89,18 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
       toast.error("PDF生成に失敗しました");
     } finally {
       setExporting(false);
+    }
+  }
+
+  // 月別ハイライトをマップ化
+  const highlightMap = new Map(content.monthHighlights.map((h) => [h.month, h]));
+
+  // コラージュ用写真
+  const collagePhotos: { month: number; url: string }[] = [];
+  for (const m of FISCAL_MONTHS) {
+    const url = photoUrls.get(m);
+    if (url && collagePhotos.length < 6) {
+      collagePhotos.push({ month: m, url });
     }
   }
 
@@ -87,65 +121,72 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
         pagesRef={pdfPagesRef}
       />
 
-      {/* アルバム本体 */}
-      <div className="space-y-6 rounded-2xl border border-border/60 bg-card p-5 sm:p-8 shadow-sm">
-        {/* 表紙 */}
-        <div className="text-center space-y-2 pb-6 border-b border-border/40">
-          <p className="text-3xl">📚</p>
-          <h2 className="font-mincho text-xl font-bold text-foreground">
-            {content.coverTitle}
-          </h2>
-          {content.childAge && (
-            <p className="text-sm text-muted-foreground">{content.childAge}</p>
-          )}
-        </div>
-
-        {/* 月ごとのハイライト */}
-        <div className="space-y-6">
-          {content.monthHighlights.map((highlight) => (
-            <MonthSection
-              key={highlight.month}
-              highlight={highlight}
-              photoUrl={photoUrls.get(highlight.month)}
-            />
-          ))}
-        </div>
-
-        {/* マイルストーン */}
-        {content.milestones.length > 0 && (
-          <div className="space-y-3 pt-4 border-t border-border/40">
-            <h3 className="font-mincho text-base font-semibold text-foreground flex items-center gap-2">
-              <span>🌟</span> 初めてできたこと
-            </h3>
-            <ul className="space-y-2">
-              {content.milestones.map((m, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm">
-                  <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/60" />
-                  <div>
-                    <span className="text-foreground">{m.title}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {m.date}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+      {/* ページめくりUI */}
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+        {/* ページコンテンツ */}
+        <div className="relative min-h-[400px]">
+          <div
+            key={currentPage}
+            className={cn(
+              "animate-in duration-300 fill-mode-both",
+              slideDirection === "left" && "slide-in-from-right-5 fade-in",
+              slideDirection === "right" && "slide-in-from-left-5 fade-in",
+              slideDirection === null && "fade-in",
+            )}
+          >
+            {currentPage === 0 && (
+              <CoverPage content={content} collagePhotos={collagePhotos} />
+            )}
+            {currentPage >= 1 && currentPage <= 3 && (
+              <MonthHighlightsPage
+                months={FISCAL_MONTHS.slice((currentPage - 1) * 4, (currentPage - 1) * 4 + 4)}
+                highlightMap={highlightMap}
+                photoUrls={photoUrls}
+              />
+            )}
+            {currentPage === 4 && (
+              <MilestonePage content={content} />
+            )}
+            {currentPage === 5 && (
+              <ClosingPage content={content} />
+            )}
           </div>
-        )}
+        </div>
 
-        {/* 成長データ */}
-        {content.growthSummary && (
-          <GrowthSummarySection summary={content.growthSummary} />
-        )}
+        {/* ページナビゲーション */}
+        <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
+          <button
+            type="button"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 0}
+            className={cn(
+              "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm transition-colors",
+              currentPage === 0
+                ? "text-muted-foreground/30 cursor-not-allowed"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            ← 前へ
+          </button>
 
-        {/* 総括メッセージ */}
-        <div className="space-y-2 pt-4 border-t border-border/40">
-          <h3 className="font-mincho text-base font-semibold text-foreground flex items-center gap-2">
-            <span>🧡</span> 1年の振り返り
-          </h3>
-          <p className="text-sm leading-7 text-foreground/90 whitespace-pre-wrap">
-            {content.closingMessage}
-          </p>
+          <span className="text-xs text-muted-foreground">
+            {currentPage + 1} / {TOTAL_PAGES}
+            <span className="ml-2 hidden sm:inline">— {PAGE_LABELS[currentPage]}</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === TOTAL_PAGES - 1}
+            className={cn(
+              "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm transition-colors",
+              currentPage === TOTAL_PAGES - 1
+                ? "text-muted-foreground/30 cursor-not-allowed"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            次へ →
+          </button>
         </div>
       </div>
 
@@ -171,31 +212,147 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
   );
 }
 
-function MonthSection({
-  highlight,
-  photoUrl,
+/* ===== ページコンポーネント ===== */
+
+function CoverPage({
+  content,
+  collagePhotos,
 }: {
-  highlight: AnnualReportContent["monthHighlights"][number];
-  photoUrl?: string;
+  content: AnnualReportContent;
+  collagePhotos: { month: number; url: string }[];
+}) {
+  let cols: number;
+  if (collagePhotos.length <= 2) cols = collagePhotos.length || 1;
+  else if (collagePhotos.length <= 4) cols = 2;
+  else cols = 3;
+
+  return (
+    <div className="flex flex-col items-center px-5 py-12 sm:px-8 sm:py-16 text-center">
+      <p className="mb-4 text-4xl">📚</p>
+      <h2 className="font-mincho text-xl sm:text-2xl font-bold text-foreground mb-2">
+        {content.coverTitle}
+      </h2>
+      {content.childAge && (
+        <p className="text-sm text-muted-foreground mb-8">{content.childAge}</p>
+      )}
+
+      {collagePhotos.length > 0 && (
+        <div
+          className="mx-auto grid gap-2 sm:gap-3"
+          style={{
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            maxWidth: cols === 1 ? 200 : cols === 2 ? 320 : 420,
+          }}
+        >
+          {collagePhotos.map((p) => (
+            <img
+              key={p.month}
+              src={p.url}
+              alt={`${MONTH_NAMES[p.month]}の写真`}
+              className="aspect-square w-full rounded-lg object-cover shadow-sm"
+              crossOrigin="anonymous"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthHighlightsPage({
+  months,
+  highlightMap,
+  photoUrls,
+}: {
+  months: number[];
+  highlightMap: Map<number, AnnualReportContent["monthHighlights"][number]>;
+  photoUrls: Map<number, string>;
 }) {
   return (
-    <div className="space-y-2">
-      <h3 className="font-mincho text-sm font-semibold text-primary/80">
-        {MONTH_NAMES[highlight.month]}
-      </h3>
-      <div className="flex gap-4 items-start">
-        {photoUrl && (
-          <img
-            src={photoUrl}
-            alt={`${MONTH_NAMES[highlight.month]}の写真`}
-            className="h-20 w-20 flex-shrink-0 rounded-lg object-cover shadow-sm"
-            crossOrigin="anonymous"
-          />
+    <div className="divide-y divide-border/40 px-5 sm:px-8">
+      {months.map((m) => {
+        const highlight = highlightMap.get(m);
+        const url = photoUrls.get(m);
+        return (
+          <div key={m} className="py-5 sm:py-6">
+            <h3 className="font-mincho text-sm font-semibold text-primary/80 mb-2">
+              {MONTH_NAMES[m]}
+            </h3>
+            <div className="flex gap-4 items-start">
+              {url ? (
+                <img
+                  src={url}
+                  alt={`${MONTH_NAMES[m]}の写真`}
+                  className="h-20 w-20 flex-shrink-0 rounded-lg object-cover shadow-sm"
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-muted/50">
+                  <span className="text-2xl text-muted-foreground/30">📷</span>
+                </div>
+              )}
+              <p className="flex-1 text-sm leading-7 text-foreground/90">
+                {highlight?.text ?? "この月の記録はありません"}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MilestonePage({ content }: { content: AnnualReportContent }) {
+  const milestones = content.milestones.slice(0, 15);
+
+  return (
+    <div className="space-y-6 px-5 py-6 sm:px-8 sm:py-8">
+      {/* マイルストーン */}
+      <div>
+        <h3 className="font-mincho text-base font-semibold text-foreground flex items-center gap-2 mb-4">
+          <span>🌟</span> 初めてできたこと
+        </h3>
+        {milestones.length > 0 ? (
+          <ul className="space-y-2">
+            {milestones.map((m, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/60" />
+                <div>
+                  <span className="text-foreground">{m.title}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {m.date}
+                  </span>
+                </div>
+              </li>
+            ))}
+            {content.milestones.length > 15 && (
+              <li className="text-xs text-muted-foreground">
+                ...他 {content.milestones.length - 15} 件
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">マイルストーンの記録はありません</p>
         )}
-        <p className="text-sm leading-7 text-foreground/90 flex-1">
-          {highlight.text}
-        </p>
       </div>
+
+      {/* 成長データ */}
+      {content.growthSummary && (
+        <GrowthSummarySection summary={content.growthSummary} />
+      )}
+    </div>
+  );
+}
+
+function ClosingPage({ content }: { content: AnnualReportContent }) {
+  return (
+    <div className="flex flex-col items-center justify-center px-5 py-12 sm:px-8 sm:py-16 text-center">
+      <h3 className="font-mincho text-base font-semibold text-foreground flex items-center gap-2 mb-6">
+        <span>🧡</span> 1年の振り返り
+      </h3>
+      <p className="max-w-lg text-sm leading-8 text-foreground/90 whitespace-pre-wrap">
+        {content.closingMessage}
+      </p>
     </div>
   );
 }
@@ -211,8 +368,8 @@ function GrowthSummarySection({
   if (!hasHeight && !hasWeight) return null;
 
   return (
-    <div className="space-y-3 pt-4 border-t border-border/40">
-      <h3 className="font-mincho text-base font-semibold text-foreground flex items-center gap-2">
+    <div className="border-t border-border/40 pt-6">
+      <h3 className="font-mincho text-base font-semibold text-foreground flex items-center gap-2 mb-4">
         <span>📏</span> 成長の記録
       </h3>
       <div className="flex gap-6 text-sm">
