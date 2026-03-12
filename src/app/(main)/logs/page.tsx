@@ -251,11 +251,6 @@ function LogsPageInner() {
         setMilestoneMap(msMap);
       }
 
-      // lastReactionCheckedAt / lastCommentCheckedAt を更新（ログ一覧を開いた＝確認した）
-      const checkedNow = new Date().toISOString();
-      localStorage.setItem("lastReactionCheckedAt", checkedNow);
-      localStorage.setItem("lastCommentCheckedAt", checkedNow);
-
       setLoading(false);
     }
     load();

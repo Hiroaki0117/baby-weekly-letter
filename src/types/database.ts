@@ -375,6 +375,7 @@ export interface Database {
           user_id: string;
           tone: string;
           sections: string[];
+          auto_generate: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -383,6 +384,7 @@ export interface Database {
           user_id: string;
           tone?: string;
           sections?: string[];
+          auto_generate?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -391,8 +393,42 @@ export interface Database {
           user_id?: string;
           tone?: string;
           sections?: string[];
+          auto_generate?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          family_id: string;
+          user_id: string | null;
+          type: string;
+          title: string;
+          link: string;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          family_id: string;
+          user_id?: string | null;
+          type: string;
+          title: string;
+          link: string;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          family_id?: string;
+          user_id?: string | null;
+          type?: string;
+          title?: string;
+          link?: string;
+          read?: boolean;
+          created_at?: string;
         };
         Relationships: [];
       };

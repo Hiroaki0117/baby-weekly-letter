@@ -12,13 +12,13 @@ import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { LogForm } from "@/components/log/log-form";
 import { LogCard } from "@/components/log/log-card";
 import { MemoriesSection } from "@/components/memory/memories-section";
-import { ReactionNotice } from "@/components/home/reaction-notice";
+import { NotificationList } from "@/components/home/notification-list";
 import { QuickTemperatureInput } from "@/components/temperature/quick-temperature-input";
 import { QuickSleepInput } from "@/components/sleep/quick-sleep-input";
 import { QuickMealInput } from "@/components/meal/quick-meal-input";
 import { toast } from "sonner";
 import { fetchActiveTracking } from "@/lib/sleep";
-import type { Child, DailyLog, Milestone, SleepTracking } from "@/types";
+import type { Child, DailyLog, Milestone, SleepTracking, AppNotification } from "@/types";
 
 export default function HomePage() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -31,8 +31,7 @@ export default function HomePage() {
   const [reactionMap, setReactionMap] = useState<Record<string, ReactionSummary[]>>({});
   const [commentMap, setCommentMap] = useState<Record<string, CommentEntry[]>>({});
   const [milestoneMap, setMilestoneMap] = useState<Record<string, Milestone>>({});
-  const [newReactionCount, setNewReactionCount] = useState(0);
-  const [newCommentCount, setNewCommentCount] = useState(0);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [currentUserId, setCurrentUserId] = useState("");
   const [activeTracking, setActiveTracking] = useState<SleepTracking[]>([]);
   const [familyIdRef, setFamilyIdRef] = useState<string | null>(null);
@@ -170,26 +169,14 @@ export default function HomePage() {
         setMilestoneMap(msMap);
       }
 
-      // 新着リアクション・コメント件数（自分が書いたログへの他人の反応）
-      if (userId) {
-        const lastReactionChecked = localStorage.getItem("lastReactionCheckedAt") ?? "1970-01-01T00:00:00Z";
-        const { count: reactionCount } = await client
-          .from("log_reactions")
-          .select("id, daily_logs!inner(author_id)", { count: "exact", head: true })
-          .eq("daily_logs.author_id", userId)
-          .neq("user_id", userId)
-          .gt("created_at", lastReactionChecked);
-        setNewReactionCount(reactionCount ?? 0);
-
-        const lastCommentChecked = localStorage.getItem("lastCommentCheckedAt") ?? "1970-01-01T00:00:00Z";
-        const { count: commentCount } = await client
-          .from("log_comments")
-          .select("id, daily_logs!inner(author_id)", { count: "exact", head: true })
-          .eq("daily_logs.author_id", userId)
-          .neq("user_id", userId)
-          .gt("created_at", lastCommentChecked);
-        setNewCommentCount(commentCount ?? 0);
-      }
+      // 未読通知を取得（notifications テーブル）
+      const { data: notifData } = await client
+        .from("notifications")
+        .select("*")
+        .eq("read", false)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setNotifications((notifData as AppNotification[]) ?? []);
 
       setCardLoaded(true);
     }
@@ -437,8 +424,11 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 新着リアクション通知 */}
-      <ReactionNotice reactionCount={newReactionCount} commentCount={newCommentCount} />
+      {/* 通知 */}
+      <NotificationList
+        notifications={notifications}
+        onRead={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
+      />
 
       {/* ○年前の今日 */}
       <MemoriesSection childrenList={childrenList} />

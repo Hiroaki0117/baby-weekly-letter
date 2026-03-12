@@ -5,6 +5,7 @@ export const reportPreferencesSchema = z.object({
   sections: z
     .array(z.enum(["highlight", "digest", "growth", "encouragement", "quote"]))
     .min(1, "セクションを最低1つ選択してください"),
+  autoGenerate: z.boolean(),
 });
 
 export type ReportPreferencesFormValues = z.infer<typeof reportPreferencesSchema>;

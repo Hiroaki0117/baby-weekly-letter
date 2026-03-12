@@ -82,6 +82,10 @@ export type PushSubscriptionInsert = Database["public"]["Tables"]["push_subscrip
 export type NotificationSettings = Database["public"]["Tables"]["notification_settings"]["Row"];
 export type NotificationSettingsInsert = Database["public"]["Tables"]["notification_settings"]["Insert"];
 
+export type AppNotification = Database["public"]["Tables"]["notifications"]["Row"];
+export type AppNotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
+export type NotificationType = "auto_weekly" | "auto_monthly" | "auto_annual" | "reaction" | "comment";
+
 export type Gender = "male" | "female";
 
 export type ReportTone = "warm" | "humor" | "neutral" | "poetic";
