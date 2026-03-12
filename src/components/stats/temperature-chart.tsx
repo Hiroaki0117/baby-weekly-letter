@@ -154,7 +154,7 @@ export function TemperatureChart({ records }: Props) {
         </div>
 
         {/* 週別/月別タブ */}
-        <div className="flex items-center gap-2">
+        <div className="flex justify-center">
           <div className="flex rounded-lg border border-border/60 p-0.5">
             <button
               type="button"
@@ -181,9 +181,10 @@ export function TemperatureChart({ records }: Props) {
               月別
             </button>
           </div>
+        </div>
 
-          {/* ナビゲーション */}
-          <div className="flex flex-1 items-center justify-center gap-2">
+        {/* ナビゲーション */}
+        <div className="flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() =>
@@ -217,7 +218,6 @@ export function TemperatureChart({ records }: Props) {
             >
               ›
             </button>
-          </div>
         </div>
       </div>
 

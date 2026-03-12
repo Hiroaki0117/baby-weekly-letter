@@ -197,8 +197,8 @@ export function SleepChart({ records }: Props) {
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">睡眠時間の推移</h3>
 
-        {/* 週別/月別タブ + ナビ */}
-        <div className="flex items-center gap-2">
+        {/* 週別/月別タブ */}
+        <div className="flex justify-center">
           <div className="flex rounded-lg border border-border/60 p-0.5">
             <button
               type="button"
@@ -225,8 +225,10 @@ export function SleepChart({ records }: Props) {
               月別
             </button>
           </div>
+        </div>
 
-          <div className="flex flex-1 items-center justify-center gap-2">
+        {/* ナビゲーション */}
+        <div className="flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() =>
@@ -260,7 +262,6 @@ export function SleepChart({ records }: Props) {
             >
               ›
             </button>
-          </div>
         </div>
       </div>
 
