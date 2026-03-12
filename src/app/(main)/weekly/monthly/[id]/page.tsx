@@ -4,10 +4,11 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatMonthJa, getMonthRange, toDateString } from "@/lib/date";
-import { fetchPhotoUrls, exportAsPng, exportAsPdf, buildExportFilename } from "@/lib/export";
+import { fetchPhotoUrls, exportAsPng, exportAsA4Pdf, buildExportFilename } from "@/lib/export";
 import { MonthlyPhotoGallery } from "@/components/monthly/monthly-photo-gallery";
 import { ShareMenu } from "@/components/export/share-menu";
 import { ExportLayout } from "@/components/export/export-layout";
+import { MonthlyPdfLayout } from "@/components/monthly/monthly-pdf-layout";
 import { toast } from "sonner";
 import { GeneratingOverlay } from "@/components/ui/generating-overlay";
 import { format, parseISO } from "date-fns";
@@ -21,6 +22,7 @@ export default function MonthlyDetailPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+  const pdfPageRef = useRef<HTMLDivElement | null>(null);
   const [exportData, setExportData] = useState<{ photoUrls: string[]; format: "png" | "pdf" } | null>(null);
   const supabase = createClient();
 
@@ -52,7 +54,10 @@ export default function MonthlyDetailPage() {
     async function doExport() {
       // ref がアタッチされるまで待つ
       await new Promise((r) => requestAnimationFrame(r));
-      const el = exportRef.current;
+
+      const isPdf = exportData!.format === "pdf";
+      const el = isPdf ? pdfPageRef.current : exportRef.current;
+
       if (!el) {
         console.error("Export element ref is null");
         toast.error("エクスポートに失敗しました");
@@ -81,10 +86,10 @@ export default function MonthlyDetailPage() {
       const filename = buildExportFilename("monthly", dateLabel, exportData!.format);
 
       try {
-        if (exportData!.format === "png") {
-          await exportAsPng(el, filename);
+        if (isPdf) {
+          await exportAsA4Pdf([el], filename);
         } else {
-          await exportAsPdf(el, filename);
+          await exportAsPng(el, filename);
         }
         toast.success("エクスポートしました");
       } catch (err) {
@@ -243,13 +248,22 @@ export default function MonthlyDetailPage() {
       {/* エクスポート用（視覚的に非表示だが描画可能） */}
       {exportData && (
         <div style={{ position: "fixed", left: 0, top: 0, zIndex: -9999, pointerEvents: "none" }}>
-          <ExportLayout
-            ref={exportRef}
-            type="monthly"
-            title={`${monthLabel}のアルバム`}
-            content={report.content}
-            photoUrls={exportData.photoUrls}
-          />
+          {exportData.format === "pdf" ? (
+            <MonthlyPdfLayout
+              month={report.month}
+              content={report.content}
+              photoUrls={exportData.photoUrls}
+              pageRef={(el) => { pdfPageRef.current = el; }}
+            />
+          ) : (
+            <ExportLayout
+              ref={exportRef}
+              type="monthly"
+              title={`${monthLabel}のアルバム`}
+              content={report.content}
+              photoUrls={exportData.photoUrls}
+            />
+          )}
         </div>
       )}
     </div>
