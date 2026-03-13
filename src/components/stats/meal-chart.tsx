@@ -90,8 +90,6 @@ export function MealChart({ records }: Props) {
     return map;
   }, [records]);
 
-  const hasWeekData = records.some((r) => days.some((d) => r.meal_date === d.dateStr));
-
   // ===== 月別 =====
   const calendarWeeks = useMemo(
     () => buildCalendarWeeks(monthDate.getFullYear(), monthDate.getMonth()),
@@ -114,10 +112,6 @@ export function MealChart({ records }: Props) {
     }
     return map;
   }, [records]);
-
-  const hasMonthData = useMemo(() => {
-    return calendarWeeks.some((week) => week.some((d) => d && monthGrid.has(d)));
-  }, [calendarWeeks, monthGrid]);
 
   function togglePopover(dateStr: string) {
     setPopover(popover === dateStr ? null : dateStr);
@@ -224,175 +218,159 @@ export function MealChart({ records }: Props) {
 
       {/* ===== 週別テーブル ===== */}
       {viewMode === "weekly" && (
-        <>
-          {!hasWeekData ? (
-            <p className="py-8 text-center text-xs text-muted-foreground">
-              この週の食事記録がありません
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse table-fixed">
-                <thead>
-                  <tr>
-                    <th className="w-[30%] px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
-                      日付
-                    </th>
-                    {MEAL_TYPES.map((mt) => (
-                      <th
-                        key={mt.value}
-                        className="w-[17.5%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground"
-                      >
-                        {mt.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {days.map((day) => {
-                    const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
-                    return (
-                      <tr
-                        key={day.dateStr}
-                        className={cn(
-                          "border-t border-border/30",
-                          isWeekend && "bg-muted/30",
-                        )}
-                      >
-                        <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
-                          {day.label}
-                        </td>
-                        {MEAL_TYPES.map((mt) => {
-                          const record = weekGrid.get(`${day.dateStr}_${mt.value}`);
-                          const style = record ? AMOUNT_STYLES[record.amount] : null;
-                          return (
-                            <td key={mt.value} className="px-2 py-2 text-center">
-                              {style ? (
-                                <span
-                                  className={cn(
-                                    "inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-bold",
-                                    style.bg,
-                                    style.text,
-                                  )}
-                                >
-                                  {style.label}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground/40">ー</span>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse table-fixed">
+            <thead>
+              <tr>
+                <th className="w-[30%] px-2 py-1.5 text-left text-xs font-medium text-muted-foreground">
+                  日付
+                </th>
+                {MEAL_TYPES.map((mt) => (
+                  <th
+                    key={mt.value}
+                    className="w-[17.5%] px-2 py-1.5 text-center text-xs font-medium text-muted-foreground"
+                  >
+                    {mt.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((day) => {
+                const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                return (
+                  <tr
+                    key={day.dateStr}
+                    className={cn(
+                      "border-t border-border/30",
+                      isWeekend && "bg-muted/30",
+                    )}
+                  >
+                    <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
+                      {day.label}
+                    </td>
+                    {MEAL_TYPES.map((mt) => {
+                      const record = weekGrid.get(`${day.dateStr}_${mt.value}`);
+                      const style = record ? AMOUNT_STYLES[record.amount] : null;
+                      return (
+                        <td key={mt.value} className="px-2 py-2 text-center">
+                          {style ? (
+                            <span
+                              className={cn(
+                                "inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-bold",
+                                style.bg,
+                                style.text,
                               )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
+                            >
+                              {style.label}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">ー</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* ===== 月別カレンダー ===== */}
       {viewMode === "monthly" && (
-        <>
-          {!hasMonthData ? (
-            <p className="py-8 text-center text-xs text-muted-foreground">
-              この月の食事記録がありません
-            </p>
-          ) : (
-            <div>
-              {/* 曜日ヘッダー */}
-              <div className="grid grid-cols-7 gap-1 mb-1">
-                {CAL_WEEKDAYS.map((wd) => (
-                  <div key={wd} className="text-center text-[10px] font-medium text-muted-foreground">
-                    {wd}
-                  </div>
-                ))}
+        <div>
+          {/* 曜日ヘッダー */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {CAL_WEEKDAYS.map((wd) => (
+              <div key={wd} className="text-center text-[10px] font-medium text-muted-foreground">
+                {wd}
               </div>
+            ))}
+          </div>
 
-              {/* カレンダーグリッド */}
-              <div className="space-y-1">
-                {calendarWeeks.map((week, wi) => (
-                  <div key={wi} className="grid grid-cols-7 gap-1">
-                    {week.map((dateStr, di) => {
-                      if (!dateStr) {
-                        return <div key={di} className="h-12" />;
-                      }
-                      const dayNum = parseInt(dateStr.slice(8), 10);
-                      const dayMap = monthGrid.get(dateStr);
-                      const hasMeals = dayMap && dayMap.size > 0;
-                      const isOpen = popover === dateStr;
+          {/* カレンダーグリッド */}
+          <div className="space-y-1">
+            {calendarWeeks.map((week, wi) => (
+              <div key={wi} className="grid grid-cols-7 gap-1">
+                {week.map((dateStr, di) => {
+                  if (!dateStr) {
+                    return <div key={di} className="h-12" />;
+                  }
+                  const dayNum = parseInt(dateStr.slice(8), 10);
+                  const dayMap = monthGrid.get(dateStr);
+                  const hasMeals = dayMap && dayMap.size > 0;
+                  const isOpen = popover === dateStr;
 
-                      return (
-                        <div key={di} className="relative">
-                          <button
-                            type="button"
-                            onClick={() => hasMeals && togglePopover(dateStr)}
-                            className={cn(
-                              "flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-md transition-colors",
-                              hasMeals ? "cursor-pointer hover:bg-muted/50" : "cursor-default",
-                            )}
-                          >
-                            <span className="text-[10px] text-muted-foreground">{dayNum}</span>
-                            {hasMeals ? (
-                              <div className="flex items-center gap-px">
-                                {MEAL_TYPES.map((mt) => {
-                                  const rec = dayMap.get(mt.value);
-                                  if (!rec) return null;
-                                  const color = MINI_AMOUNT_COLORS[rec.amount] ?? "text-muted-foreground";
-                                  const label = AMOUNT_STYLES[rec.amount]?.label ?? "?";
-                                  return (
-                                    <span
-                                      key={mt.value}
-                                      className={cn("text-[10px] font-bold leading-none", color)}
-                                    >
-                                      {label}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground/30">ー</span>
-                            )}
-                          </button>
+                  return (
+                    <div key={di} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => hasMeals && togglePopover(dateStr)}
+                        className={cn(
+                          "flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-md transition-colors",
+                          hasMeals ? "cursor-pointer hover:bg-muted/50" : "cursor-default",
+                        )}
+                      >
+                        <span className="text-[10px] text-muted-foreground">{dayNum}</span>
+                        {hasMeals ? (
+                          <div className="flex items-center gap-px">
+                            {MEAL_TYPES.map((mt) => {
+                              const rec = dayMap.get(mt.value);
+                              if (!rec) return null;
+                              const color = MINI_AMOUNT_COLORS[rec.amount] ?? "text-muted-foreground";
+                              const label = AMOUNT_STYLES[rec.amount]?.label ?? "?";
+                              return (
+                                <span
+                                  key={mt.value}
+                                  className={cn("text-[10px] font-bold leading-none", color)}
+                                >
+                                  {label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/30">ー</span>
+                        )}
+                      </button>
 
-                          {isOpen && dayMap && (
-                            <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
-                              <div className="space-y-1 text-xs whitespace-nowrap">
-                                {MEAL_TYPES.map((mt) => {
-                                  const rec = dayMap.get(mt.value);
-                                  if (!rec) return null;
-                                  const style = AMOUNT_STYLES[rec.amount];
-                                  return (
-                                    <div key={mt.value} className="flex items-center gap-2">
-                                      <span className="text-muted-foreground">{mt.label}</span>
-                                      <span className={cn("font-bold", style?.text)}>
-                                        {style?.label}
-                                      </span>
-                                      <span className="text-muted-foreground">
-                                        {rec.amount === "plenty"
-                                          ? "よく食べた"
-                                          : rec.amount === "normal"
-                                            ? "ふつう"
-                                            : rec.amount === "little"
-                                              ? "少なめ"
-                                              : "食べなかった"}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
+                      {isOpen && dayMap && (
+                        <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                          <div className="space-y-1 text-xs whitespace-nowrap">
+                            {MEAL_TYPES.map((mt) => {
+                              const rec = dayMap.get(mt.value);
+                              if (!rec) return null;
+                              const style = AMOUNT_STYLES[rec.amount];
+                              return (
+                                <div key={mt.value} className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">{mt.label}</span>
+                                  <span className={cn("font-bold", style?.text)}>
+                                    {style?.label}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {rec.amount === "plenty"
+                                      ? "よく食べた"
+                                      : rec.amount === "normal"
+                                        ? "ふつう"
+                                        : rec.amount === "little"
+                                          ? "少なめ"
+                                          : "食べなかった"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          )}
-        </>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
