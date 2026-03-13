@@ -290,7 +290,7 @@ export function TemperatureChart({ records }: Props) {
                               {latest.temperature}℃
                             </button>
                           ) : (
-                            <span className="text-xs text-muted-foreground/40">ー</span>
+                            <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs text-muted-foreground/40">ー</span>
                           )}
                           {isOpen && cellRecords && (
                             <div
@@ -373,7 +373,7 @@ export function TemperatureChart({ records }: Props) {
                             className={cn("h-3 w-3 rounded-full", tempDotColor(maxTemp))}
                           />
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/30">ー</span>
+                          <span className="flex h-3 items-center text-[10px] leading-none text-muted-foreground/30">ー</span>
                         )}
                       </button>
 

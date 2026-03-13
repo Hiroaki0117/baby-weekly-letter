@@ -265,7 +265,7 @@ export function MealChart({ records }: Props) {
                               {style.label}
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground/40">ー</span>
+                            <span className="inline-flex h-7 w-7 items-center justify-center text-xs text-muted-foreground/40">ー</span>
                           )}
                         </td>
                       );
@@ -332,7 +332,7 @@ export function MealChart({ records }: Props) {
                             })}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/30">ー</span>
+                          <span className="flex items-center text-[10px] leading-none text-muted-foreground/30">ー</span>
                         )}
                       </button>
 
