@@ -10,8 +10,10 @@ import {
   format,
   startOfMonth,
 } from "date-fns";
+import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
+import { SleepEditSheet } from "@/components/stats/edit-sheet";
 import type { SleepRecord, SleepCategory } from "@/types";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -41,15 +43,18 @@ function formatTimeFromISO(iso: string): string {
 
 type Props = {
   records: SleepRecord[];
+  onEdit?: (id: string, data: { started_at: string; ended_at: string }) => void;
+  onDelete?: (id: string) => void;
 };
 
 type ViewMode = "weekly" | "monthly";
 
-export function SleepChart({ records }: Props) {
+export function SleepChart({ records, onEdit, onDelete }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<{ dateStr: string; category?: SleepCategory } | null>(null);
+  const [editingRecord, setEditingRecord] = useState<SleepRecord | null>(null);
 
   const currentMonday = getMonday(new Date());
   const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -182,6 +187,63 @@ export function SleepChart({ records }: Props) {
     } else {
       setPopover({ dateStr, category });
     }
+  }
+
+  function handleDelete(id: string) {
+    if (!onDelete) return;
+    if (!window.confirm("この睡眠記録を削除しますか？")) return;
+    onDelete(id);
+    setPopover(null);
+  }
+
+  function handleEditSave(id: string, data: { started_at: string; ended_at: string }) {
+    if (!onEdit) return;
+    onEdit(id, data);
+    setEditingRecord(null);
+    setPopover(null);
+  }
+
+  function renderSleepPopover(popoverRecords: SleepRecord[], openUpward: boolean) {
+    if (popoverRecords.length === 0) return null;
+    return (
+      <div
+        className={cn(
+          "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+          openUpward ? "bottom-full mb-1" : "top-full mt-1",
+        )}
+      >
+        <div className="space-y-1.5 text-xs whitespace-nowrap">
+          {popoverRecords.map((r) => (
+            <div key={r.id} className="flex items-center gap-2">
+              <span className="text-muted-foreground">{formatTimeFromISO(r.started_at)}</span>
+              <span className="text-muted-foreground">〜</span>
+              <span className="text-muted-foreground">{formatTimeFromISO(r.ended_at)}</span>
+              <span className="font-medium text-foreground">{formatHourMin(r.duration_minutes)}</span>
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }}
+                  className="ml-auto flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="編集"
+                >
+                  <Pencil size={12} />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }}
+                  className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-red-50 hover:text-red-500"
+                  aria-label="削除"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const BAR_MAX_H = 32;
@@ -320,12 +382,8 @@ export function SleepChart({ records }: Props) {
                       ) : (
                         <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
-                      {popover?.dateStr === day.dateStr && popover?.category === "daytime" && (
-                        <SleepPopover
-                          records={detailMap.get(`${day.dateStr}_daytime`) ?? []}
-                          openUpward={openUpward}
-                        />
-                      )}
+                      {popover?.dateStr === day.dateStr && popover?.category === "daytime" &&
+                        renderSleepPopover(detailMap.get(`${day.dateStr}_daytime`) ?? [], openUpward)}
                     </td>
                     <td className="relative px-2 py-2 text-center">
                       {entry.night > 0 ? (
@@ -339,12 +397,8 @@ export function SleepChart({ records }: Props) {
                       ) : (
                         <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
-                      {popover?.dateStr === day.dateStr && popover?.category === "night" && (
-                        <SleepPopover
-                          records={detailMap.get(`${day.dateStr}_night`) ?? []}
-                          openUpward={openUpward}
-                        />
-                      )}
+                      {popover?.dateStr === day.dateStr && popover?.category === "night" &&
+                        renderSleepPopover(detailMap.get(`${day.dateStr}_night`) ?? [], openUpward)}
                     </td>
                     <td className="px-2 py-2 text-center">
                       {total > 0 ? (
@@ -421,29 +475,8 @@ export function SleepChart({ records }: Props) {
                         )}
                       </button>
 
-                      {isOpen && entry && (
-                        <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
-                          <div className="space-y-1 text-xs whitespace-nowrap">
-                            {(monthDetailMap.get(dateStr) ?? []).map((r) => (
-                              <div key={r.id} className="flex items-center gap-2">
-                                <span className="text-muted-foreground">
-                                  {formatTimeFromISO(r.started_at)}〜{formatTimeFromISO(r.ended_at)}
-                                </span>
-                                <span
-                                  className={cn(
-                                    "font-medium",
-                                    r.sleep_category === "night"
-                                      ? "text-indigo-600"
-                                      : "text-amber-600",
-                                  )}
-                                >
-                                  {formatHourMin(r.duration_minutes)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {isOpen && entry &&
+                        renderSleepPopover(monthDetailMap.get(dateStr) ?? [], false)}
                     </div>
                   );
                 })}
@@ -468,29 +501,15 @@ export function SleepChart({ records }: Props) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-function SleepPopover({ records, openUpward }: { records: SleepRecord[]; openUpward: boolean }) {
-  if (records.length === 0) return null;
-  return (
-    <div
-      className={cn(
-        "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
-        openUpward ? "bottom-full mb-1" : "top-full mt-1",
+      {/* 編集シート */}
+      {editingRecord && (
+        <SleepEditSheet
+          record={editingRecord}
+          onSave={handleEditSave}
+          onClose={() => setEditingRecord(null)}
+        />
       )}
-    >
-      <div className="space-y-1 text-xs whitespace-nowrap">
-        {records.map((r) => (
-          <div key={r.id} className="flex items-center gap-2">
-            <span className="text-muted-foreground">{formatTimeFromISO(r.started_at)}</span>
-            <span className="text-muted-foreground">〜</span>
-            <span className="text-muted-foreground">{formatTimeFromISO(r.ended_at)}</span>
-            <span className="font-medium text-foreground">{formatHourMin(r.duration_minutes)}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

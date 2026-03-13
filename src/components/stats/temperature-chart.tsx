@@ -10,9 +10,11 @@ import {
   format,
   startOfMonth,
 } from "date-fns";
+import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calcNormalTemperature } from "@/lib/temperature";
 import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
+import { TempEditSheet } from "@/components/stats/edit-sheet";
 import type { TemperatureRecord, TempPeriod } from "@/types";
 
 const FEVER_LINE = 37.5;
@@ -56,15 +58,18 @@ function formatTime(isoStr: string): string {
 
 type Props = {
   records: TemperatureRecord[];
+  onEdit?: (id: string, data: { temperature: number; measured_at: string }) => void;
+  onDelete?: (id: string) => void;
 };
 
 type ViewMode = "weekly" | "monthly";
 
-export function TemperatureChart({ records }: Props) {
+export function TemperatureChart({ records, onEdit, onDelete }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<{ dateStr: string; period?: TempPeriod } | null>(null);
+  const [editingRecord, setEditingRecord] = useState<TemperatureRecord | null>(null);
 
   const currentMonday = getMonday(new Date());
   const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -131,6 +136,67 @@ export function TemperatureChart({ records }: Props) {
     } else {
       setPopover({ dateStr, period });
     }
+  }
+
+  function handleDelete(id: string) {
+    if (!onDelete) return;
+    if (!window.confirm("この体温記録を削除しますか？")) return;
+    onDelete(id);
+    setPopover(null);
+  }
+
+  function handleEditSave(id: string, data: { temperature: number; measured_at: string }) {
+    if (!onEdit) return;
+    onEdit(id, data);
+    setEditingRecord(null);
+    setPopover(null);
+  }
+
+  function renderPopoverContent(popoverRecords: TemperatureRecord[], openUpward: boolean) {
+    return (
+      <div
+        className={cn(
+          "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+          openUpward ? "bottom-full mb-1" : "top-full mt-1",
+        )}
+      >
+        <div className="space-y-1.5 text-xs whitespace-nowrap">
+          {popoverRecords.map((r) => {
+            const s = tempStyle(r.temperature);
+            return (
+              <div key={r.id} className="flex items-center gap-2">
+                <span className="text-muted-foreground">
+                  {formatTime(r.measured_at)}
+                </span>
+                <span className={cn("font-bold", s.text)}>
+                  {r.temperature}℃
+                </span>
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }}
+                    className="ml-auto flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="編集"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }}
+                    className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-red-50 hover:text-red-500"
+                    aria-label="削除"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -292,30 +358,7 @@ export function TemperatureChart({ records }: Props) {
                           ) : (
                             <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs text-muted-foreground/40">ー</span>
                           )}
-                          {isOpen && cellRecords && (
-                            <div
-                              className={cn(
-                                "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
-                                openUpward ? "bottom-full mb-1" : "top-full mt-1",
-                              )}
-                            >
-                              <div className="space-y-1 text-xs whitespace-nowrap">
-                                {cellRecords.map((r) => {
-                                  const s = tempStyle(r.temperature);
-                                  return (
-                                    <div key={r.id} className="flex items-center gap-2">
-                                      <span className="text-muted-foreground">
-                                        {formatTime(r.measured_at)}
-                                      </span>
-                                      <span className={cn("font-bold", s.text)}>
-                                        {r.temperature}℃
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
+                          {isOpen && cellRecords && renderPopoverContent(cellRecords, openUpward)}
                         </td>
                       );
                     })}
@@ -377,25 +420,7 @@ export function TemperatureChart({ records }: Props) {
                         )}
                       </button>
 
-                      {isOpen && dayRecords && (
-                        <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
-                          <div className="space-y-1 text-xs whitespace-nowrap">
-                            {dayRecords.map((r) => {
-                              const s = tempStyle(r.temperature);
-                              return (
-                                <div key={r.id} className="flex items-center gap-2">
-                                  <span className="text-muted-foreground">
-                                    {formatTime(r.measured_at)}
-                                  </span>
-                                  <span className={cn("font-bold", s.text)}>
-                                    {r.temperature}℃
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                      {isOpen && dayRecords && renderPopoverContent(dayRecords, false)}
                     </div>
                   );
                 })}
@@ -403,6 +428,15 @@ export function TemperatureChart({ records }: Props) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* 編集シート */}
+      {editingRecord && (
+        <TempEditSheet
+          record={editingRecord}
+          onSave={handleEditSave}
+          onClose={() => setEditingRecord(null)}
+        />
       )}
     </div>
   );

@@ -10,8 +10,10 @@ import {
   format,
   startOfMonth,
 } from "date-fns";
+import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
+import { MealEditSheet } from "@/components/stats/edit-sheet";
 import type { MealRecord, MealType } from "@/types";
 
 const MEAL_TYPES: { value: MealType; label: string }[] = [
@@ -49,15 +51,18 @@ function formatWeekLabel(weekStart: Date): string {
 
 type Props = {
   records: MealRecord[];
+  onEdit?: (id: string, data: { amount: string }) => void;
+  onDelete?: (id: string) => void;
 };
 
 type ViewMode = "weekly" | "monthly";
 
-export function MealChart({ records }: Props) {
+export function MealChart({ records, onEdit, onDelete }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<string | null>(null);
+  const [editingRecord, setEditingRecord] = useState<MealRecord | null>(null);
 
   const currentMonday = getMonday(new Date());
   const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -115,6 +120,20 @@ export function MealChart({ records }: Props) {
 
   function togglePopover(dateStr: string) {
     setPopover(popover === dateStr ? null : dateStr);
+  }
+
+  function handleDelete(id: string) {
+    if (!onDelete) return;
+    if (!window.confirm("この食事記録を削除しますか？")) return;
+    onDelete(id);
+    setPopover(null);
+  }
+
+  function handleEditSave(id: string, data: { amount: string }) {
+    if (!onEdit) return;
+    onEdit(id, data);
+    setEditingRecord(null);
+    setPopover(null);
   }
 
   return (
@@ -252,20 +271,53 @@ export function MealChart({ records }: Props) {
                     {MEAL_TYPES.map((mt) => {
                       const record = weekGrid.get(`${day.dateStr}_${mt.value}`);
                       const style = record ? AMOUNT_STYLES[record.amount] : null;
+                      const isOpen = popover === `${day.dateStr}_${mt.value}`;
                       return (
-                        <td key={mt.value} className="px-2 py-2 text-center">
-                          {style ? (
-                            <span
+                        <td key={mt.value} className="relative px-2 py-2 text-center">
+                          {style && record ? (
+                            <button
+                              type="button"
+                              onClick={() => togglePopover(`${day.dateStr}_${mt.value}`)}
                               className={cn(
-                                "inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-bold",
+                                "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-sm font-bold",
                                 style.bg,
                                 style.text,
                               )}
                             >
                               {style.label}
-                            </span>
+                            </button>
                           ) : (
                             <span className="inline-flex h-7 w-7 items-center justify-center text-xs text-muted-foreground/40">ー</span>
+                          )}
+                          {isOpen && record && (
+                            <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                              <div className="flex items-center gap-2 text-xs whitespace-nowrap">
+                                <span className="text-muted-foreground">{mt.label}</span>
+                                <span className={cn("font-bold", style?.text)}>
+                                  {style?.label}
+                                </span>
+                                {onEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setEditingRecord(record); }}
+                                    className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                                    aria-label="編集"
+                                  >
+                                    <Pencil size={12} />
+                                  </button>
+                                )}
+                                {onDelete && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(record.id); }}
+                                    className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-red-50 hover:text-red-500"
+                                    aria-label="削除"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           )}
                         </td>
                       );
@@ -338,7 +390,7 @@ export function MealChart({ records }: Props) {
 
                       {isOpen && dayMap && (
                         <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
-                          <div className="space-y-1 text-xs whitespace-nowrap">
+                          <div className="space-y-1.5 text-xs whitespace-nowrap">
                             {MEAL_TYPES.map((mt) => {
                               const rec = dayMap.get(mt.value);
                               if (!rec) return null;
@@ -358,6 +410,26 @@ export function MealChart({ records }: Props) {
                                           ? "少なめ"
                                           : "食べなかった"}
                                   </span>
+                                  {onEdit && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setEditingRecord(rec); }}
+                                      className="ml-auto flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                                      aria-label="編集"
+                                    >
+                                      <Pencil size={12} />
+                                    </button>
+                                  )}
+                                  {onDelete && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleDelete(rec.id); }}
+                                      className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-red-50 hover:text-red-500"
+                                      aria-label="削除"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
                                 </div>
                               );
                             })}
@@ -371,6 +443,15 @@ export function MealChart({ records }: Props) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* 編集シート */}
+      {editingRecord && (
+        <MealEditSheet
+          record={editingRecord}
+          onSave={handleEditSave}
+          onClose={() => setEditingRecord(null)}
+        />
       )}
     </div>
   );
