@@ -417,7 +417,7 @@ export function SleepChart({ records }: Props) {
                             )}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/30">ー</span>
+                          <span className="inline-flex items-center text-[10px] leading-none text-muted-foreground/30">ー</span>
                         )}
                       </button>
 
@@ -452,16 +452,20 @@ export function SleepChart({ records }: Props) {
           </div>
 
           {/* サマリー */}
-          {monthSummary && (
-            <div className="mt-3 flex justify-center gap-6 text-xs text-muted-foreground">
-              <span>
-                平均 <span className="font-semibold text-foreground">{monthSummary.avg}</span>
-              </span>
-              <span>
-                最長 <span className="font-semibold text-foreground">{monthSummary.max}</span>
-              </span>
-            </div>
-          )}
+          <div className="mt-3 flex justify-center gap-6 text-xs text-muted-foreground">
+            {monthSummary ? (
+              <>
+                <span>
+                  平均 <span className="font-semibold text-foreground">{monthSummary.avg}</span>
+                </span>
+                <span>
+                  最長 <span className="font-semibold text-foreground">{monthSummary.max}</span>
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground/40">記録なし</span>
+            )}
+          </div>
         </div>
       )}
     </div>
