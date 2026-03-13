@@ -14,9 +14,9 @@ import {
 } from "@/lib/stats";
 import type { PeriodType } from "@/lib/stats";
 import { fetchGrowthRecords } from "@/lib/growth";
-import { fetchTemperatureRecords } from "@/lib/temperature";
-import { fetchSleepRecords } from "@/lib/sleep";
-import { fetchMealRecords } from "@/lib/meal";
+import { fetchTemperatureRecords, updateTemperatureRecord, deleteTemperatureRecord } from "@/lib/temperature";
+import { fetchSleepRecords, updateSleepRecord, deleteSleepRecord, calcDurationMinutes, classifySleep } from "@/lib/sleep";
+import { fetchMealRecords, updateMealRecord, deleteMealRecord } from "@/lib/meal";
 import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
@@ -26,6 +26,8 @@ import { SleepChart } from "@/components/stats/sleep-chart";
 import { MealChart } from "@/components/stats/meal-chart";
 import { ChildSelector } from "@/components/child/child-selector";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
+import { classifyTempPeriod } from "@/lib/temperature";
+import { toast } from "sonner";
 import type { Child, DailyLog, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, Gender, Milestone } from "@/types";
 
 type StatsTab = "logs" | "growth";
@@ -211,6 +213,114 @@ export default function StatsPage() {
   const selectedMealRecords = mealRecords[selectedChildId] ?? [];
   const hasGrowthData = selectedChild?.birth_date && selectedGrowthRecords.length > 0;
 
+  // ===== 体温 編集・削除 =====
+  const handleTempEdit = useCallback(
+    async (id: string, data: { temperature: number; measured_at: string }) => {
+      if (!selectedChildId) return;
+      try {
+        await updateTemperatureRecord(supabaseRef.current, id, {
+          temperature: data.temperature,
+          measured_at: data.measured_at,
+          temp_period: classifyTempPeriod(data.measured_at),
+        });
+        const updated = await fetchTemperatureRecords(supabaseRef.current, selectedChildId);
+        setTemperatureRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("体温記録を更新しました");
+      } catch {
+        toast.error("更新に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  const handleTempDelete = useCallback(
+    async (id: string) => {
+      if (!selectedChildId) return;
+      try {
+        await deleteTemperatureRecord(supabaseRef.current, id);
+        const updated = await fetchTemperatureRecords(supabaseRef.current, selectedChildId);
+        setTemperatureRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("体温記録を削除しました");
+      } catch {
+        toast.error("削除に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  // ===== 睡眠 編集・削除 =====
+  const handleSleepEdit = useCallback(
+    async (id: string, data: { started_at: string; ended_at: string }) => {
+      if (!selectedChildId) return;
+      try {
+        const durationMinutes = calcDurationMinutes(data.started_at, data.ended_at);
+        const sleepCategory = classifySleep(data.started_at);
+        const sleepDate = format(new Date(data.started_at), "yyyy-MM-dd");
+        await updateSleepRecord(supabaseRef.current, id, {
+          started_at: data.started_at,
+          ended_at: data.ended_at,
+          duration_minutes: durationMinutes,
+          sleep_category: sleepCategory,
+          sleep_date: sleepDate,
+        });
+        const updated = await fetchSleepRecords(supabaseRef.current, selectedChildId);
+        setSleepRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("睡眠記録を更新しました");
+      } catch {
+        toast.error("更新に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  const handleSleepDelete = useCallback(
+    async (id: string) => {
+      if (!selectedChildId) return;
+      try {
+        await deleteSleepRecord(supabaseRef.current, id);
+        const updated = await fetchSleepRecords(supabaseRef.current, selectedChildId);
+        setSleepRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("睡眠記録を削除しました");
+      } catch {
+        toast.error("削除に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  // ===== 食事 編集・削除 =====
+  const handleMealEdit = useCallback(
+    async (id: string, data: { amount: string }) => {
+      if (!selectedChildId) return;
+      try {
+        await updateMealRecord(supabaseRef.current, id, {
+          amount: data.amount,
+        });
+        const updated = await fetchMealRecords(supabaseRef.current, selectedChildId);
+        setMealRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("食事記録を更新しました");
+      } catch {
+        toast.error("更新に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  const handleMealDelete = useCallback(
+    async (id: string) => {
+      if (!selectedChildId) return;
+      try {
+        await deleteMealRecord(supabaseRef.current, id);
+        const updated = await fetchMealRecords(supabaseRef.current, selectedChildId);
+        setMealRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("食事記録を削除しました");
+      } catch {
+        toast.error("削除に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -324,15 +434,15 @@ export default function StatsPage() {
           </div>
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <TemperatureChart records={selectedTempRecords} />
+            <TemperatureChart records={selectedTempRecords} onEdit={handleTempEdit} onDelete={handleTempDelete} />
           </div>
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <SleepChart records={selectedSleepRecords} />
+            <SleepChart records={selectedSleepRecords} onEdit={handleSleepEdit} onDelete={handleSleepDelete} />
           </div>
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <MealChart records={selectedMealRecords} />
+            <MealChart records={selectedMealRecords} onEdit={handleMealEdit} onDelete={handleMealDelete} />
           </div>
         </div>
       )}
