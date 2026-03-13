@@ -318,7 +318,7 @@ export function SleepChart({ records }: Props) {
                           {formatHourMin(entry.daytime)}
                         </button>
                       ) : (
-                        <span className="text-xs text-muted-foreground/40">ー</span>
+                        <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
                       {popover?.dateStr === day.dateStr && popover?.category === "daytime" && (
                         <SleepPopover
@@ -337,7 +337,7 @@ export function SleepChart({ records }: Props) {
                           {formatHourMin(entry.night)}
                         </button>
                       ) : (
-                        <span className="text-xs text-muted-foreground/40">ー</span>
+                        <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
                       {popover?.dateStr === day.dateStr && popover?.category === "night" && (
                         <SleepPopover
@@ -352,7 +352,7 @@ export function SleepChart({ records }: Props) {
                           {formatHourMin(total)}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground/40">ー</span>
+                        <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
                     </td>
                   </tr>
