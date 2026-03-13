@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { NotificationPrompt } from "@/components/notification/notification-prompt";
+import { VersionChecker } from "@/components/layout/version-checker";
 
 export default function MainLayout({
   children,
@@ -15,6 +16,7 @@ export default function MainLayout({
       </main>
       <BottomNav />
       <NotificationPrompt />
+      <VersionChecker />
     </div>
   );
 }
