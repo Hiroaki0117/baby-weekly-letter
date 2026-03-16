@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
   const payload = JSON.stringify({
     title: "すくすく日記",
-    body: "今日の記録がまだありません。今日の出来事を残しましょう！",
+    body: "今日の日記がまだありません。今日の出来事を残しましょう！",
     url: "/",
   });
 
