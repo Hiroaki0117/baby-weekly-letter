@@ -203,13 +203,16 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
     setPopover(null);
   }
 
-  function renderSleepPopover(popoverRecords: SleepRecord[], openUpward: boolean) {
+  function renderSleepPopover(popoverRecords: SleepRecord[], openUpward: boolean, align: "left" | "center" | "right" = "center") {
     if (popoverRecords.length === 0) return null;
     return (
       <div
         className={cn(
-          "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+          "absolute z-10 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
           openUpward ? "bottom-full mb-1" : "top-full mt-1",
+          align === "left" && "left-0",
+          align === "right" && "right-0",
+          align === "center" && "left-1/2 -translate-x-1/2",
         )}
       >
         <div className="space-y-1.5 text-xs whitespace-nowrap">
@@ -335,7 +338,7 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
 
       {/* ===== 週別テーブル ===== */}
       {viewMode === "weekly" && (
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full border-collapse table-fixed">
             <thead>
               <tr>
@@ -383,7 +386,7 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
                         <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
                       {popover?.dateStr === day.dateStr && popover?.category === "daytime" &&
-                        renderSleepPopover(detailMap.get(`${day.dateStr}_daytime`) ?? [], openUpward)}
+                        renderSleepPopover(detailMap.get(`${day.dateStr}_daytime`) ?? [], openUpward, "left")}
                     </td>
                     <td className="relative px-2 py-2 text-center">
                       {entry.night > 0 ? (

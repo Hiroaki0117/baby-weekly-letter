@@ -152,12 +152,15 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
     setPopover(null);
   }
 
-  function renderPopoverContent(popoverRecords: TemperatureRecord[], openUpward: boolean) {
+  function renderPopoverContent(popoverRecords: TemperatureRecord[], openUpward: boolean, align: "left" | "center" | "right" = "center") {
     return (
       <div
         className={cn(
-          "absolute left-1/2 z-10 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+          "absolute z-10 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
           openUpward ? "bottom-full mb-1" : "top-full mt-1",
+          align === "left" && "left-0",
+          align === "right" && "right-0",
+          align === "center" && "left-1/2 -translate-x-1/2",
         )}
       >
         <div className="space-y-1.5 text-xs whitespace-nowrap">
@@ -303,7 +306,7 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
 
       {/* ===== 週別テーブル ===== */}
       {viewMode === "weekly" && (
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full border-collapse table-fixed">
             <thead>
               <tr>
@@ -335,11 +338,12 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
                     <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
                       {day.label}
                     </td>
-                    {PERIODS.map((p) => {
+                    {PERIODS.map((p, periodIndex) => {
                       const cellRecords = grid.get(`${day.dateStr}_${p.value}`);
                       const latest = cellRecords?.[0];
                       const isOpen =
                         popover?.dateStr === day.dateStr && popover?.period === p.value;
+                      const align = periodIndex === 0 ? "left" as const : periodIndex === PERIODS.length - 1 ? "right" as const : "center" as const;
 
                       return (
                         <td key={p.value} className="relative px-2 py-2 text-center">
@@ -358,7 +362,7 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
                           ) : (
                             <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs text-muted-foreground/40">ー</span>
                           )}
-                          {isOpen && cellRecords && renderPopoverContent(cellRecords, openUpward)}
+                          {isOpen && cellRecords && renderPopoverContent(cellRecords, openUpward, align)}
                         </td>
                       );
                     })}
