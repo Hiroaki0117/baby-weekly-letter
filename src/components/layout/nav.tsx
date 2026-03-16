@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, BookOpen, ImageIcon, BarChart3 } from "lucide-react";
+import { Home, BookOpen, ImageIcon, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 const navItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "今日", icon: Home },
-  { href: "/calendar", label: "カレンダー", icon: Calendar },
-  { href: "/logs", label: "記録", icon: BookOpen },
-  { href: "/gallery", label: "写真", icon: ImageIcon },
-  { href: "/stats", label: "統計", icon: BarChart3 },
+  { href: "/diary", label: "日記", icon: BookOpen },
+  { href: "/album", label: "アルバム", icon: ImageIcon },
+  { href: "/report", label: "レポート", icon: BarChart3 },
 ];
 
 type NavProps = {

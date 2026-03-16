@@ -16,7 +16,7 @@ export function WeeklyReportCard({ report }: WeeklyReportCardProps) {
     ) ?? "";
 
   return (
-    <Link href={`/weekly/${report.id}`}>
+    <Link href={`/album/weekly/${report.id}`}>
       <div className="group overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-primary/5 transition-all duration-200 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-1">
         {/* エアメール斜めストライプ */}
         <div className="airmail-stripe h-3 w-full" />

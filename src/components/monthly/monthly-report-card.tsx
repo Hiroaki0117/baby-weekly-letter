@@ -20,7 +20,7 @@ export function MonthlyReportCard({ report }: MonthlyReportCardProps) {
     ) ?? "";
 
   return (
-    <Link href={`/weekly/monthly/${report.id}`}>
+    <Link href={`/album/monthly/${report.id}`}>
       <div className="group overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5">
         {/* グラデーション上部バー */}
         <div className="h-2.5 w-full bg-gradient-to-r from-primary/60 via-primary/40 to-primary/20" />
