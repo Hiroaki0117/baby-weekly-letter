@@ -353,11 +353,11 @@ export default function StatsPage() {
         />
       )}
 
-      {/* 大元タブ: 記録 / 成長 */}
+      {/* 大元タブ: 日記 / 成長 */}
       <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
         {(
           [
-            { key: "logs", label: "記録" },
+            { key: "logs", label: "日記" },
             { key: "growth", label: "からだの記録" },
           ] as const
         ).map((t) => (
@@ -375,13 +375,13 @@ export default function StatsPage() {
         ))}
       </div>
 
-      {/* 記録タブ */}
+      {/* 日記タブ */}
       {statsTab === "logs" && (
         <>
           {allLogs.length === 0 ? (
             <div className="rounded-xl border border-border/50 bg-card px-6 py-16 text-center">
               <p className="text-sm text-muted-foreground">
-                まだ記録がありません。記録を追加するとレポートが表示されます。
+                まだ日記がありません。日記を追加するとレポートが表示されます。
               </p>
             </div>
           ) : (
@@ -396,7 +396,7 @@ export default function StatsPage() {
               />
 
               <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">記録の様子</h3>
+                <h3 className="mb-3 text-sm font-semibold text-foreground">日記の様子</h3>
                 <MoodChart data={moodData} scrollable={scrollable} />
               </div>
 
