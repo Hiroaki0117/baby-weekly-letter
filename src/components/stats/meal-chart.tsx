@@ -394,7 +394,12 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                       </button>
 
                       {isOpen && dayMap && (
-                        <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                        <div className={cn(
+                          "absolute top-full z-10 mt-1 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+                          di === 0 && "left-0",
+                          di === 6 && "right-0",
+                          di > 0 && di < 6 && "left-1/2 -translate-x-1/2",
+                        )}>
                           <div className="space-y-1.5 text-xs whitespace-nowrap">
                             {MEAL_TYPES.map((mt) => {
                               const rec = dayMap.get(mt.value);
