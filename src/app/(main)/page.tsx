@@ -408,14 +408,14 @@ export default function HomePage() {
               <p className="text-xs text-muted-foreground">
                 <span className="mr-1.5">📝</span>
                 {logs.length === 0
-                  ? "今日はまだ記録がありません"
-                  : `今日は${logs.length}件の記録があります`}
+                  ? "今日はまだ日記がありません"
+                  : `今日は${logs.length}件の日記があります`}
               </p>
               {streak > 0 && (
                 <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1">
                   <span className="text-base leading-none">🔥</span>
                   <span className="text-sm font-bold text-primary">
-                    {streak}日連続記録中！
+                    {streak}日連続！
                   </span>
                 </div>
               )}
@@ -461,7 +461,7 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border/50" />
             <span className="text-[10px] font-medium uppercase tracking-widest text-primary/70">
-              {logs.length}件の記録
+              {logs.length}件の日記
             </span>
             <div className="h-px flex-1 bg-border/50" />
           </div>
