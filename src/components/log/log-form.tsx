@@ -222,7 +222,7 @@ export function LogForm({
       {/* フォームヘッダー */}
       <div className="border-b border-primary/10 bg-primary/5 px-5 py-3">
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          {editingLog ? "ログを編集" : "今日の記録"}
+          {editingLog ? "ログを編集" : "今日の日記"}
         </p>
       </div>
 
@@ -231,7 +231,7 @@ export function LogForm({
         {childrenList.length >= 2 && (
           <div className="space-y-2.5">
             <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              だれの記録？
+              だれの日記？
             </Label>
             <ChildSelector
               childrenList={childrenList}

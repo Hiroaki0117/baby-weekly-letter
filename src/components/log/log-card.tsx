@@ -225,7 +225,7 @@ export function LogCard({ log, childName, authorDisplayName, milestone, reaction
                 </svg>
               </div>
               <p className="text-sm font-medium text-foreground">
-                この記録を削除しますか？
+                この日記を削除しますか？
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 この操作は取り消せません

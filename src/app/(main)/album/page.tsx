@@ -428,7 +428,7 @@ function AlbumPageInner() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">まだ写真がありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">記録に写真を添付してみましょう</p>
+                <p className="mt-1 text-xs text-muted-foreground/70">日記に写真を添付してみましょう</p>
               </div>
             </div>
           ) : (
@@ -464,7 +464,7 @@ function AlbumPageInner() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">まだ週次アルバムがありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">ログを記録したら「今週のアルバムを作る」を押してみましょう</p>
+                <p className="mt-1 text-xs text-muted-foreground/70">日記を書いたら「今週のアルバムを作る」を押してみましょう</p>
               </div>
             </div>
           ) : (

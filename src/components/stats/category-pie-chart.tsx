@@ -90,7 +90,7 @@ export function CategoryPieChart({ data, period, selectedMonth, onChangeMonth }:
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">カテゴリ別の記録</h3>
+      <h3 className="text-sm font-semibold text-foreground">カテゴリ別の日記</h3>
 
       {/* 月セレクター（月別タブ時のみ表示） */}
       {period === "monthly" && onChangeMonth && (

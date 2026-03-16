@@ -239,9 +239,9 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between p-5">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground">記録リマインダー</p>
+              <p className="text-sm font-medium text-foreground">日記リマインダー</p>
               <p className="text-[11px] text-muted-foreground">
-                記録がない日の21時に通知します
+                日記がない日の21時に通知します
               </p>
             </div>
             <button

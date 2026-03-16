@@ -661,7 +661,7 @@ function DiaryPageInner() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">まだログがありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">ホームから最初の記録を残してみましょう</p>
+                <p className="mt-1 text-xs text-muted-foreground/70">ホームから最初の日記を残してみましょう</p>
               </div>
             </div>
           ) : filteredLogs.length === 0 ? (

@@ -106,10 +106,10 @@ export function NotificationPrompt() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="mx-4 max-w-sm rounded-2xl bg-white p-6 shadow-xl">
         <h2 className="text-base font-semibold text-foreground">
-          記録リマインダー
+          日記リマインダー
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          その日の記録がまだないときに、21時にお知らせします。記録の習慣づけにお役立てください。
+          その日の日記がまだないときに、21時にお知らせします。日記の習慣づけにお役立てください。
         </p>
         <div className="mt-5 flex gap-3">
           <button
