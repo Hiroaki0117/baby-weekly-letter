@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
-  Calendar,
   BookOpen,
+  ImageIcon,
   BarChart3,
   MoreHorizontal,
   Users,
@@ -18,9 +18,9 @@ import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/", label: "今日", icon: Home },
-  { href: "/calendar", label: "カレンダー", icon: Calendar },
-  { href: "/logs", label: "記録", icon: BookOpen },
-  { href: "/stats", label: "統計", icon: BarChart3 },
+  { href: "/diary", label: "日記", icon: BookOpen },
+  { href: "/album", label: "アルバム", icon: ImageIcon },
+  { href: "/report", label: "レポート", icon: BarChart3 },
 ];
 
 const moreMenuItems = [

@@ -34,7 +34,7 @@ export default function WeeklyDetailPage() {
 
     if (error || !data) {
       toast.error("アルバムが見つかりませんでした");
-      router.push("/weekly");
+      router.push("/album?tab=weekly");
       return;
     }
 
@@ -164,7 +164,7 @@ export default function WeeklyDetailPage() {
 
       {/* 戻るリンク */}
       <button
-        onClick={() => router.push("/weekly")}
+        onClick={() => router.push("/album?tab=weekly")}
         className="flex items-center gap-2 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

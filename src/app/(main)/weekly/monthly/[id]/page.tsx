@@ -35,7 +35,7 @@ export default function MonthlyDetailPage() {
 
     if (error || !data) {
       toast.error("アルバムが見つかりませんでした");
-      router.push("/weekly?tab=monthly");
+      router.push("/album?tab=monthly");
       return;
     }
 
@@ -169,7 +169,7 @@ export default function MonthlyDetailPage() {
 
       {/* 戻るリンク */}
       <button
-        onClick={() => router.push("/weekly?tab=monthly")}
+        onClick={() => router.push("/album?tab=monthly")}
         className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         ← 月次アルバム一覧へ

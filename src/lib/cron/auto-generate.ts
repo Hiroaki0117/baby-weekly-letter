@@ -249,7 +249,7 @@ export async function processWeekly(
             familyId,
             "auto_weekly",
             `${rangeLabel}の週次アルバムが作成されました`,
-            `/weekly/${report.id}`,
+            `/album/weekly/${report.id}`,
           );
           generated++;
         }
@@ -374,7 +374,7 @@ export async function processMonthly(
             familyId,
             "auto_monthly",
             `${monthLabel}の月次アルバムが作成されました`,
-            `/weekly/monthly/${report.id}`,
+            `/album/monthly/${report.id}`,
           );
           generated++;
         }
@@ -532,7 +532,7 @@ export async function processAnnual(
             familyId,
             "auto_annual",
             `${fiscalYear}年度の年次アルバムが作成されました`,
-            `/logs?tab=annual`,
+            `/album?tab=annual`,
           );
           generated++;
         }
