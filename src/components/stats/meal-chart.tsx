@@ -237,7 +237,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
 
       {/* ===== 週別テーブル ===== */}
       {viewMode === "weekly" && (
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full border-collapse table-fixed">
             <thead>
               <tr>
@@ -268,7 +268,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                     <td className="px-2 py-2 text-xs font-medium text-foreground whitespace-nowrap">
                       {day.label}
                     </td>
-                    {MEAL_TYPES.map((mt) => {
+                    {MEAL_TYPES.map((mt, mtIndex) => {
                       const record = weekGrid.get(`${day.dateStr}_${mt.value}`);
                       const style = record ? AMOUNT_STYLES[record.amount] : null;
                       const isOpen = popover === `${day.dateStr}_${mt.value}`;
@@ -290,7 +290,12 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                             <span className="inline-flex h-7 w-7 items-center justify-center text-xs text-muted-foreground/40">ー</span>
                           )}
                           {isOpen && record && (
-                            <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg">
+                            <div className={cn(
+                              "absolute top-full z-10 mt-1 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
+                              mtIndex === 0 && "left-0",
+                              mtIndex === MEAL_TYPES.length - 1 && "right-0",
+                              mtIndex > 0 && mtIndex < MEAL_TYPES.length - 1 && "left-1/2 -translate-x-1/2",
+                            )}>
                               <div className="flex items-center gap-2 text-xs whitespace-nowrap">
                                 <span className="text-muted-foreground">{mt.label}</span>
                                 <span className={cn("font-bold", style?.text)}>
