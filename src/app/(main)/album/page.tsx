@@ -23,14 +23,18 @@ import { startOfWeek, endOfWeek } from "date-fns";
 import type { Child, DailyLog, WeeklyReport, MonthlyReport, AnnualReport } from "@/types";
 
 type AlbumTab = "photos" | "weekly" | "monthly" | "annual" | "settings";
+type TopCategory = "photos" | "albums";
 
-const albumTabs: { key: AlbumTab; label: string; icon: string }[] = [
-  { key: "photos", label: "写真", icon: "📸" },
+const albumSubTabs: { key: AlbumTab; label: string; icon: string }[] = [
   { key: "weekly", label: "週次", icon: "✉" },
   { key: "monthly", label: "月次", icon: "📖" },
   { key: "annual", label: "年次", icon: "📚" },
   { key: "settings", label: "設定", icon: "⚙" },
 ];
+
+function getTopCategory(tab: AlbumTab): TopCategory {
+  return tab === "photos" ? "photos" : "albums";
+}
 
 export default function AlbumPage() {
   return (
@@ -50,7 +54,8 @@ export default function AlbumPage() {
 function AlbumPageInner() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as AlbumTab) ?? "photos";
-  const validTab = albumTabs.some((t) => t.key === initialTab) ? initialTab : "photos";
+  const allTabs: AlbumTab[] = ["photos", "weekly", "monthly", "annual", "settings"];
+  const validTab = allTabs.includes(initialTab) ? initialTab : "photos";
 
   const [activeTab, setActiveTab] = useState<AlbumTab>(validTab);
   const [loading, setLoading] = useState(true);
@@ -351,23 +356,54 @@ function AlbumPageInner() {
         )}
       </div>
 
-      {/* タブ切替 */}
-      <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
-        {albumTabs.map((tab) => (
+      {/* タブ切替（2段構成） */}
+      <div className="space-y-3">
+        {/* 大項目: 写真 / アルバム */}
+        <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
           <button
-            key={tab.key}
-            onClick={() => handleTabChange(tab.key)}
+            onClick={() => handleTabChange("photos")}
             className={cn(
               "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              activeTab === tab.key
+              getTopCategory(activeTab) === "photos"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <span className="mr-1">{tab.icon}</span>
-            {tab.label}
+            📸 写真
           </button>
-        ))}
+          <button
+            onClick={() => { if (activeTab === "photos") handleTabChange("weekly"); }}
+            className={cn(
+              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              getTopCategory(activeTab) === "albums"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            📚 アルバム
+          </button>
+        </div>
+
+        {/* 小項目: アルバムカテゴリ選択時のみ */}
+        {getTopCategory(activeTab) === "albums" && (
+          <div className="flex gap-1 rounded-lg bg-muted/50 p-1">
+            {albumSubTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key)}
+                className={cn(
+                  "flex-1 rounded-md py-1.5 text-xs font-medium transition-all",
+                  activeTab === tab.key
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className="mr-1">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 子供セレクター */}
