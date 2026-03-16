@@ -479,7 +479,7 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
                       </button>
 
                       {isOpen && entry &&
-                        renderSleepPopover(monthDetailMap.get(dateStr) ?? [], false)}
+                        renderSleepPopover(monthDetailMap.get(dateStr) ?? [], false, di === 0 ? "left" : di === 6 ? "right" : "center")}
                     </div>
                   );
                 })}

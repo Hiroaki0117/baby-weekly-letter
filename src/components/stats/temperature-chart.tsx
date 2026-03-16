@@ -424,7 +424,7 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
                         )}
                       </button>
 
-                      {isOpen && dayRecords && renderPopoverContent(dayRecords, false)}
+                      {isOpen && dayRecords && renderPopoverContent(dayRecords, false, di === 0 ? "left" : di === 6 ? "right" : "center")}
                     </div>
                   );
                 })}
