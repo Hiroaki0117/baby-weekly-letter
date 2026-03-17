@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   profileFormSchema,
   type ProfileFormValues,
@@ -176,14 +177,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       {/* ページヘッダー */}
-      <div>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-          Settings
-        </p>
-        <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
-          設定
-        </h1>
-      </div>
+      <PageHeader englishLabel="Settings" title="設定" />
 
       <div className="h-px bg-border/60" />
 

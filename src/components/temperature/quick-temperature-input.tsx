@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addTemperatureRecord, classifyTempPeriod } from "@/lib/temperature";
+import { QuickInputSection } from "@/components/ui/quick-input-section";
 import { toast } from "sonner";
 import type { Child } from "@/types";
 
@@ -21,7 +22,6 @@ type Props = {
 };
 
 export function QuickTemperatureInput({ childrenList }: Props) {
-  const [open, setOpen] = useState(false);
   const [temperatures, setTemperatures] = useState<Record<string, string>>({});
   const [measuredAts, setMeasuredAts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -61,18 +61,7 @@ export function QuickTemperatureInput({ childrenList }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/30"
-      >
-        <span>🌡 体温を記録</span>
-        <span className="text-xs text-muted-foreground">{open ? "▲" : "▼"}</span>
-      </button>
-
-      {open && (
-        <div className="space-y-2 border-t border-border/40 px-4 py-3">
+    <QuickInputSection label={<span>🌡 体温を記録</span>}>
           {childrenList.map((child) => (
             <div key={child.id} className="space-y-1.5">
               <div className="flex items-center gap-2">
@@ -125,8 +114,6 @@ export function QuickTemperatureInput({ childrenList }: Props) {
               </div>
             </div>
           ))}
-        </div>
-      )}
-    </div>
+    </QuickInputSection>
   );
 }

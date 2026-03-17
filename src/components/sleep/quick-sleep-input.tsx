@@ -13,6 +13,7 @@ import {
   updateTracking,
 } from "@/lib/sleep";
 import { getMyFamilyId } from "@/lib/supabase/family";
+import { QuickInputSection } from "@/components/ui/quick-input-section";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
 import type { Child, SleepTracking } from "@/types";
@@ -227,12 +228,10 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/30"
-      >
+    <QuickInputSection
+      open={open}
+      onOpenChange={setOpen}
+      label={
         <div className="flex items-center gap-2">
           <span>😴 睡眠を記録</span>
           {hasAnyTracking && !open && (
@@ -242,11 +241,8 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
             </span>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">{open ? "▲" : "▼"}</span>
-      </button>
-
-      {open && (
-        <div className="space-y-3 border-t border-border/40 px-4 py-3">
+      }
+    >
           {/* アクティブな計測を表示 */}
           {activeTracking.map((tracking) => {
             const trackingChild = childrenList.find((c) => c.id === tracking.child_id);
@@ -485,8 +481,6 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
               </div>
             </>
           )}
-        </div>
-      )}
-    </div>
+    </QuickInputSection>
   );
 }

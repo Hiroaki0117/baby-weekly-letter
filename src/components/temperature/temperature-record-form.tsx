@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormActions } from "@/components/ui/form-actions";
 import type { TemperatureRecord } from "@/types";
 
 type Props = {
@@ -91,22 +92,7 @@ export function TemperatureRecordForm({ editingRecord, onSubmit, onCancel }: Pro
         <p className="text-xs text-red-500">{error}</p>
       )}
 
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
-        >
-          {saving ? "保存中..." : editingRecord ? "更新" : "追加"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-border/60 px-4 py-2 text-sm text-muted-foreground transition-all hover:bg-secondary/60"
-        >
-          取消
-        </button>
-      </div>
+      <FormActions saving={saving} isEditing={!!editingRecord} onCancel={onCancel} />
     </form>
   );
 }
