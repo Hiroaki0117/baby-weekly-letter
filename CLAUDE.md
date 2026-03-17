@@ -77,7 +77,11 @@ mkdir -p .steering
 
 #### 3. CLAUDE.md にプロジェクト固有情報を追記
 
-永続的ドキュメントの作成完了後、CLAUDE.md の「概要」セクションにプロジェクト固有の説明を記載する。
+永続的ドキュメントの作成完了後、以下をCLAUDE.mdに記載する：
+
+- 「概要」セクションにプロジェクトの説明を記載
+- 「開発用の一時変更」セクションに一時的な設定変更があれば記載
+- プロジェクト固有の注意事項があれば追記
 
 #### 4. 初回実装用のステアリングファイル作成
 
@@ -97,11 +101,15 @@ mkdir -p .steering/[YYYYMMDD]-initial-implementation
 
 #### 6. 実装開始
 
-`.steering/[YYYYMMDD]-initial-implementation/tasklist.md` に基づいて実装を進めます。
+1. `docs/development-guidelines.md` を読み込む
+2. `.steering/[YYYYMMDD]-initial-implementation/tasklist.md` に基づいて実装を進める
 
 #### 7. 品質チェック
 
-`docs/development-guidelines.md` の作業完了時のルールに従う。
+```bash
+pnpm lint && pnpm type-check && pnpm test
+```
+エラーがあれば修正し、commit → push まで行う。詳細は `docs/development-guidelines.md` の「作業完了時のルール」を参照。
 
 ### 機能追加・修正時の手順
 
@@ -139,11 +147,15 @@ mkdir -p .steering/[YYYYMMDD]-[開発タイトル]
 
 #### 6. 実装開始
 
-`.steering/[YYYYMMDD]-[開発タイトル]/tasklist.md` に基づいて実装を進めます。
+1. `docs/development-guidelines.md` を読み込む
+2. `.steering/[YYYYMMDD]-[開発タイトル]/tasklist.md` に基づいて実装を進める
 
 #### 7. 品質チェック
 
-`docs/development-guidelines.md` の作業完了時のルールに従う。
+```bash
+pnpm lint && pnpm type-check && pnpm test
+```
+エラーがあれば修正し、commit → push まで行う。詳細は `docs/development-guidelines.md` の「作業完了時のルール」を参照。
 
 ## ドキュメント管理の原則
 
