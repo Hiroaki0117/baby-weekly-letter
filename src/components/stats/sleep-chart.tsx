@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import {
   startOfWeek,
   addWeeks,
@@ -55,14 +55,18 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<{ dateStr: string; category?: SleepCategory } | null>(null);
   const [editingRecord, setEditingRecord] = useState<SleepRecord | null>(null);
-
-  const closePopover = useCallback(() => setPopover(null), []);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!popover) return;
-    document.addEventListener("mousedown", closePopover);
-    return () => document.removeEventListener("mousedown", closePopover);
-  }, [popover, closePopover]);
+    function handleMouseDown(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setPopover(null);
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [popover]);
 
   const currentMonday = getMonday(new Date());
   const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -215,7 +219,7 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
     if (popoverRecords.length === 0) return null;
     return (
       <div
-        onMouseDown={(e) => e.stopPropagation()}
+        ref={popoverRef}
         className={cn(
           "absolute z-10 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
           openUpward ? "bottom-full mb-1" : "top-full mt-1",
