@@ -14,9 +14,9 @@ import {
 } from "@/lib/stats";
 import type { PeriodType } from "@/lib/stats";
 import { fetchGrowthRecords } from "@/lib/growth";
-import { fetchTemperatureRecords, updateTemperatureRecord, deleteTemperatureRecord } from "@/lib/temperature";
-import { fetchSleepRecords, updateSleepRecord, deleteSleepRecord, calcDurationMinutes, classifySleep } from "@/lib/sleep";
-import { fetchMealRecords, updateMealRecord, deleteMealRecord } from "@/lib/meal";
+import { fetchTemperatureRecords, addTemperatureRecord, updateTemperatureRecord, deleteTemperatureRecord } from "@/lib/temperature";
+import { fetchSleepRecords, addSleepRecord, updateSleepRecord, deleteSleepRecord, calcDurationMinutes, classifySleep } from "@/lib/sleep";
+import { fetchMealRecords, addMealRecord, updateMealRecord, deleteMealRecord } from "@/lib/meal";
 import { PeriodTabs } from "@/components/stats/period-tabs";
 import { MoodChart } from "@/components/stats/mood-chart";
 import { CategoryPieChart } from "@/components/stats/category-pie-chart";
@@ -31,7 +31,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
-import type { Child, DailyLog, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, Gender, Milestone } from "@/types";
+import type { Child, DailyLog, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, Gender, Milestone, SleepCategory, MealType } from "@/types";
 
 type StatsTab = "logs" | "growth";
 
@@ -324,6 +324,72 @@ export default function StatsPage() {
     [selectedChildId],
   );
 
+  // ===== 体温 新規追加 =====
+  const handleTempAdd = useCallback(
+    async (data: { temperature: number; measured_at: string }) => {
+      if (!selectedChildId) return;
+      try {
+        await addTemperatureRecord(supabaseRef.current, {
+          child_id: selectedChildId,
+          temperature: data.temperature,
+          measured_at: data.measured_at,
+          temp_period: classifyTempPeriod(data.measured_at),
+        });
+        const updated = await fetchTemperatureRecords(supabaseRef.current, selectedChildId);
+        setTemperatureRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("体温記録を追加しました");
+      } catch {
+        toast.error("追加に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  // ===== 睡眠 新規追加 =====
+  const handleSleepAdd = useCallback(
+    async (data: { sleep_date: string; started_at: string; ended_at: string; sleep_category: SleepCategory }) => {
+      if (!selectedChildId) return;
+      try {
+        const durationMinutes = calcDurationMinutes(data.started_at, data.ended_at);
+        await addSleepRecord(supabaseRef.current, {
+          child_id: selectedChildId,
+          sleep_date: data.sleep_date,
+          started_at: data.started_at,
+          ended_at: data.ended_at,
+          duration_minutes: durationMinutes,
+          sleep_category: data.sleep_category,
+        });
+        const updated = await fetchSleepRecords(supabaseRef.current, selectedChildId);
+        setSleepRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("睡眠記録を追加しました");
+      } catch {
+        toast.error("追加に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
+  // ===== 食事 新規追加 =====
+  const handleMealAdd = useCallback(
+    async (data: { meal_date: string; meal_type: MealType; amount: string }) => {
+      if (!selectedChildId) return;
+      try {
+        await addMealRecord(supabaseRef.current, {
+          child_id: selectedChildId,
+          meal_date: data.meal_date,
+          meal_type: data.meal_type,
+          amount: data.amount,
+        });
+        const updated = await fetchMealRecords(supabaseRef.current, selectedChildId);
+        setMealRecords((prev) => ({ ...prev, [selectedChildId]: updated }));
+        toast.success("食事記録を追加しました");
+      } catch {
+        toast.error("追加に失敗しました");
+      }
+    },
+    [selectedChildId],
+  );
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -427,15 +493,15 @@ export default function StatsPage() {
           </div>
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <TemperatureChart records={selectedTempRecords} onEdit={handleTempEdit} onDelete={handleTempDelete} />
+            <TemperatureChart records={selectedTempRecords} onEdit={handleTempEdit} onDelete={handleTempDelete} onAdd={handleTempAdd} />
           </div>
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <SleepChart records={selectedSleepRecords} onEdit={handleSleepEdit} onDelete={handleSleepDelete} />
+            <SleepChart records={selectedSleepRecords} onEdit={handleSleepEdit} onDelete={handleSleepDelete} onAdd={handleSleepAdd} />
           </div>
 
           <div className="overflow-hidden rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-            <MealChart records={selectedMealRecords} onEdit={handleMealEdit} onDelete={handleMealDelete} />
+            <MealChart records={selectedMealRecords} onEdit={handleMealEdit} onDelete={handleMealDelete} onAdd={handleMealAdd} />
           </div>
         </div>
       )}

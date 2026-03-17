@@ -3,14 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import { formatDateJa } from "@/lib/date";
-
-const moodLabels: Record<string, string> = {
-  moved: "🥰",
-  happy: "🙂",
-  neutral: "😐",
-  tired: "😴",
-  sad: "😭",
-};
+import { MOOD_OPTIONS } from "@/types";
 
 type PhotoModalProps = {
   imageUrl: string;
@@ -80,7 +73,7 @@ export function PhotoModal({
               {formatDateJa(logDate)}
             </span>
             <span className="text-lg leading-none">
-              {moodLabels[mood] ?? ""}
+              {MOOD_OPTIONS.find((o) => o.value === mood)?.emoji ?? ""}
             </span>
             {childName && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">

@@ -39,6 +39,17 @@ export const TEMP_PERIOD_OPTIONS: { value: TempPeriod; label: string }[] = [
   { value: "night", label: "夜" },
 ];
 
+/** 体温時間帯ごとのデフォルト計測時刻（時） */
+export const TEMP_PERIOD_DEFAULT_HOUR: Record<TempPeriod, number> = {
+  morning: 7,
+  afternoon: 12,
+  evening: 17,
+  night: 21,
+};
+
+/** 発熱の閾値（℃） */
+export const FEVER_THRESHOLD = 37.5;
+
 export type SleepRecord = Database["public"]["Tables"]["sleep_records"]["Row"];
 export type SleepRecordInsert = Database["public"]["Tables"]["sleep_records"]["Insert"];
 
@@ -51,6 +62,12 @@ export const SLEEP_CATEGORY_OPTIONS: { value: SleepCategory; label: string }[] =
   { value: "night", label: "夜間睡眠" },
   { value: "daytime", label: "日中睡眠" },
 ];
+
+/** 睡眠カテゴリごとのデフォルト開始・終了時刻 */
+export const SLEEP_DEFAULT_TIMES: Record<SleepCategory, { start: string; end: string }> = {
+  night: { start: "21:00", end: "06:00" },
+  daytime: { start: "13:00", end: "15:00" },
+};
 
 export type MealRecord = Database["public"]["Tables"]["meal_records"]["Row"];
 export type MealRecordInsert = Database["public"]["Tables"]["meal_records"]["Insert"];
@@ -188,3 +205,20 @@ export const CATEGORY_OPTIONS: Category[] = [
   { value: "growth", label: "成長" },
   { value: "parent_feeling", label: "パパ/ママの気持ち" },
 ];
+
+// ===== カレンダー定数 =====
+
+/** 日〜土の曜日ラベル（日曜始まり） */
+export const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
+/** 月〜日の曜日ラベル（月曜始まり、カレンダーグリッド用） */
+export const CAL_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"] as const;
+
+/** 月名ラベル（1〜12） */
+export const MONTH_NAMES: Record<number, string> = {
+  1: "1月", 2: "2月", 3: "3月", 4: "4月", 5: "5月", 6: "6月",
+  7: "7月", 8: "8月", 9: "9月", 10: "10月", 11: "11月", 12: "12月",
+};
+
+/** 年度順の月（4月始まり） */
+export const FISCAL_MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3] as const;

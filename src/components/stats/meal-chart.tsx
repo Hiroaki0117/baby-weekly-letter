@@ -13,15 +13,11 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
-import { MealEditSheet } from "@/components/stats/edit-sheet";
+import { MealEditSheet, MealAddSheet } from "@/components/stats/edit-sheet";
+import { MEAL_TYPE_OPTIONS, WEEKDAYS, CAL_WEEKDAYS } from "@/types";
 import type { MealRecord, MealType } from "@/types";
 
-const MEAL_TYPES: { value: MealType; label: string }[] = [
-  { value: "breakfast", label: "朝食" },
-  { value: "lunch", label: "昼食" },
-  { value: "dinner", label: "夕食" },
-  { value: "snack", label: "おやつ" },
-];
+const MEAL_TYPES = MEAL_TYPE_OPTIONS;
 
 const AMOUNT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   plenty: { bg: "bg-green-100", text: "text-green-700", label: "◎" },
@@ -37,9 +33,6 @@ const MINI_AMOUNT_COLORS: Record<string, string> = {
   none: "text-red-500",
 };
 
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-const CAL_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
-
 function getMonday(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
 }
@@ -53,16 +46,18 @@ type Props = {
   records: MealRecord[];
   onEdit?: (id: string, data: { amount: string }) => void;
   onDelete?: (id: string) => void;
+  onAdd?: (data: { meal_date: string; meal_type: MealType; amount: string }) => void;
 };
 
 type ViewMode = "weekly" | "monthly";
 
-export function MealChart({ records, onEdit, onDelete }: Props) {
+export function MealChart({ records, onEdit, onDelete, onAdd }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<MealRecord | null>(null);
+  const [addContext, setAddContext] = useState<{ dateStr: string; mealType: MealType } | null>(null);
 
   useEffect(() => {
     if (!popover) return;
@@ -298,6 +293,14 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                             >
                               {style.label}
                             </button>
+                          ) : onAdd ? (
+                            <button
+                              type="button"
+                              onClick={() => setAddContext({ dateStr: day.dateStr, mealType: mt.value })}
+                              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center text-xs text-muted-foreground/40 transition-colors hover:text-primary hover:bg-primary/5 rounded-md"
+                            >
+                              ー
+                            </button>
                           ) : (
                             <span className="inline-flex h-7 w-7 items-center justify-center text-xs text-muted-foreground/40">ー</span>
                           )}
@@ -473,6 +476,16 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
           record={editingRecord}
           onSave={handleEditSave}
           onClose={() => setEditingRecord(null)}
+        />
+      )}
+
+      {/* 新規追加シート */}
+      {addContext && onAdd && (
+        <MealAddSheet
+          dateStr={addContext.dateStr}
+          mealType={addContext.mealType}
+          onCreate={(data) => { onAdd(data); setAddContext(null); }}
+          onClose={() => setAddContext(null)}
         />
       )}
     </div>

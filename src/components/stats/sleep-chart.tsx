@@ -13,11 +13,9 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
-import { SleepEditSheet } from "@/components/stats/edit-sheet";
+import { SleepEditSheet, SleepAddSheet } from "@/components/stats/edit-sheet";
+import { WEEKDAYS, CAL_WEEKDAYS } from "@/types";
 import type { SleepRecord, SleepCategory } from "@/types";
-
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-const CAL_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
 
 function getMonday(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
@@ -45,16 +43,18 @@ type Props = {
   records: SleepRecord[];
   onEdit?: (id: string, data: { started_at: string; ended_at: string }) => void;
   onDelete?: (id: string) => void;
+  onAdd?: (data: { sleep_date: string; started_at: string; ended_at: string; sleep_category: SleepCategory }) => void;
 };
 
 type ViewMode = "weekly" | "monthly";
 
-export function SleepChart({ records, onEdit, onDelete }: Props) {
+export function SleepChart({ records, onEdit, onDelete, onAdd }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<{ dateStr: string; category?: SleepCategory } | null>(null);
   const [editingRecord, setEditingRecord] = useState<SleepRecord | null>(null);
+  const [addContext, setAddContext] = useState<{ dateStr: string; category: SleepCategory } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -395,6 +395,14 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
                         >
                           {formatHourMin(entry.daytime)}
                         </button>
+                      ) : onAdd ? (
+                        <button
+                          type="button"
+                          onClick={() => setAddContext({ dateStr: day.dateStr, category: "daytime" })}
+                          className="inline-flex cursor-pointer items-center text-xs text-muted-foreground/40 transition-colors hover:text-primary hover:bg-primary/5 rounded-md px-1"
+                        >
+                          ー
+                        </button>
                       ) : (
                         <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
                       )}
@@ -409,6 +417,14 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
                           className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-indigo-600"
                         >
                           {formatHourMin(entry.night)}
+                        </button>
+                      ) : onAdd ? (
+                        <button
+                          type="button"
+                          onClick={() => setAddContext({ dateStr: day.dateStr, category: "night" })}
+                          className="inline-flex cursor-pointer items-center text-xs text-muted-foreground/40 transition-colors hover:text-primary hover:bg-primary/5 rounded-md px-1"
+                        >
+                          ー
                         </button>
                       ) : (
                         <span className="inline-flex items-center text-xs text-muted-foreground/40">ー</span>
@@ -524,6 +540,16 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
           record={editingRecord}
           onSave={handleEditSave}
           onClose={() => setEditingRecord(null)}
+        />
+      )}
+
+      {/* 新規追加シート */}
+      {addContext && onAdd && (
+        <SleepAddSheet
+          dateStr={addContext.dateStr}
+          category={addContext.category}
+          onCreate={(data) => { onAdd(data); setAddContext(null); }}
+          onClose={() => setAddContext(null)}
         />
       )}
     </div>

@@ -1,15 +1,8 @@
 "use client";
 
+import { MOOD_OPTIONS } from "@/types";
 import type { DailyLog } from "@/types";
 import { ChildBadge } from "@/components/child/child-badge";
-
-const moodLabels: Record<string, string> = {
-  moved: "🥰",
-  happy: "🙂",
-  neutral: "😐",
-  tired: "😴",
-  sad: "😭",
-};
 
 type MemoryCardProps = {
   log: DailyLog;
@@ -36,7 +29,7 @@ export function MemoryCard({ log, photoUrl, childName }: MemoryCardProps) {
       <div className="space-y-2 p-4">
         <div className="flex items-center gap-2">
           <span className="text-lg leading-none">
-            {moodLabels[log.mood] ?? ""}
+            {MOOD_OPTIONS.find((o) => o.value === log.mood)?.emoji ?? ""}
           </span>
           {childName && <ChildBadge name={childName} />}
         </div>

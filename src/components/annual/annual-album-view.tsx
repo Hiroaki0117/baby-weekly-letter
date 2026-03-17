@@ -6,19 +6,13 @@ import { exportAsA4Pdf } from "@/lib/export";
 import { AnnualPdfLayout } from "./annual-pdf-layout";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { MONTH_NAMES, FISCAL_MONTHS } from "@/types";
 import type { AnnualReport, AnnualReportContent } from "@/types";
 
 type AnnualAlbumViewProps = {
   report: AnnualReport;
   onBack: () => void;
 };
-
-const MONTH_NAMES: Record<number, string> = {
-  1: "1月", 2: "2月", 3: "3月", 4: "4月", 5: "5月", 6: "6月",
-  7: "7月", 8: "8月", 9: "9月", 10: "10月", 11: "11月", 12: "12月",
-};
-
-const FISCAL_MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
 
 const TOTAL_PAGES = 6;
 
