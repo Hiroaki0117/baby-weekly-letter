@@ -424,67 +424,76 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 通知 */}
-      <NotificationList
-        notifications={notifications}
-        onRead={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
-      />
-
-      {/* ○年前の今日 */}
-      <MemoriesSection childrenList={childrenList} />
-
-      {/* クイック入力セクション */}
-      <QuickTemperatureInput childrenList={childrenList} />
-      <QuickSleepInput childrenList={childrenList} activeTracking={activeTracking} onTrackingChange={refreshTracking} />
-      <QuickMealInput childrenList={childrenList} />
-
-      {/* ログフォーム */}
-      <LogForm
-        key={editingLog?.id ?? "new"}
-        childrenList={childrenList}
-        editingLog={editingLog}
-        existingPhotoUrl={editingPhotoUrl}
-        onSaved={handleSaved}
-        onCancel={
-          editingLog
-            ? () => {
-                setEditingLog(null);
-                setEditingPhotoUrl(null);
-              }
-            : undefined
-        }
-      />
-
-      {/* 今日のログ */}
-      {logs.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-border/50" />
-            <span className="text-[10px] font-medium uppercase tracking-widest text-primary/70">
-              {logs.length}件の日記
-            </span>
-            <div className="h-px flex-1 bg-border/50" />
-          </div>
-          {logs.map((log) => (
-            <LogCard
-              key={log.id}
-              log={log}
-              childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
-              authorDisplayName={authorNames[log.author_id]}
-              milestone={milestoneMap[log.id]}
-              reactions={reactionMap[log.id]}
-              comments={commentMap[log.id]}
-              currentUserId={currentUserId}
-              nameMap={authorNames}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleReaction={handleToggleReaction}
-              onAddComment={handleAddComment}
-              onUpdateComment={handleUpdateComment}
-              onDeleteComment={handleDeleteComment}
-            />
-          ))}
+      {!cardLoaded ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-20">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          <p className="text-xs text-muted-foreground">読み込み中...</p>
         </div>
+      ) : (
+        <>
+          {/* 通知 */}
+          <NotificationList
+            notifications={notifications}
+            onRead={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
+          />
+
+          {/* ○年前の今日 */}
+          <MemoriesSection childrenList={childrenList} />
+
+          {/* クイック入力セクション */}
+          <QuickTemperatureInput childrenList={childrenList} />
+          <QuickSleepInput childrenList={childrenList} activeTracking={activeTracking} onTrackingChange={refreshTracking} />
+          <QuickMealInput childrenList={childrenList} />
+
+          {/* ログフォーム */}
+          <LogForm
+            key={editingLog?.id ?? "new"}
+            childrenList={childrenList}
+            editingLog={editingLog}
+            existingPhotoUrl={editingPhotoUrl}
+            onSaved={handleSaved}
+            onCancel={
+              editingLog
+                ? () => {
+                    setEditingLog(null);
+                    setEditingPhotoUrl(null);
+                  }
+                : undefined
+            }
+          />
+
+          {/* 今日のログ */}
+          {logs.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-border/50" />
+                <span className="text-[10px] font-medium uppercase tracking-widest text-primary/70">
+                  {logs.length}件の日記
+                </span>
+                <div className="h-px flex-1 bg-border/50" />
+              </div>
+              {logs.map((log) => (
+                <LogCard
+                  key={log.id}
+                  log={log}
+                  childName={childrenList.length >= 2 ? childrenList.find((c) => c.id === log.child_id)?.name : undefined}
+                  authorDisplayName={authorNames[log.author_id]}
+                  milestone={milestoneMap[log.id]}
+                  reactions={reactionMap[log.id]}
+                  comments={commentMap[log.id]}
+                  currentUserId={currentUserId}
+                  nameMap={authorNames}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onToggleReaction={handleToggleReaction}
+                  onAddComment={handleAddComment}
+                  onUpdateComment={handleUpdateComment}
+                  onDeleteComment={handleDeleteComment}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
