@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   startOfWeek,
   addWeeks,
@@ -64,13 +64,17 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
   const [popover, setPopover] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<MealRecord | null>(null);
 
-  const closePopover = useCallback(() => setPopover(null), []);
-
   useEffect(() => {
     if (!popover) return;
-    document.addEventListener("mousedown", closePopover);
-    return () => document.removeEventListener("mousedown", closePopover);
-  }, [popover, closePopover]);
+    function handleMouseDown(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-meal-popover]")) {
+        setPopover(null);
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [popover]);
 
   const currentMonday = getMonday(new Date());
   const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -298,7 +302,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                             <span className="inline-flex h-7 w-7 items-center justify-center text-xs text-muted-foreground/40">ー</span>
                           )}
                           {isOpen && record && (
-                            <div onMouseDown={(e) => e.stopPropagation()} className={cn(
+                            <div data-meal-popover className={cn(
                               "absolute top-full z-10 mt-1 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
                               mtIndex === 0 && "left-0",
                               mtIndex === MEAL_TYPES.length - 1 && "right-0",
@@ -402,7 +406,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                       </button>
 
                       {isOpen && dayMap && (
-                        <div onMouseDown={(e) => e.stopPropagation()} className={cn(
+                        <div data-meal-popover className={cn(
                           "absolute top-full z-10 mt-1 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
                           di === 0 && "left-0",
                           di === 6 && "right-0",
