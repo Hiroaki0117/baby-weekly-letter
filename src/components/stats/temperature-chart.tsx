@@ -14,19 +14,11 @@ import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calcNormalTemperature } from "@/lib/temperature";
 import { buildCalendarWeeks, formatMonthLabel } from "@/lib/calendar";
-import { TempEditSheet } from "@/components/stats/edit-sheet";
+import { TempEditSheet, TempAddSheet } from "@/components/stats/edit-sheet";
+import { TEMP_PERIOD_OPTIONS, FEVER_THRESHOLD, WEEKDAYS, CAL_WEEKDAYS } from "@/types";
 import type { TemperatureRecord, TempPeriod } from "@/types";
 
-const FEVER_LINE = 37.5;
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-const CAL_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
-
-const PERIODS: { value: TempPeriod; label: string }[] = [
-  { value: "morning", label: "朝" },
-  { value: "afternoon", label: "昼" },
-  { value: "evening", label: "夕" },
-  { value: "night", label: "夜" },
-];
+const PERIODS = TEMP_PERIOD_OPTIONS;
 
 function getMonday(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
@@ -38,14 +30,14 @@ function formatWeekLabel(weekStart: Date): string {
 }
 
 function tempStyle(temp: number): { bg: string; text: string } {
-  if (temp >= FEVER_LINE) return { bg: "bg-red-100", text: "text-red-700" };
+  if (temp >= FEVER_THRESHOLD) return { bg: "bg-red-100", text: "text-red-700" };
   if (temp >= 37.0) return { bg: "bg-yellow-100", text: "text-yellow-700" };
   if (temp >= 36.0) return { bg: "bg-green-100", text: "text-green-700" };
   return { bg: "bg-blue-100", text: "text-blue-700" };
 }
 
 function tempDotColor(temp: number): string {
-  if (temp >= FEVER_LINE) return "bg-red-400";
+  if (temp >= FEVER_THRESHOLD) return "bg-red-400";
   if (temp >= 37.0) return "bg-yellow-400";
   if (temp >= 36.0) return "bg-green-400";
   return "bg-blue-400";
@@ -60,16 +52,18 @@ type Props = {
   records: TemperatureRecord[];
   onEdit?: (id: string, data: { temperature: number; measured_at: string }) => void;
   onDelete?: (id: string) => void;
+  onAdd?: (data: { temperature: number; measured_at: string }) => void;
 };
 
 type ViewMode = "weekly" | "monthly";
 
-export function TemperatureChart({ records, onEdit, onDelete }: Props) {
+export function TemperatureChart({ records, onEdit, onDelete, onAdd }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("weekly");
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<{ dateStr: string; period?: TempPeriod } | null>(null);
   const [editingRecord, setEditingRecord] = useState<TemperatureRecord | null>(null);
+  const [addContext, setAddContext] = useState<{ dateStr: string; period: TempPeriod } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -372,6 +366,14 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
                             >
                               {latest.temperature}℃
                             </button>
+                          ) : onAdd ? (
+                            <button
+                              type="button"
+                              onClick={() => setAddContext({ dateStr: day.dateStr, period: p.value })}
+                              className="inline-flex cursor-pointer items-center justify-center px-1.5 py-0.5 text-xs text-muted-foreground/40 transition-colors hover:text-primary hover:bg-primary/5 rounded-md"
+                            >
+                              ー
+                            </button>
                           ) : (
                             <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs text-muted-foreground/40">ー</span>
                           )}
@@ -453,6 +455,16 @@ export function TemperatureChart({ records, onEdit, onDelete }: Props) {
           record={editingRecord}
           onSave={handleEditSave}
           onClose={() => setEditingRecord(null)}
+        />
+      )}
+
+      {/* 新規追加シート */}
+      {addContext && onAdd && (
+        <TempAddSheet
+          dateStr={addContext.dateStr}
+          period={addContext.period}
+          onCreate={(data) => { onAdd(data); setAddContext(null); }}
+          onClose={() => setAddContext(null)}
         />
       )}
     </div>

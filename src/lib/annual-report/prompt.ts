@@ -1,4 +1,5 @@
 import { calcAge } from "@/lib/date";
+import { MONTH_NAMES } from "@/types";
 import type {
   WeeklyReport,
   MonthlyReport,
@@ -31,10 +32,6 @@ const TONE_LABELS: Record<ReportTone, string> = {
   poetic: "詩的で情緒豊かな文体",
 };
 
-const MONTH_NAMES = [
-  "", "1月", "2月", "3月", "4月", "5月", "6月",
-  "7月", "8月", "9月", "10月", "11月", "12月",
-];
 
 function buildMonthlyData(
   monthlyReports: MonthlyReport[],

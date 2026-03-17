@@ -1,20 +1,13 @@
 "use client";
 
 import { useCallback } from "react";
+import { MONTH_NAMES, FISCAL_MONTHS } from "@/types";
 import type { AnnualReportContent } from "@/types";
 
 // A4比率: 210mm × 297mm → 794px × 1123px (96dpi相当)
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
 const PAGE_PADDING = 40;
-
-const MONTH_NAMES: Record<number, string> = {
-  1: "1月", 2: "2月", 3: "3月", 4: "4月", 5: "5月", 6: "6月",
-  7: "7月", 8: "8月", 9: "9月", 10: "10月", 11: "11月", 12: "12月",
-};
-
-// 年度順の月
-const FISCAL_MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
 
 type AnnualPdfLayoutProps = {
   content: AnnualReportContent;
