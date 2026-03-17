@@ -10,6 +10,7 @@ import {
   classifySleep,
   startTracking,
   stopTracking,
+  updateTracking,
 } from "@/lib/sleep";
 import { getMyFamilyId } from "@/lib/supabase/family";
 import { toast } from "sonner";
@@ -64,6 +65,9 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
   const [endTime, setEndTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmingTrackingId, setConfirmingTrackingId] = useState<string | null>(null);
+  const [editingTrackingId, setEditingTrackingId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
   const supabaseRef = useRef(createClient());
 
   // childrenList が後から渡された場合に同期
@@ -133,6 +137,27 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
       toast.success("計測を取り消しました");
     } catch {
       toast.error("取消に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // 開始時刻を編集して保存
+  async function handleSaveEditedStartTime(trackingId: string) {
+    if (!editDate || !editTime) return;
+
+    setSaving(true);
+    try {
+      const startedAt = new Date(`${editDate}T${editTime}:00`).toISOString();
+      await updateTracking(supabaseRef.current, trackingId, {
+        started_at: startedAt,
+        sleep_date: editDate,
+      });
+      toast.success("開始時刻を修正しました");
+      setEditingTrackingId(null);
+      onTrackingChange();
+    } catch {
+      toast.error("開始時刻の修正に失敗しました");
     } finally {
       setSaving(false);
     }
@@ -238,11 +263,57 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
                     <p className="text-xs text-muted-foreground">
                       {trackingChild?.name} - 記録中
                     </p>
-                    <p className="text-sm font-medium text-foreground">
-                      {date} {time}〜
-                    </p>
+                    {editingTrackingId === tracking.id ? (
+                      <div className="flex items-center gap-1.5 pt-0.5">
+                        <input
+                          type="date"
+                          value={editDate}
+                          onChange={(e) => setEditDate(e.target.value)}
+                          className="rounded-md border border-border/60 bg-background/60 px-1.5 py-0.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        />
+                        <input
+                          type="time"
+                          value={editTime}
+                          onChange={(e) => setEditTime(e.target.value)}
+                          className="rounded-md border border-border/60 bg-background/60 px-1.5 py-0.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEditedStartTime(tracking.id)}
+                          disabled={saving || !editDate || !editTime}
+                          className="rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          保存
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTrackingId(null)}
+                          className="rounded-md border border-border/60 px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/60"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="flex items-center gap-1 text-sm font-medium text-foreground">
+                        {date} {time}〜
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditDate(date);
+                            setEditTime(time);
+                            setEditingTrackingId(tracking.id);
+                          }}
+                          className="inline-flex items-center rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                          title="開始時刻を修正"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
+                            <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L3.22 10.306a1 1 0 0 0-.26.445l-.812 3.22a.5.5 0 0 0 .607.607l3.22-.812a1 1 0 0 0 .445-.26l7.793-7.793a1.75 1.75 0 0 0 0-2.475l-.725-.725ZM11.72 3.22a.25.25 0 0 1 .354 0l.725.725a.25.25 0 0 1 0 .354L12 5.1 10.9 4l.82-.78ZM10.193 4.707l1.1 1.1-5.986 5.986-1.535.388.388-1.535 5.986-5.986.047.047Z" />
+                          </svg>
+                        </button>
+                      </p>
+                    )}
                   </div>
-                  {!isConfirming && (
+                  {!isConfirming && editingTrackingId !== tracking.id && (
                     <div className="flex gap-2">
                       <button
                         type="button"
