@@ -171,6 +171,25 @@ export async function startTracking(
 }
 
 /**
+ * 睡眠計測の開始時刻を更新
+ */
+export async function updateTracking(
+  supabase: Client,
+  trackingId: string,
+  updates: { started_at: string; sleep_date: string },
+): Promise<SleepTracking> {
+  const { data, error } = await supabase
+    .from("sleep_tracking")
+    .update(updates)
+    .eq("id", trackingId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SleepTracking;
+}
+
+/**
  * 睡眠計測を終了・取消（sleep_tracking レコードを削除）
  */
 export async function stopTracking(
