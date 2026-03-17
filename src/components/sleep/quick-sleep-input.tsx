@@ -264,34 +264,38 @@ export function QuickSleepInput({ childrenList, activeTracking, onTrackingChange
                       {trackingChild?.name} - 記録中
                     </p>
                     {editingTrackingId === tracking.id ? (
-                      <div className="flex items-center gap-1.5 pt-0.5">
-                        <input
-                          type="date"
-                          value={editDate}
-                          onChange={(e) => setEditDate(e.target.value)}
-                          className="rounded-md border border-border/60 bg-background/60 px-1.5 py-0.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                        />
-                        <input
-                          type="time"
-                          value={editTime}
-                          onChange={(e) => setEditTime(e.target.value)}
-                          className="rounded-md border border-border/60 bg-background/60 px-1.5 py-0.5 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleSaveEditedStartTime(tracking.id)}
-                          disabled={saving || !editDate || !editTime}
-                          className="rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-                        >
-                          保存
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingTrackingId(null)}
-                          className="rounded-md border border-border/60 px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/60"
-                        >
-                          ✕
-                        </button>
+                      <div className="space-y-2 pt-1">
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={(e) => setEditDate(e.target.value)}
+                            className="min-w-0 flex-1 rounded-md border border-border/60 bg-background/60 px-1.5 py-1 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                          />
+                          <input
+                            type="time"
+                            value={editTime}
+                            onChange={(e) => setEditTime(e.target.value)}
+                            className="min-w-0 flex-1 rounded-md border border-border/60 bg-background/60 px-1.5 py-1 text-sm focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEditedStartTime(tracking.id)}
+                            disabled={saving || !editDate || !editTime}
+                            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            保存
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingTrackingId(null)}
+                            className="rounded-md border border-border/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary/60"
+                          >
+                            キャンセル
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <p className="flex items-center gap-1 text-sm font-medium text-foreground">
