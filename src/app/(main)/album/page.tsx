@@ -9,6 +9,8 @@ import { PhotoGrid } from "@/components/gallery/photo-grid";
 import { PhotoModal } from "@/components/gallery/photo-modal";
 import { GeneratingOverlay } from "@/components/ui/generating-overlay";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
 import { UngeneratedWeekCard } from "@/components/weekly/ungenerated-week-card";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
@@ -298,15 +300,7 @@ function AlbumPageInner() {
       <GeneratingOverlay visible={generating} />
 
       {/* ページヘッダー */}
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            {headerInfo[activeTab].en}
-          </p>
-          <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
-            {headerInfo[activeTab].ja}
-          </h1>
-        </div>
+      <PageHeader englishLabel={headerInfo[activeTab].en} title={headerInfo[activeTab].ja}>
         {/* 生成ボタン */}
         {activeTab === "weekly" && (
           <button
@@ -352,7 +346,7 @@ function AlbumPageInner() {
             {String(photoMonths.reduce((sum, m) => sum + m.photos.length, 0)).padStart(3, "0")}
           </span>
         )}
-      </div>
+      </PageHeader>
 
       {/* タブ切替（2段構成） */}
       <div className="space-y-3">
@@ -420,15 +414,11 @@ function AlbumPageInner() {
       {activeTab === "photos" && (
         <>
           {photoMonths.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border text-2xl">
-                📷
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">まだ写真がありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">日記に写真を添付してみましょう</p>
-              </div>
-            </div>
+            <EmptyState
+              emoji="📷"
+              title="まだ写真がありません"
+              subtitle="日記に写真を添付してみましょう"
+            />
           ) : (
             <PhotoGrid
               months={photoMonths}
@@ -455,16 +445,16 @@ function AlbumPageInner() {
       {activeTab === "weekly" && (
         <>
           {filteredReports.length === 0 && ungeneratedWeeks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
-                <div className="airmail-stripe absolute inset-x-0 top-0 h-2.5" />
-                <span className="mt-2 text-3xl">✉</span>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">まだ週次アルバムがありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">日記を書いたら「今週のアルバムを作る」を押してみましょう</p>
-              </div>
-            </div>
+            <EmptyState
+              icon={
+                <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
+                  <div className="airmail-stripe absolute inset-x-0 top-0 h-2.5" />
+                  <span className="mt-2 text-3xl">✉</span>
+                </div>
+              }
+              title="まだ週次アルバムがありません"
+              subtitle="日記を書いたら「今週のアルバムを作る」を押してみましょう"
+            />
           ) : (
             <div className="space-y-3">
               {(() => {
@@ -506,16 +496,16 @@ function AlbumPageInner() {
       {activeTab === "monthly" && (
         <>
           {filteredMonthlyReports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
-                <div className="h-2.5 w-full bg-gradient-to-r from-primary/60 via-primary/40 to-primary/20 absolute inset-x-0 top-0" />
-                <span className="mt-2 text-3xl">📖</span>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">まだ月次アルバムがありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">週次アルバムが作られたら「アルバムを作る」を押してみましょう</p>
-              </div>
-            </div>
+            <EmptyState
+              icon={
+                <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
+                  <div className="h-2.5 w-full bg-gradient-to-r from-primary/60 via-primary/40 to-primary/20 absolute inset-x-0 top-0" />
+                  <span className="mt-2 text-3xl">📖</span>
+                </div>
+              }
+              title="まだ月次アルバムがありません"
+              subtitle="週次アルバムが作られたら「アルバムを作る」を押してみましょう"
+            />
           ) : (
             <div className="space-y-3">
               {filteredMonthlyReports.map((report) => (
@@ -615,16 +605,16 @@ function AnnualTabContent({
       )}
 
       {reports.length === 0 && suggestedYear === null ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
-            <div className="h-2.5 w-full bg-gradient-to-r from-amber-500/60 via-amber-400/40 to-amber-300/20 absolute inset-x-0 top-0" />
-            <span className="mt-2 text-3xl">📚</span>
-          </div>
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">まだ年次アルバムがありません</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">年度末（3月）以降にアルバムを生成できます</p>
-          </div>
-        </div>
+        <EmptyState
+          icon={
+            <div className="relative flex h-20 w-24 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border">
+              <div className="h-2.5 w-full bg-gradient-to-r from-amber-500/60 via-amber-400/40 to-amber-300/20 absolute inset-x-0 top-0" />
+              <span className="mt-2 text-3xl">📚</span>
+            </div>
+          }
+          title="まだ年次アルバムがありません"
+          subtitle="年度末（3月）以降にアルバムを生成できます"
+        />
       ) : (
         <div className="space-y-3">
           {reports.map((report) => (

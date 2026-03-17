@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { RecordList } from "@/components/ui/record-list";
 import type { SleepRecord } from "@/types";
 
 type Props = {
@@ -23,47 +23,22 @@ function formatDuration(minutes: number): string {
 }
 
 export function SleepRecordList({ records, onEdit, onDelete }: Props) {
-  if (records.length === 0) {
-    return (
-      <p className="py-4 text-center text-xs text-muted-foreground">
-        まだ睡眠記録がありません
-      </p>
-    );
-  }
-
   return (
-    <div className="divide-y divide-border/30">
-      {[...records].reverse().map((record) => (
-        <div
-          key={record.id}
-          className="flex items-center justify-between py-3"
-        >
-          <div className="space-y-0.5">
-            <p className="text-xs font-medium text-foreground">
-              {formatTime(record.started_at)} → {formatTime(record.ended_at)}
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {formatDuration(record.duration_minutes)}
-            </p>
-          </div>
-          <div className="flex gap-1">
-            <button
-              onClick={() => onEdit(record)}
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="編集"
-            >
-              <Pencil size={14} />
-            </button>
-            <button
-              onClick={() => onDelete(record.id)}
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500"
-              aria-label="削除"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+    <RecordList
+      records={records}
+      emptyMessage="まだ睡眠記録がありません"
+      onEdit={onEdit}
+      onDelete={onDelete}
+      renderContent={(record) => (
+        <div className="space-y-0.5">
+          <p className="text-xs font-medium text-foreground">
+            {formatTime(record.started_at)} → {formatTime(record.ended_at)}
+          </p>
+          <p className="text-sm font-semibold text-foreground">
+            {formatDuration(record.duration_minutes)}
+          </p>
         </div>
-      ))}
-    </div>
+      )}
+    />
   );
 }

@@ -11,6 +11,7 @@ import type { Milestone } from "@/types";
 import { logFormSchema, type LogFormValues } from "@/schemas/log";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { FormActions } from "@/components/ui/form-actions";
 import { MoodSelector } from "./mood-selector";
 import { CategoryPicker } from "./category-picker";
 import { PhotoUploader } from "./photo-uploader";
@@ -383,24 +384,28 @@ export function LogForm({
       </div>
 
       {/* ボタン */}
-      <div className="flex gap-2 border-t border-primary/10 bg-primary/5 px-5 py-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
-        >
-          {saving ? "保存中…" : editingLog ? "更新する" : "保存する"}
-        </button>
-        {onCancel && (
+      {onCancel ? (
+        <FormActions
+          saving={saving}
+          isEditing={!!editingLog}
+          submitLabel={editingLog ? "更新する" : "保存する"}
+          savingLabel="保存中…"
+          cancelLabel="キャンセル"
+          onCancel={onCancel}
+          className="flex gap-2 border-t border-primary/10 bg-primary/5 px-5 py-3"
+          submitClassName="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
+        />
+      ) : (
+        <div className="flex gap-2 border-t border-primary/10 bg-primary/5 px-5 py-3">
           <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg border border-border/70 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            type="submit"
+            disabled={saving}
+            className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 disabled:opacity-50"
           >
-            キャンセル
+            {saving ? "保存中…" : "保存する"}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </form>
   );
 }

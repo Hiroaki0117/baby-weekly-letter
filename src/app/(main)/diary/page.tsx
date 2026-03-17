@@ -15,6 +15,8 @@ import { LogFilter } from "@/components/log/log-filter";
 import { Calendar, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import type { Child, DailyLog, Milestone, Mood } from "@/types";
 
@@ -506,15 +508,7 @@ function DiaryPageInner() {
   return (
     <div className="space-y-5">
       {/* ページヘッダー */}
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Diary
-          </p>
-          <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
-            日記
-          </h1>
-        </div>
+      <PageHeader englishLabel="Diary" title="日記">
 
         {/* 表示切り替えトグル */}
         <div className="flex rounded-lg border border-border/60 p-0.5">
@@ -545,7 +539,7 @@ function DiaryPageInner() {
             一覧
           </button>
         </div>
-      </div>
+      </PageHeader>
 
       <div className="h-px bg-border/60" />
 
@@ -589,9 +583,7 @@ function DiaryPageInner() {
               )}
 
               {selectedLogs.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground">この日のログはありません</p>
-                </div>
+                <EmptyState title="この日のログはありません" className="py-8" />
               ) : (
                 selectedLogs.map((log) => (
                   <LogCard
@@ -653,27 +645,22 @@ function DiaryPageInner() {
           )}
 
           {allLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border text-2xl">
-                📝
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">まだログがありません</p>
-                <p className="mt-1 text-xs text-muted-foreground/70">ホームから最初の日記を残してみましょう</p>
-              </div>
-            </div>
+            <EmptyState
+              emoji="📝"
+              title="まだログがありません"
+              subtitle="ホームから最初の日記を残してみましょう"
+            />
           ) : filteredLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border text-2xl">
-                🔍
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">条件に合うログがありません</p>
+            <EmptyState
+              emoji="🔍"
+              title="条件に合うログがありません"
+              className="py-16"
+              action={
                 <button type="button" onClick={clearFilters} className="mt-2 text-xs text-primary transition-colors hover:text-primary/80">
                   フィルターをクリア
                 </button>
-              </div>
-            </div>
+              }
+            />
           ) : (
             <div className="space-y-3">
               {filteredLogs.map((log) => (

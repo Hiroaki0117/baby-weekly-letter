@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { addMealRecord } from "@/lib/meal";
+import { QuickInputSection } from "@/components/ui/quick-input-section";
 import { toast } from "sonner";
 import { ChildSelector } from "@/components/child/child-selector";
 import {
@@ -19,7 +20,6 @@ type Props = {
 };
 
 export function QuickMealInput({ childrenList }: Props) {
-  const [open, setOpen] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState(childrenList[0]?.id ?? "");
   const [mealType, setMealType] = useState<MealType | "">("");
   const [mealAmount, setMealAmount] = useState<MealAmount | "">("");
@@ -65,18 +65,7 @@ export function QuickMealInput({ childrenList }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/30"
-      >
-        <span>🍽 食事を記録</span>
-        <span className="text-xs text-muted-foreground">{open ? "▲" : "▼"}</span>
-      </button>
-
-      {open && (
-        <div className="space-y-3 border-t border-border/40 px-4 py-3">
+    <QuickInputSection label={<span>🍽 食事を記録</span>}>
           {/* 子供セレクタ（2人以上の場合） */}
           {showSelector && (
             <div className="space-y-1.5">
@@ -139,8 +128,6 @@ export function QuickMealInput({ childrenList }: Props) {
               {saving ? "..." : "記録"}
             </button>
           </div>
-        </div>
-      )}
-    </div>
+    </QuickInputSection>
   );
 }

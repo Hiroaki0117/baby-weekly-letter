@@ -28,6 +28,8 @@ import { ChildSelector } from "@/components/child/child-selector";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { classifyTempPeriod } from "@/lib/temperature";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import type { Child, DailyLog, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, Gender, Milestone } from "@/types";
 
@@ -334,14 +336,7 @@ export default function StatsPage() {
   return (
     <div className="space-y-5">
       {/* ページヘッダー */}
-      <div>
-        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-          Report
-        </p>
-        <h1 className="font-mincho mt-0.5 text-xl font-semibold text-foreground">
-          レポート
-        </h1>
-      </div>
+      <PageHeader englishLabel="Report" title="レポート" />
 
       {/* 子供セレクター */}
       {childrenList.length >= 2 && (
@@ -378,11 +373,10 @@ export default function StatsPage() {
       {statsTab === "logs" && (
         <>
           {allLogs.length === 0 ? (
-            <div className="rounded-xl border border-border/50 bg-card px-6 py-16 text-center">
-              <p className="text-sm text-muted-foreground">
-                まだ日記がありません。日記を追加するとレポートが表示されます。
-              </p>
-            </div>
+            <EmptyState
+              title="まだ日記がありません。日記を追加するとレポートが表示されます。"
+              className="rounded-xl border border-border/50 bg-card px-6 py-16"
+            />
           ) : (
             <div className="space-y-6">
               <PeriodTabs
