@@ -1,54 +1,25 @@
-# CLAUDE.md (プロジェクトメモリ)
+# CLAUDE.md
 
 ## 概要
 
 すくすく日記 - 育児ログ週次通信アプリ。日々の育児ログを簡単に残し、週1回AIで「ちょい感動系」の週次通信を自動生成するWebアプリケーション。
 
-## 開発コマンド
+## docs 参照ガイド
 
-```bash
-# 開発サーバー起動
-pnpm dev
+作業内容に応じて、以下の `docs/` ファイルを参照すること。
 
-# ビルド
-pnpm build
+| 作業 | 参照すべきファイル |
+|------|-------------------|
+| 実装全般（コーディング・テスト・コミット） | `docs/development-guidelines.md` |
+| 新機能の設計・既存機能の仕様確認 | `docs/functional-design.md` |
+| 技術選定・アーキテクチャの確認 | `docs/architecture.md` |
+| ファイル配置・ディレクトリ構造 | `docs/repository-structure.md` |
+| 用語・命名の確認 | `docs/glossary.md` |
+| プロダクトの目的・要件の確認 | `docs/product-requirements.md` |
 
-# 本番サーバー起動
-pnpm start
-
-# リント
-pnpm lint
-pnpm lint:fix
-
-# フォーマット
-pnpm format
-pnpm format:check
-
-# 型チェック
-pnpm type-check
-
-# テスト
-pnpm test
-pnpm test:coverage
-```
-
-## 技術スタック
-
-- **フレームワーク**: Next.js 16 (App Router)
-- **言語**: TypeScript
-- **スタイリング**: Tailwind CSS 4 + shadcn/ui
-- **データベース**: Supabase (PostgreSQL)
-- **認証**: Supabase Auth (メール+パスワード / Google OAuth)
-- **ストレージ**: Supabase Storage (写真保存)
-- **LLM**: Google Gemini 2.0 Flash (週次通信生成)
-- **フォーム**: React Hook Form + Zod
-- **日付操作**: date-fns
-- **テスト**: Vitest
-- **デプロイ**: Vercel
+**実装作業では `docs/development-guidelines.md` を必ず読むこと。** 開発コマンド、作業完了時のルール（品質チェック → commit → push）、テスト規約、コーディング規約が記載されている。
 
 ## プロジェクト構造
-
-本リポジトリは、すくすく日記（育児ログ週次通信アプリ）専用のリポジトリです。
 
 ### ドキュメントの分類
 
@@ -58,48 +29,11 @@ pnpm test:coverage
 アプリケーションの基本設計や方針が変わらない限り更新されません。
 
 - **product-requirements.md** - プロダクト要求定義書
-  - プロダクトビジョンと目的
-  - ターゲットユーザーと課題・ニーズ
-  - 主要な機能一覧
-  - 成功の定義
-  - ビジネス要件
-  - ユーザーストーリー
-  - 受け入れ条件
-  - 機能要件
-  - 非機能要件
-
 - **functional-design.md** - 機能設計書
-  - 機能ごとのアーキテクチャ
-  - システム構成図
-  - データモデル定義（ER図含む）
-  - コンポーネント設計
-  - ユースケース図、画面遷移図、ワイヤフレーム
-  - API設計（将来的にバックエンドと連携する場合）
-
 - **architecture.md** - 技術仕様書
-  - テクノロジースタック
-  - 開発ツールと手法
-  - 技術的制約と要件
-  - パフォーマンス要件
-
 - **repository-structure.md** - リポジトリ構造定義書
-  - フォルダ・ファイル構成
-  - ディレクトリの役割
-  - ファイル配置ルール
-
 - **development-guidelines.md** - 開発ガイドライン
-  - コーディング規約
-  - 命名規則
-  - スタイリング規約
-  - テスト規約
-  - Git規約
-
 - **glossary.md** - ユビキタス言語定義
-  - ドメイン用語の定義
-  - ビジネス用語の定義
-  - UI/UX用語の定義
-  - 英語・日本語対応表
-  - コード上の命名規則
 
 #### 2. 作業単位のドキュメント（`.steering/[YYYYMMDD]-[開発タイトル]/`）
 
@@ -107,34 +41,14 @@ pnpm test:coverage
 作業完了後は参照用として保持されますが、新しい作業では新しいディレクトリを作成します。
 
 - **requirements.md** - 今回の作業の要求内容
-  - 変更・追加する機能の説明
-  - ユーザーストーリー
-  - 受け入れ条件
-  - 制約事項
-
 - **design.md** - 変更内容の設計
-  - 実装アプローチ
-  - 変更するコンポーネント
-  - データ構造の変更
-  - 影響範囲の分析
-
 - **tasklist.md** - タスクリスト
-  - 具体的な実装タスク
-  - タスクの進捗状況
-  - 完了条件
 
 ### ステアリングディレクトリの命名規則
 
 ```
 .steering/[YYYYMMDD]-[開発タイトル]/
 ```
-
-**例：**
-
-- `.steering/20250103-initial-implementation/`
-- `.steering/20250115-add-tag-feature/`
-- `.steering/20250120-fix-filter-bug/`
-- `.steering/20250201-improve-performance/`
 
 ## 開発プロセス
 
@@ -161,7 +75,11 @@ mkdir -p .steering
 
 **重要：** 1ファイルごとに作成後、必ず確認・承認を得てから次のファイル作成を行う
 
-#### 3. 初回実装用のステアリングファイル作成
+#### 3. CLAUDE.md にプロジェクト固有情報を追記
+
+永続的ドキュメントの作成完了後、CLAUDE.md の「概要」セクションにプロジェクト固有の説明を記載する。
+
+#### 4. 初回実装用のステアリングファイル作成
 
 初回実装用のディレクトリを作成し、実装に必要なドキュメントを配置します。
 
@@ -175,13 +93,15 @@ mkdir -p .steering/[YYYYMMDD]-initial-implementation
 2. `.steering/[YYYYMMDD]-initial-implementation/design.md` - 実装設計
 3. `.steering/[YYYYMMDD]-initial-implementation/tasklist.md` - 実装タスク
 
-#### 4. 環境セットアップ
+#### 5. 環境セットアップ
 
-#### 5. 実装開始
+#### 6. 実装開始
 
 `.steering/[YYYYMMDD]-initial-implementation/tasklist.md` に基づいて実装を進めます。
 
-#### 6. 品質チェック
+#### 7. 品質チェック
+
+`docs/development-guidelines.md` の作業完了時のルールに従う。
 
 ### 機能追加・修正時の手順
 
@@ -200,12 +120,6 @@ mkdir -p .steering/[YYYYMMDD]-initial-implementation
 
 ```bash
 mkdir -p .steering/[YYYYMMDD]-[開発タイトル]
-```
-
-**例：**
-
-```bash
-mkdir -p .steering/20250115-add-tag-feature
 ```
 
 #### 4. 作業ドキュメント作成
@@ -228,6 +142,8 @@ mkdir -p .steering/20250115-add-tag-feature
 `.steering/[YYYYMMDD]-[開発タイトル]/tasklist.md` に基づいて実装を進めます。
 
 #### 7. 品質チェック
+
+`docs/development-guidelines.md` の作業完了時のルールに従う。
 
 ## ドキュメント管理の原則
 
@@ -261,112 +177,12 @@ mkdir -p .steering/20250115-add-tag-feature
 
 ### 記述形式
 
-1. **Mermaid記法（推奨）**
-   - Markdownに直接埋め込める
-   - バージョン管理が容易
-   - ツール不要で編集可能
+1. **Mermaid記法（推奨）** - Markdownに直接埋め込め、バージョン管理が容易
+2. **ASCII アート** - シンプルな図表に使用
+3. **画像ファイル（必要な場合のみ）** - `docs/images/` フォルダに配置、PNG または SVG 形式を推奨
 
-```mermaid
-graph TD
-    A[ユーザー] --> B[タスク作成]
-    B --> C[タスク一覧]
-    C --> D[タスク編集]
-    C --> E[タスク削除]
-```
-
-2. **ASCII アート**
-   - シンプルな図表に使用
-   - テキストエディタで編集可能
-
-```
-┌─────────────┐
-│   Header    │
-└─────────────┘
-       │
-       ↓
-┌─────────────┐
-│  Task List  │
-└─────────────┘
-```
-
-3. **画像ファイル（必要な場合のみ）**
-   - 複雑なワイヤフレームやモックアップ
-   - `docs/images/` フォルダに配置
-   - PNG または SVG 形式を推奨
-
-### 図表の更新
-
-- 設計変更時は対応する図表も同時に更新
-- 図表とコードの乖離を防ぐ
-
-## 作業完了時のルール
-
-実装が完了したら、必ず以下の順序で品質チェック → commit → push まで行うこと：
-
-1. **品質チェック**（エラーがあれば修正してから次へ）
-   ```bash
-   pnpm lint
-   pnpm type-check
-   pnpm test
-   ```
-2. 変更ファイルをステージング（関係ファイルのみ指定する）
-3. コミットメッセージは日本語で `fix:` / `feat:` / `refactor:` プレフィックスを付ける
-4. `git push origin main` でリモートに反映する
-
-ユーザーから明示的に「push しないで」と指示がない限り、push まで自動で実行する。
-
-**例外：** コミット内容がドキュメント（`docs/`、`.steering/`、`CLAUDE.md` 等）のみの場合、品質チェック（lint・型チェック・テスト）は不要。直接 commit → push してよい。
-
-### ステアリング資料の管理
-
-ステアリング資料（`.steering/` 配下）を作成・更新したら、承認後すみやかに commit → push する。実装開始前にステアリングがリモートに反映されている状態にすること。
-
-## テスト規約
-
-### テストファイルの配置
-
-テストはプロジェクトルート直下の `__tests__/` に、ソースコードのディレクトリ構造をミラーして配置する。
-
-```
-__tests__/
-├── lib/                  # src/lib/ に対応
-│   ├── date.test.ts
-│   ├── growth.test.ts
-│   ├── stats.test.ts
-│   └── supabase/
-│       └── family.test.ts
-└── schemas/              # src/schemas/ に対応
-    ├── log.test.ts
-    ├── growth.test.ts
-    └── family.test.ts
-```
-
-**重要:** `src/` 内にテストファイルを置かない。必ず `__tests__/` 配下に配置すること。
-
-### テストケースを追加すべきタイミング
-
-以下に該当する場合、実装と合わせてテストケースを作成する：
-
-- **ユーティリティ関数の新規追加・変更**（`src/lib/` 配下）: 計算ロジック、データ変換、日付操作など
-- **Zodスキーマの新規追加・変更**（`src/schemas/` 配下）: バリデーションルール、境界値、必須/任意の組み合わせ
-- **静的データの追加**（マスタデータ、定数配列など）: データの整合性・構造の検証
-
-以下はテスト不要：
-
-- UIコンポーネント（`src/components/`）: Vitestのnode環境ではDOM依存のテストが困難なため対象外
-- ページコンポーネント（`src/app/`）: 同上
-- Supabaseクライアント呼び出しのみのラッパー関数: モックが複雑になるため対象外
+図表は必要最小限に留め、設計変更時は対応する図表も同時に更新すること。
 
 ## 開発用の一時変更（本番リリース前に戻すこと）
 
 - **年次アルバムのクールダウン無効化**: `src/lib/annual-report/data.ts` の `COOLDOWN_MS` を `0` に設定中。本番では `24 * 60 * 60 * 1000`（24時間）に戻す。
-
-## 注意事項
-
-- ドキュメントの作成・更新は段階的に行い、各段階で承認を得る
-- `.steering/` のディレクトリ名は日付と開発タイトルで明確に識別できるようにする
-- 永続的ドキュメントと作業単位のドキュメントを混同しない
-- コード変更後は必ずリント・型チェックを実施する
-- 共通のデザインシステム（Tailwind CSS）を使用して統一感を保つ
-- セキュリティを考慮したコーディング（XSS対策、入力バリデーションなど）
-- 図表は必要最小限に留め、メンテナンスコストを抑える

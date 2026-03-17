@@ -234,7 +234,61 @@ refactor: 日付ユーティリティを date-fns に統一
 
 ---
 
-## 6. コードレビュー観点
+## 6. 開発コマンド
+
+```bash
+# 開発サーバー起動
+pnpm dev
+
+# ビルド
+pnpm build
+
+# 本番サーバー起動
+pnpm start
+
+# リント
+pnpm lint
+pnpm lint:fix
+
+# フォーマット
+pnpm format
+pnpm format:check
+
+# 型チェック
+pnpm type-check
+
+# テスト
+pnpm test
+pnpm test:coverage
+```
+
+---
+
+## 7. 作業完了時のルール
+
+実装が完了したら、必ず以下の順序で品質チェック → commit → push まで行うこと：
+
+1. **品質チェック**（エラーがあれば修正してから次へ）
+   ```bash
+   pnpm lint
+   pnpm type-check
+   pnpm test
+   ```
+2. 変更ファイルをステージング（関係ファイルのみ指定する）
+3. コミットメッセージは日本語で `fix:` / `feat:` / `refactor:` プレフィックスを付ける
+4. `git push origin main` でリモートに反映する
+
+ユーザーから明示的に「push しないで」と指示がない限り、push まで自動で実行する。
+
+**例外：** コミット内容がドキュメント（`docs/`、`.steering/`、`CLAUDE.md` 等）のみの場合、品質チェック（lint・型チェック・テスト）は不要。直接 commit → push してよい。
+
+### ステアリング資料の管理
+
+ステアリング資料（`.steering/` 配下）を作成・更新したら、承認後すみやかに commit → push する。実装開始前にステアリングがリモートに反映されている状態にすること。
+
+---
+
+## 8. コードレビュー観点
 
 - 型安全性（`any` が使われていないか）
 - RLS を迂回するコードがないか
