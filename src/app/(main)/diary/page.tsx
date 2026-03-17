@@ -14,6 +14,7 @@ import { LogForm } from "@/components/log/log-form";
 import { LogFilter } from "@/components/log/log-filter";
 import { Calendar, List } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import type { Child, DailyLog, Milestone, Mood } from "@/types";
 
@@ -23,10 +24,7 @@ export default function DiaryPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-xs text-muted-foreground">読み込み中...</p>
-        </div>
+        <LoadingSpinner />
       }
     >
       <DiaryPageInner />

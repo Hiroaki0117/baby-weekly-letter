@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   profileFormSchema,
   type ProfileFormValues,
@@ -168,10 +169,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-        <p className="text-xs text-muted-foreground">読み込み中...</p>
-      </div>
+      <LoadingSpinner />
     );
   }
 

@@ -8,6 +8,7 @@ import { groupPhotosByMonth, type MonthGroup } from "@/lib/gallery";
 import { PhotoGrid } from "@/components/gallery/photo-grid";
 import { PhotoModal } from "@/components/gallery/photo-modal";
 import { GeneratingOverlay } from "@/components/ui/generating-overlay";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { WeeklyReportCard } from "@/components/weekly/weekly-report-card";
 import { UngeneratedWeekCard } from "@/components/weekly/ungenerated-week-card";
 import { MonthlyReportCard } from "@/components/monthly/monthly-report-card";
@@ -40,10 +41,7 @@ export default function AlbumPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-          <p className="text-xs text-muted-foreground">読み込み中...</p>
-        </div>
+        <LoadingSpinner />
       }
     >
       <AlbumPageInner />

@@ -16,6 +16,7 @@ import { NotificationList } from "@/components/home/notification-list";
 import { QuickTemperatureInput } from "@/components/temperature/quick-temperature-input";
 import { QuickSleepInput } from "@/components/sleep/quick-sleep-input";
 import { QuickMealInput } from "@/components/meal/quick-meal-input";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import { fetchActiveTracking } from "@/lib/sleep";
 import type { Child, DailyLog, Milestone, SleepTracking, AppNotification } from "@/types";
@@ -425,10 +426,7 @@ export default function HomePage() {
       </div>
 
       {!cardLoaded ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-          <p className="text-xs text-muted-foreground">読み込み中...</p>
-        </div>
+        <LoadingSpinner />
       ) : (
         <>
           {/* 通知 */}

@@ -27,6 +27,7 @@ import { MealChart } from "@/components/stats/meal-chart";
 import { ChildSelector } from "@/components/child/child-selector";
 import { fetchMilestonesByLogIds } from "@/lib/milestones";
 import { classifyTempPeriod } from "@/lib/temperature";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import type { Child, DailyLog, GrowthRecord, TemperatureRecord, SleepRecord, MealRecord, Gender, Milestone } from "@/types";
 
@@ -325,9 +326,7 @@ export default function StatsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-lg font-semibold text-foreground">レポート</h1>
-        <div className="flex items-center justify-center py-20">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       </div>
     );
   }
