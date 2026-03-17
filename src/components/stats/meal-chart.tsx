@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import {
   startOfWeek,
   addWeeks,
@@ -63,19 +63,13 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<MealRecord | null>(null);
-  const chartRef = useRef<HTMLDivElement>(null);
 
   const closePopover = useCallback(() => setPopover(null), []);
 
   useEffect(() => {
     if (!popover) return;
-    function handleMouseDown(e: MouseEvent) {
-      if (chartRef.current && !chartRef.current.contains(e.target as Node)) {
-        closePopover();
-      }
-    }
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mousedown", closePopover);
+    return () => document.removeEventListener("mousedown", closePopover);
   }, [popover, closePopover]);
 
   const currentMonday = getMonday(new Date());
@@ -151,7 +145,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
   }
 
   return (
-    <div ref={chartRef} className="space-y-3">
+    <div className="space-y-3">
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">食事量の推移</h3>
 
@@ -304,7 +298,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                             <span className="inline-flex h-7 w-7 items-center justify-center text-xs text-muted-foreground/40">ー</span>
                           )}
                           {isOpen && record && (
-                            <div className={cn(
+                            <div onMouseDown={(e) => e.stopPropagation()} className={cn(
                               "absolute top-full z-10 mt-1 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
                               mtIndex === 0 && "left-0",
                               mtIndex === MEAL_TYPES.length - 1 && "right-0",
@@ -408,7 +402,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
                       </button>
 
                       {isOpen && dayMap && (
-                        <div className={cn(
+                        <div onMouseDown={(e) => e.stopPropagation()} className={cn(
                           "absolute top-full z-10 mt-1 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
                           di === 0 && "left-0",
                           di === 6 && "right-0",

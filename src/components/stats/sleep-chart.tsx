@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import {
   startOfWeek,
   addWeeks,
@@ -55,19 +55,13 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<{ dateStr: string; category?: SleepCategory } | null>(null);
   const [editingRecord, setEditingRecord] = useState<SleepRecord | null>(null);
-  const chartRef = useRef<HTMLDivElement>(null);
 
   const closePopover = useCallback(() => setPopover(null), []);
 
   useEffect(() => {
     if (!popover) return;
-    function handleMouseDown(e: MouseEvent) {
-      if (chartRef.current && !chartRef.current.contains(e.target as Node)) {
-        closePopover();
-      }
-    }
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mousedown", closePopover);
+    return () => document.removeEventListener("mousedown", closePopover);
   }, [popover, closePopover]);
 
   const currentMonday = getMonday(new Date());
@@ -221,6 +215,7 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
     if (popoverRecords.length === 0) return null;
     return (
       <div
+        onMouseDown={(e) => e.stopPropagation()}
         className={cn(
           "absolute z-10 rounded-lg border border-border/60 bg-white px-3 py-2 shadow-lg",
           openUpward ? "bottom-full mb-1" : "top-full mt-1",
@@ -266,7 +261,7 @@ export function SleepChart({ records, onEdit, onDelete }: Props) {
   const BAR_MAX_H = 32;
 
   return (
-    <div ref={chartRef} className="space-y-3">
+    <div className="space-y-3">
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">睡眠時間の推移</h3>
 
