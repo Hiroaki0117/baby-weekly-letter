@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import {
   startOfWeek,
   addWeeks,
@@ -63,6 +63,20 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [popover, setPopover] = useState<string | null>(null);
   const [editingRecord, setEditingRecord] = useState<MealRecord | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  const closePopover = useCallback(() => setPopover(null), []);
+
+  useEffect(() => {
+    if (!popover) return;
+    function handleMouseDown(e: MouseEvent) {
+      if (chartRef.current && !chartRef.current.contains(e.target as Node)) {
+        closePopover();
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [popover, closePopover]);
 
   const currentMonday = getMonday(new Date());
   const canGoNextWeek = !isAfter(addWeeks(weekStart, 1), currentMonday);
@@ -137,7 +151,7 @@ export function MealChart({ records, onEdit, onDelete }: Props) {
   }
 
   return (
-    <div className="space-y-3">
+    <div ref={chartRef} className="space-y-3">
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">食事量の推移</h3>
 
