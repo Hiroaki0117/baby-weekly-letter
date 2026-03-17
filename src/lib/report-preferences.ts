@@ -1,17 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import { DEFAULT_REPORT_PREFERENCES } from "@/types";
 import type { ReportPreferences, ReportTone, ReportSection } from "@/types";
-
-export const DEFAULT_PREFERENCES: ReportPreferences = {
-  tone: "warm",
-  sections: ["highlight", "digest", "growth"],
-};
 
 export async function fetchReportPreferences(): Promise<ReportPreferences> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return DEFAULT_PREFERENCES;
+  if (!user) return DEFAULT_REPORT_PREFERENCES;
 
   const { data } = await supabase
     .from("report_preferences")
@@ -19,7 +15,7 @@ export async function fetchReportPreferences(): Promise<ReportPreferences> {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!data) return DEFAULT_PREFERENCES;
+  if (!data) return DEFAULT_REPORT_PREFERENCES;
 
   return {
     tone: data.tone as ReportTone,

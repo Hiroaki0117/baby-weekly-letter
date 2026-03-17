@@ -4,9 +4,8 @@ import { useState } from "react";
 import { getCalendarDays, formatMonthJa, toDateString } from "@/lib/date";
 import { CalendarDayCell } from "./calendar-day-cell";
 import { MonthPicker } from "./month-picker";
+import { CAL_WEEKDAYS_EN } from "@/types";
 import type { DailyLog, Milestone } from "@/types";
-
-const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type CalendarGridProps = {
   year: number;
@@ -111,7 +110,7 @@ export function CalendarGrid({
 
       {/* 曜日ヘッダー */}
       <div className="grid grid-cols-7 border-b border-border/30 bg-muted/15 px-2 py-1.5">
-        {WEEKDAY_LABELS.map((label) => (
+        {CAL_WEEKDAYS_EN.map((label) => (
           <div
             key={label}
             className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
