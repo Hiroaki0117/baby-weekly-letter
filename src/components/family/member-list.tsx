@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 
 type Member = {
@@ -54,9 +55,7 @@ export function MemberList({ isOwner, currentUserId }: MemberListProps) {
 
   if (loading) {
     return (
-      <div className="py-4 text-center text-xs text-muted-foreground">
-        読み込み中...
-      </div>
+      <LoadingSpinner />
     );
   }
 
