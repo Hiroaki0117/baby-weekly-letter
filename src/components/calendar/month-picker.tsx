@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { MONTH_LABELS } from "@/types";
 
 type MonthPickerProps = {
   year: number;
@@ -9,13 +10,6 @@ type MonthPickerProps = {
   onSelect: (year: number, month: number) => void;
   onClose: () => void;
 };
-
-const MONTH_LABELS = [
-  "1月", "2月", "3月",
-  "4月", "5月", "6月",
-  "7月", "8月", "9月",
-  "10月", "11月", "12月",
-];
 
 export function MonthPicker({ year, month, onSelect, onClose }: MonthPickerProps) {
   const [displayYear, setDisplayYear] = useState(year);

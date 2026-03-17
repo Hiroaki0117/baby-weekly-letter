@@ -6,7 +6,7 @@ import { exportAsA4Pdf } from "@/lib/export";
 import { AnnualPdfLayout } from "./annual-pdf-layout";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { MONTH_NAMES, FISCAL_MONTHS } from "@/types";
+import { MONTH_NAMES, FISCAL_MONTHS, ANNUAL_ALBUM_PAGE_LABELS } from "@/types";
 import type { AnnualReport, AnnualReportContent } from "@/types";
 
 type AnnualAlbumViewProps = {
@@ -14,16 +14,7 @@ type AnnualAlbumViewProps = {
   onBack: () => void;
 };
 
-const TOTAL_PAGES = 6;
-
-const PAGE_LABELS = [
-  "表紙",
-  "4月〜7月",
-  "8月〜11月",
-  "12月〜3月",
-  "マイルストーン",
-  "振り返り",
-];
+const TOTAL_PAGES = ANNUAL_ALBUM_PAGE_LABELS.length;
 
 export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
   const content = report.content;
@@ -165,7 +156,7 @@ export function AnnualAlbumView({ report, onBack }: AnnualAlbumViewProps) {
 
           <span className="text-xs text-muted-foreground">
             {currentPage + 1} / {TOTAL_PAGES}
-            <span className="ml-2 hidden sm:inline">— {PAGE_LABELS[currentPage]}</span>
+            <span className="ml-2 hidden sm:inline">— {ANNUAL_ALBUM_PAGE_LABELS[currentPage]}</span>
           </span>
 
           <button

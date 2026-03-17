@@ -12,7 +12,7 @@ import {
   getGrowthSummary,
 } from "@/lib/annual-report/data";
 import { calcAge } from "@/lib/date";
-import { DEFAULT_PREFERENCES } from "@/lib/report-preferences";
+import { DEFAULT_REPORT_PREFERENCES } from "@/types";
 import type {
   Child,
   DailyLog,
@@ -89,7 +89,7 @@ async function fetchPreferencesForFamily(
     .select("user_id")
     .eq("family_id", familyId);
 
-  if (!members || members.length === 0) return DEFAULT_PREFERENCES;
+  if (!members || members.length === 0) return DEFAULT_REPORT_PREFERENCES;
 
   const userIds = members.map((m) => m.user_id);
   const { data: pref } = await supabase
@@ -100,7 +100,7 @@ async function fetchPreferencesForFamily(
     .limit(1)
     .maybeSingle();
 
-  if (!pref) return DEFAULT_PREFERENCES;
+  if (!pref) return DEFAULT_REPORT_PREFERENCES;
 
   return {
     tone: pref.tone as ReportTone,

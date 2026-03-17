@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { REACTION_STAMPS } from "@/types";
+export { REACTION_STAMPS };
 
 export type ReactionSummary = {
   emoji: string;
@@ -7,14 +9,6 @@ export type ReactionSummary = {
   reacted: boolean;
   userIds: string[];
 };
-
-export const REACTION_STAMPS = [
-  { key: "heart", emoji: "❤️", label: "いいね" },
-  { key: "clap", emoji: "👏", label: "すごい！" },
-  { key: "smile", emoji: "😊", label: "ほっこり" },
-  { key: "muscle", emoji: "💪", label: "おつかれさま" },
-  { key: "sparkle", emoji: "✨", label: "キラキラ" },
-] as const;
 
 type RawReaction = {
   log_id: string;

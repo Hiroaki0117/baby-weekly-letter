@@ -1,5 +1,5 @@
 import { addDays, format } from "date-fns";
-import { CATEGORY_OPTIONS } from "@/types";
+import { CATEGORY_OPTIONS, MOODS, CAL_WEEKDAYS, MONTH_LABELS } from "@/types";
 import type { DailyLog, Mood } from "@/types";
 
 // --- 共通型 ---
@@ -26,14 +26,6 @@ export type CategoryCount = {
   milestoneCount: number;
 };
 
-const MOODS: Mood[] = ["moved", "happy", "neutral", "tired", "sad"];
-
-const DAY_LABELS = ["月", "火", "水", "木", "金", "土", "日"];
-
-const MONTH_LABELS = [
-  "1月", "2月", "3月", "4月", "5月", "6月",
-  "7月", "8月", "9月", "10月", "11月", "12月",
-];
 
 function emptyMood(label: string): MoodEntry {
   return { label, moved: 0, happy: 0, neutral: 0, tired: 0, sad: 0 };
@@ -45,7 +37,7 @@ function emptyMood(label: string): MoodEntry {
  * 週別の記録件数（月〜日の7日分）
  */
 export function calcWeeklyCounts(logs: DailyLog[], weekStart: Date): CountEntry[] {
-  const entries: CountEntry[] = DAY_LABELS.map((label) => ({ label, count: 0 }));
+  const entries: CountEntry[] = CAL_WEEKDAYS.map((label) => ({ label, count: 0 }));
   for (let i = 0; i < 7; i++) {
     const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
     entries[i].count = logs.filter((l) => l.log_date === dateStr).length;
@@ -57,7 +49,7 @@ export function calcWeeklyCounts(logs: DailyLog[], weekStart: Date): CountEntry[
  * 週別の気分内訳（月〜日の7日分）
  */
 export function calcWeeklyMoods(logs: DailyLog[], weekStart: Date): MoodEntry[] {
-  const entries: MoodEntry[] = DAY_LABELS.map((label) => emptyMood(label));
+  const entries: MoodEntry[] = CAL_WEEKDAYS.map((label) => emptyMood(label));
   for (let i = 0; i < 7; i++) {
     const dateStr = format(addDays(weekStart, i), "yyyy-MM-dd");
     const dayLogs = logs.filter((l) => l.log_date === dateStr);

@@ -190,6 +190,9 @@ export const MOOD_OPTIONS: { value: Mood; emoji: string; label: string }[] = [
   { value: "sad",     emoji: "😭", label: "大変だった" },
 ];
 
+/** Mood値の配列（MOOD_OPTIONSの順序に従う） */
+export const MOODS: Mood[] = MOOD_OPTIONS.map((o) => o.value);
+
 export type Category = {
   value: string;
   label: string;
@@ -211,14 +214,63 @@ export const CATEGORY_OPTIONS: Category[] = [
 /** 日〜土の曜日ラベル（日曜始まり） */
 export const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
-/** 月〜日の曜日ラベル（月曜始まり、カレンダーグリッド用） */
+/** 月〜日の曜日ラベル（月曜始まり、カレンダーグリッド用・日本語） */
 export const CAL_WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"] as const;
 
-/** 月名ラベル（1〜12） */
+/** 月〜日の曜日ラベル（月曜始まり、カレンダーグリッド用・英語） */
+export const CAL_WEEKDAYS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+/** 月名ラベル（1〜12、キーがnumber） */
 export const MONTH_NAMES: Record<number, string> = {
   1: "1月", 2: "2月", 3: "3月", 4: "4月", 5: "5月", 6: "6月",
   7: "7月", 8: "8月", 9: "9月", 10: "10月", 11: "11月", 12: "12月",
 };
 
+/** 月名ラベル（0始まり配列、月ピッカー等で使用） */
+export const MONTH_LABELS = [
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
+] as const;
+
 /** 年度順の月（4月始まり） */
 export const FISCAL_MONTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3] as const;
+
+/** 年次アルバムのページラベル */
+export const ANNUAL_ALBUM_PAGE_LABELS = [
+  "表紙",
+  "4月〜7月",
+  "8月〜11月",
+  "12月〜3月",
+  "マイルストーン",
+  "振り返り",
+] as const;
+
+// ===== 通知定数 =====
+
+/** 通知種別ごとのアイコン */
+export const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
+  auto_weekly: "✉",
+  auto_monthly: "📖",
+  auto_annual: "📚",
+  reaction: "❤️",
+  comment: "💬",
+};
+
+// ===== リアクション定数 =====
+
+/** リアクションスタンプ */
+export const REACTION_STAMPS = [
+  { key: "heart", emoji: "❤️", label: "いいね" },
+  { key: "clap", emoji: "👏", label: "すごい！" },
+  { key: "smile", emoji: "😊", label: "ほっこり" },
+  { key: "muscle", emoji: "💪", label: "おつかれさま" },
+  { key: "sparkle", emoji: "✨", label: "キラキラ" },
+] as const;
+
+// ===== レポート設定 =====
+
+/** レポート設定のデフォルト値 */
+export const DEFAULT_REPORT_PREFERENCES: ReportPreferences = {
+  tone: "warm",
+  sections: ["highlight", "digest", "growth"],
+};

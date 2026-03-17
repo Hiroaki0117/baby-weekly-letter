@@ -2,19 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { NOTIFICATION_TYPE_ICONS } from "@/types";
 import type { AppNotification } from "@/types";
 
 type NotificationListProps = {
   notifications: AppNotification[];
   onRead: (id: string) => void;
-};
-
-const TYPE_ICONS: Record<string, string> = {
-  auto_weekly: "✉",
-  auto_monthly: "📖",
-  auto_annual: "📚",
-  reaction: "❤️",
-  comment: "💬",
 };
 
 export function NotificationList({
@@ -47,7 +40,7 @@ export function NotificationList({
           className="flex w-full items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
         >
           <span className="text-lg leading-none">
-            {TYPE_ICONS[n.type] ?? "🔔"}
+            {NOTIFICATION_TYPE_ICONS[n.type] ?? "🔔"}
           </span>
           <span className="text-sm font-medium text-foreground">
             {n.title}
