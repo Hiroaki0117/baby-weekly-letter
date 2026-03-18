@@ -84,9 +84,9 @@ mkdir -p .steering
 1. `docs/product-requirements.md` - プロダクト要求定義書（テンプレート: `docs/template/product-requirements-template.md`）
 2. `docs/functional-design.md` - 機能設計書（テンプレート: `docs/template/functional-design-template.md`）
 3. `docs/architecture.md` - 技術仕様書（テンプレート: `docs/template/architecture-template.md`）
-4. `docs/repository-structure.md` - リポジトリ構造定義書
+4. `docs/repository-structure.md` - リポジトリ構造定義書（テンプレート: `docs/template/repository-structure-template.md`）
 5. `docs/development-guidelines.md` - 開発ガイドライン（テンプレート: `docs/template/development-guidelines-template.md`）
-6. `docs/glossary.md` - ユビキタス言語定義
+6. `docs/glossary.md` - ユビキタス言語定義（テンプレート: `docs/template/glossary-template.md`）
 
 **重要：** 1ファイルごとに作成後、必ず確認・承認を得てから次のファイル作成を行う
 **テンプレートがあるファイルは、テンプレートの構成をベースに作成すること。**
