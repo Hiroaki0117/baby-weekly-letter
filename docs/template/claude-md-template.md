@@ -81,8 +81,8 @@ mkdir -p .steering
 アプリケーション全体の設計を定義します。
 各ドキュメントを作成後、必ず確認・承認を得てから次に進みます。
 
-1. `docs/product-requirements.md` - プロダクト要求定義書
-2. `docs/functional-design.md` - 機能設計書
+1. `docs/product-requirements.md` - プロダクト要求定義書（テンプレート: `docs/template/product-requirements-template.md`）
+2. `docs/functional-design.md` - 機能設計書（テンプレート: `docs/template/functional-design-template.md`）
 3. `docs/architecture.md` - 技術仕様書（テンプレート: `docs/template/architecture-template.md`）
 4. `docs/repository-structure.md` - リポジトリ構造定義書
 5. `docs/development-guidelines.md` - 開発ガイドライン（テンプレート: `docs/template/development-guidelines-template.md`）
