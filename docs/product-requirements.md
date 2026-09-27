@@ -253,7 +253,7 @@
 
 - ユーザー操作（ボタン押下）による生成
 - 対象期間：該当週の月曜〜日曜のログ
-- LLM: Google Gemini 2.5 Flash
+- LLM: Google Gemini 3.8 Flash
 - 生成は Next.js Route Handler 経由で実行
 
 #### 出力フォーマット
@@ -301,7 +301,7 @@
 | 日付操作 | date-fns |
 | バックエンド | Supabase (Auth / Database / Storage) |
 | API | Next.js Route Handlers |
-| LLM | Google Gemini 2.5 Flash |
+| LLM | Google Gemini 3.8 Flash |
 | デプロイ | Vercel |
 | 認証方式 | メール+パスワード / Google OAuth |
 
