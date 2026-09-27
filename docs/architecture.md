@@ -33,7 +33,7 @@
 
 | 技術 | 用途 |
 |------|------|
-| Google Gemini 2.5 Flash | 週次・月次通信の文章生成 |
+| Google Gemini 3.8 Flash | 週次・月次通信の文章生成 |
 | @google/generative-ai | Gemini SDK |
 
 ### 1.4 インフラ / デプロイ
@@ -77,7 +77,7 @@
            ▼                ▼
 ┌─────────────────┐  ┌──────────────┐
 │    Supabase     │  │ Google Gemini│
-│  Auth / DB /    │  │  2.5 Flash   │
+│  Auth / DB /    │  │  3.8 Flash   │
 │  Storage        │  │              │
 └─────────────────┘  └──────────────┘
 ```
@@ -147,6 +147,7 @@ lib/
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Supabase 匿名キー | Vercel / .env.local |
 | SUPABASE_SERVICE_ROLE_KEY | Supabase サービスロールキー | Vercel のみ |
 | GEMINI_API_KEY | Google Gemini APIキー | Vercel のみ |
+| GEMINI_MODEL | 使用する Gemini モデル（任意。省略時は `gemini-3.8-flash`） | Vercel / .env.local |
 
 - `NEXT_PUBLIC_` プレフィックスのある変数のみクライアントに公開
 - `SUPABASE_SERVICE_ROLE_KEY` と `GEMINI_API_KEY` はサーバーサイドのみ
